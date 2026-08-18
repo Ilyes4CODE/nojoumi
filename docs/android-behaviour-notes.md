@@ -185,6 +185,69 @@ Until then, the PIN gate on scenarios 8 and 10 is **unproven**.
 
 ---
 
+## V9 — the three clocks, and how a boot session is identified
+
+**Verified in local framework source** `android-36.1/android/os/SystemClock.java`, 2026-08-18. Quoted verbatim:
+
+- Class javadoc on the wall clock: *"`System.currentTimeMillis()` is the standard "wall" clock (time and date)
+  expressing milliseconds since the epoch. **The wall clock can be set by the user or the phone network** (see
+  `setCurrentTimeMillis`), so **the time may jump backwards or forwards unpredictably**. … Interval or elapsed
+  time measurements should use a different clock."*
+  → This sentence *is* Article 6.8 and Article 7.6, written by Google. The wall clock is the untrusted input.
+
+- Class javadoc on `uptimeMillis`: *"counted in milliseconds since the system was booted. **This clock stops when
+  the system enters deep sleep**"* → unusable for us: a phone asleep overnight would lose the night.
+
+- Class javadoc on `elapsedRealtime`: *"`elapsedRealtime` and `elapsedRealtimeNanos` return the time since the
+  system was booted, **and include deep sleep**. This clock is **guaranteed to be monotonic**, and continues to
+  tick even when the CPU is in power saving modes, so is the recommend basis for general purpose interval
+  timing."* Method javadoc: *"Returns milliseconds since boot, including time spent in sleep."*
+
+- `setCurrentTimeMillis(long)`: *"Sets the current wall time, in milliseconds. **Requires the calling process to
+  have appropriate permissions.**"* → an ordinary app cannot move the wall clock. The user can, through Settings,
+  and that is exactly the scenario Article 12.12 tests.
+
+**What we rely on:** `elapsedRealtime()` as the monotonic witness inside one boot session, and
+`System.currentTimeMillis()` as the input we check *against* it. This is precisely the split `nojoumi_time`
+was written for.
+
+### The boot id is derived, because Android does not give apps one
+
+`/proc/sys/kernel/random/boot_id` is the obvious candidate and we are **not** using it: on modern Android an
+`untrusted_app` domain has no SELinux rule granting it, and a search turned up no authority saying otherwise.
+Building the tamper model on a file that may return `EACCES` on the reference device is not acceptable.
+
+**Instead the boot token is derived in Kotlin, persisted in the app's own preferences, and rotated on either of
+two signals:**
+
+1. `elapsedRealtime()` came back **lower than the highest value we have stored**. Within one boot that is
+   impossible — the framework guarantees monotonicity — so it proves a reboot.
+2. The derived boot instant, `currentTimeMillis() − elapsedRealtime()`, moved by more than a tolerance from the
+   stored one. After a reboot this is a genuinely different value, which catches the case signal 1 misses: a
+   reboot followed by an uptime *longer* than the previous session's.
+
+Signal 2 also fires when the user simply changes the clock, which is **not** a reboot. That false positive is
+deliberate and safe: rotating the token only pushes `TrustedClock` onto its reboot branch, where the sole
+surviving rule is that time never runs backwards. A rotation can cost trust; it can never grant anything.
+
+**Why this matters enough to spell out:** if a reboot were *missed*, `TrustedClock` would keep extrapolating from
+a stale anchor and could over-state the current time — the one direction that could extend a subscription. Every
+mechanism above is chosen so the failure mode is a lost anchor, never an inflated one.
+
+**UNVERIFIED-ON-HARDWARE, and this is a device fact, not a documentation fact.** What the developer must check
+once the reference device exists:
+
+- reboot the phone and confirm `NJM_CLOCK` logs a token rotation on the first reading after boot;
+- reboot after a *long* uptime and confirm rotation still happens (that is signal 2 doing its job);
+- change the clock forward a day, then back, and confirm the token rotates and the star balance does not move —
+  this is checklist scenario 12;
+- confirm `elapsedRealtime()` does not regress across a Doze cycle overnight, since a false rotation every
+  morning would mean a re-anchor every morning.
+
+Logcat: `adb logcat -s NJM_CLOCK`.
+
+---
+
 ## V8 — Still to verify before their phase
 
 | Item | Needed by | Why |

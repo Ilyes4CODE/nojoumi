@@ -1,0 +1,163 @@
+{
+  "@@locale": "en",
+  "appName": "Nojoumi",
+  "@appName": {
+    "description": "The app name, shown in the launcher and headers."
+  },
+  "starsBalance": "Your balance",
+  "starsUnit": "stars",
+  "minutesUnit": "minutes",
+  "playTimeRemaining": "Play time remaining",
+  "todayTasks": "Today's tasks",
+  "taskMemorize": "Memorize",
+  "taskReview": "Review",
+  "taskExercise": "Exercise",
+  "sessionComplete": "You finished all of today's tasks",
+  "sessionBonusEarned": "Completion bonus: {stars} stars",
+  "@sessionBonusEarned": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      }
+    }
+  },
+  "cardShowAnswer": "Show answer",
+  "cardIKnewIt": "I knew it",
+  "cardIDidNot": "I did not",
+  "answerCorrect": "Correct",
+  "answerWrong": "Wrong. This card will come back later.",
+  "tryAgainMessage": "Try again",
+  "needStarsToPlay": "You need {stars} stars to unlock this game",
+  "@needStarsToPlay": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedTitle": "Play time is over",
+  "blockedBody": "Finish your tasks to earn more stars",
+  "earnStarsNow": "Earn stars now",
+  "playPausedByParent": "Play is paused by your parent",
+  "weeklyTest": "Weekly test",
+  "weeklyTestResult": "Your score: {percent}%",
+  "@weeklyTestResult": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "parentArea": "Parent area",
+  "enterPin": "Enter PIN",
+  "wrongPin": "Incorrect PIN",
+  "settings": "Settings",
+  "starValueMinutes": "Minutes per star",
+  "dailyStarCeiling": "Daily star ceiling",
+  "minimumCardSeconds": "Minimum time on a card",
+  "dailySessionSize": "Daily session size",
+  "balanceExpiry": "Balance expiry",
+  "expiryDaily": "End of day",
+  "expiryWeekly": "End of week",
+  "grantStars": "Grant stars",
+  "deductStars": "Deduct stars",
+  "pausePlay": "Pause play",
+  "managedApps": "Games and distracting apps",
+  "captureLesson": "Capture a lesson",
+  "captureHintFlat": "Press the page flat",
+  "captureHintLight": "Good light, no flash",
+  "captureHintStraight": "Hold the camera parallel to the page",
+  "processing": "Processing…",
+  "imageUnclear": "The photo is not clear. Retake it with better light and a flat page.",
+  "subscription": "Subscription",
+  "subscriptionTrial": "Trial",
+  "subscriptionActive": "Active",
+  "subscriptionGrace": "Grace period",
+  "subscriptionExpired": "Expired",
+  "subscriptionRefunded": "Refunded",
+  "expiresOn": "Expires on {date}",
+  "@expiresOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "enterActivationCode": "Enter activation code",
+  "activate": "Activate",
+  "freeModeNotice": "New lesson generation is paused. Blocking, stars and saved lessons keep working.",
+  "continueAction": "Continue",
+  "cancel": "Cancel",
+  "save": "Save",
+  "retry": "Retry",
+  "offlineNotice": "No internet connection",
+  "setupTitle": "Set up Nojoumi",
+  "setupWelcomeTitle": "Welcome to Nojoumi",
+  "setupWelcomeBody": "Nojoumi turns play time into something your child earns by studying, rather than something you take away. Setup is three steps, and everything can be changed later.",
+  "setupStepOf": "Step {current} of {total}",
+  "@setupStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "setupGradeTitle": "School grade",
+  "setupGradeBody": "Used to generate age-appropriate lessons. We never ask for the child's name, photo or date of birth.",
+  "setupGradeHint": "For example: fourth year primary",
+  "setupPinTitle": "Parent PIN",
+  "setupPinBody": "At least four digits. It protects the settings and the granting of stars. The PIN itself is never stored and can only be reset through your server account.",
+  "setupPinCreate": "Enter a new PIN",
+  "setupPinConfirm": "Re-enter the PIN",
+  "setupPinMismatch": "The two PINs do not match",
+  "setupPinTooShort": "The PIN must be at least four digits",
+  "setupProtectionTitle": "Blocking and home-screen mode",
+  "setupProtectionBody": "Both are entirely optional, and the app is fully usable without them: lessons, cards, stars, the weekly test and the parent dashboard all work.",
+  "setupEnableBlocking": "Turn on game blocking",
+  "setupEnableLauncher": "Make Nojoumi the home screen",
+  "setupSkipProtection": "Continue without them for now",
+  "setupDisclosureTitle": "Important disclosure before granting permission",
+  "setupDisclosureBody": "To enable blocking, Nojoumi needs the Accessibility service. The app uses it for one purpose only: to know which app has just appeared on screen, so that it can close blocked games when play time runs out.\n\nNojoumi does not read screen content, passwords or messages, does not log what you type, and sends none of this to any server. You can turn the service off at any time in your phone's settings.",
+  "setupDisclosureConsent": "I have read this disclosure and consent as a parent",
+  "setupDisclosureDecline": "No, continue without blocking",
+  "setupFinish": "Start",
+  "setupDoneTitle": "Everything is ready",
+  "setupDoneBody": "We gave your child {stars} welcome stars to begin with.",
+  "@setupDoneBody": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreeting": "Hello",
+  "startSession": "Start today's tasks",
+  "noTasksYet": "No tasks yet. Ask your parent to capture a lesson.",
+  "tasksRemaining": "{count} tasks left",
+  "@tasksRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyCeilingReached": "You have reached today's ceiling. Come back tomorrow.",
+  "streakDays": "{days}-day streak",
+  "@streakDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "clockUntrustedTitle": "The phone's clock cannot be trusted",
+  "clockUntrustedBody": "The phone's date or time has changed. No new stars can be earned until the clock is back on automatic. Stars already earned and the remaining play time are unaffected.",
+  "fixClockAction": "Open date and time settings",
+  "next": "Next",
+  "back": "Back",
+  "skip": "Skip",
+  "notNow": "Not now"
+}

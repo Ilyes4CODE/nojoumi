@@ -1,0 +1,63 @@
+name: nojoumi
+description: >-
+  نجومي — تطبيق تعليمي تحفيزي للأطفال. Arabic-first, RTL.
+  The Android app. Contract logic lives in ../packages (AD-1); this app is a
+  client of it and of the Kotlin blocking layer, never the owner of a rule.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # AD-1 — every contract rule lives in a pure Dart package, tested without a
+  # device. The app imports decisions; it does not make them.
+  nojoumi_stars:
+    path: ../packages/nojoumi_stars
+  nojoumi_time:
+    path: ../packages/nojoumi_time
+  nojoumi_subscription:
+    path: ../packages/nojoumi_subscription
+  nojoumi_sm2:
+    path: ../packages/nojoumi_sm2
+
+  # Art. 3 — state management.
+  flutter_riverpod: ^2.6.1
+
+  # Art. 3 — local storage is SQLite via Drift. All child data lives here and
+  # only here (Art. 14).
+  drift: ^2.20.0
+  sqlite3_flutter_libs: ^0.5.24
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # Server calls: the AI proxy and the subscription API. No provider keys, ever.
+  dio: ^5.7.0
+
+  # Art. 3 — local notifications only. No FCM in scope.
+  flutter_local_notifications: ^17.2.3
+
+  # PIN hashing and the signed-snapshot signature check (Art. 7.6).
+  crypto: ^3.0.5
+  cryptography: ^2.7.0
+
+  intl: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.20.0
+  build_runner: ^2.4.13
+  # Lets `flutter test` open a real SQLite database on the developer's Windows
+  # machine, so the schema is verified without a phone attached.
+  sqlite3: ^2.4.6
+
+flutter:
+  uses-material-design: true
+  generate: true

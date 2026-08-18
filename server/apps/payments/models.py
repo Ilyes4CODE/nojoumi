@@ -1,0 +1,133 @@
+"""Payment records and webhook events.
+
+Article 7.7, quoted because it admits no interpretation:
+
+    "لا يجمع التطبيق ولا الخادم أي بيانات بطاقة بنكية إطلاقاً — لا رقم بطاقة، ولا
+     تاريخ صلاحية، ولا رمز تحقّق. تُدخل هذه البيانات حصرياً على صفحة Chargily
+     الآمنة. ما يُخزَّن على الخادم هو فقط: معرّف العملية، والمبلغ، وحالتها،
+     وتاريخها."
+
+Four fields. That is the entire permitted schema, and `Transaction` holds exactly
+those plus the plan it was for. A pull request that adds a fifth field of card
+shape is a contract breach, not a review comment — and the structural test in
+`apps/lessons/tests/test_privacy.py` fails the build if one appears.
+"""
+
+from __future__ import annotations
+
+from django.conf import settings
+from django.db import models
+
+from apps.subscriptions.plans import PlanCode
+
+
+class TransactionStatus(models.TextChoices):
+    """Our own vocabulary, mapped from the gateway's.
+
+    Chargily's exact status strings are **not** written here from memory — that
+    mapping lives in `chargily.py` and is filled in from the current
+    documentation once the client supplies it (Art. 7.8).
+    """
+
+    PENDING = "pending", "قيد الانتظار"
+    PAID = "paid", "مدفوعة"
+    FAILED = "failed", "فاشلة"
+    CANCELED = "canceled", "ملغاة"
+    REFUNDED = "refunded", "مسترجعة"
+
+
+class Transaction(models.Model):
+    """One payment attempt. Art. 7.6 also requires a downloadable receipt per one."""
+
+    # "معرّف العملية" — the gateway's identifier, and our idempotency anchor.
+    gateway = models.CharField(max_length=32, default="chargily")
+    gateway_checkout_id = models.CharField(max_length=128, blank=True, db_index=True)
+    gateway_payment_id = models.CharField(
+        max_length=128, blank=True, null=True, unique=True
+    )
+
+    # "المبلغ" — integer dinars. No fractional currency in DZD retail pricing, and
+    # an integer cannot drift.
+    amount_dzd = models.PositiveIntegerField()
+    currency = models.CharField(max_length=8, default="dzd")
+
+    # "حالتها"
+    status = models.CharField(
+        max_length=16,
+        choices=TransactionStatus.choices,
+        default=TransactionStatus.PENDING,
+    )
+
+    plan = models.CharField(max_length=16, choices=PlanCode.choices)
+
+    # Nullable: a payment starts on an external web page (Art. 7.2) and may be
+    # made before the parent has an account, or by someone paying on their behalf.
+    parent = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transactions",
+    )
+
+    # "وتاريخها"
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        indexes = [models.Index(fields=["status", "-created_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.gateway}:{self.gateway_payment_id or self.gateway_checkout_id}"
+
+
+class WebhookEvent(models.Model):
+    """Every inbound webhook, verified once and never processed twice.
+
+    Article 7.3: "يتحقّق الخادم من صحة توقيع الإشعار ويرفض أي إشعار غير موقّع أو
+    مكرّر (idempotency)."
+
+    Storing rejected events too is deliberate: when the client asks why a payment
+    did not activate, the answer must be a row, not a theory.
+    """
+
+    class Outcome(models.TextChoices):
+        PROCESSED = "processed", "تمت المعالجة"
+        DUPLICATE = "duplicate", "مكرّر"
+        BAD_SIGNATURE = "bad_signature", "توقيع غير صحيح"
+        UNKNOWN_EVENT = "unknown_event", "حدث غير معروف"
+        ERROR = "error", "خطأ"
+
+    gateway = models.CharField(max_length=32, default="chargily")
+
+    # The gateway's own event id. Unique, which is what makes replay impossible:
+    # a second delivery of the same event violates the constraint and is recorded
+    # as a duplicate instead of being applied again.
+    event_id = models.CharField(max_length=160, unique=True)
+
+    signature_valid = models.BooleanField(default=False)
+    outcome = models.CharField(max_length=16, choices=Outcome.choices)
+
+    # A hash, never the body: a webhook body carries payment metadata we have no
+    # reason to retain, and possibly fields we are forbidden to (Art. 7.7).
+    payload_sha256 = models.CharField(max_length=64)
+
+    transaction = models.ForeignKey(
+        Transaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="webhook_events",
+    )
+
+    received_at = models.DateTimeField(auto_now_add=True)
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ("-received_at",)
+        indexes = [models.Index(fields=["outcome", "-received_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.event_id} -> {self.outcome}"

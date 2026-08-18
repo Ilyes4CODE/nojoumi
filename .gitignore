@@ -36,9 +36,17 @@ venv/
 staticfiles/
 mediafiles/
 
-# Lesson images must never be committed — Art. 14 forbids storing them at all.
+# Lesson images must never be committed — Art. 14 forbids storing them at all,
+# and git history is permanent. This covers both the developer's own development
+# photographs and the client's 10 acceptance images.
 **/lesson_images/
 **/captures/
+tools/eval/samples/**
+!tools/eval/samples/**/.gitkeep
+!tools/eval/samples/README.md
+
+# Eval harness output can quote lesson text, which is child data.
+tools/eval/runs/
 
 # IDE / OS
 .idea/

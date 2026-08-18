@@ -1,0 +1,13 @@
+# Nojoumi server — Article 3's stack, pinned.
+Django==5.0.6
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+drf-spectacular==0.27.2
+psycopg2-binary==2.9.12
+requests==2.32.3
+python-dotenv==1.0.1
+gunicorn==22.0.0
+
+# Ed25519 signing of the subscription snapshot (Art. 7.6 — the local copy is a
+# *signed* cache, and the app holds only the public key).
+cryptography==42.0.8

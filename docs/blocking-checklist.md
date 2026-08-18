@@ -99,23 +99,42 @@ whole checklist and OEM/Android version behaviour varies.
 **Result:** ☐ pass ☐ fail · what appeared: ____________
 
 ### 9 — Attempt to uninstall Nojoumi
-**Contract result:** prevented (ممنوع).
+**Contract result:** prevented (ممنوع). ⚠️ **Not achievable as literally worded — see below.**
+
+**Established fact, not a hypothesis:** `setUninstallBlocked` requires device owner or profile owner
+(`android-36.1` framework sources, see `android-behaviour-notes.md` V5). The client **refused Device Owner** on
+2026-08-15 (`decisions.md` D-21), so there is no route to absolute prevention. What ships is: the system's own
+refusal while the admin is active, a warning on `onDisableRequested`, detection via `onDisabled`, and a parent
+notification.
+
 **Steps:** try all of — long-press icon → uninstall; Settings → Apps → Nojoumi → Uninstall; Play Store → My apps
-→ Uninstall.
-**Look for:** the uninstall is refused in each path. Record the exact system message.
-**Record:** if any path only *delays* the uninstall (e.g. deactivate admin first, then uninstall succeeds), that
-is a **fail** and must be reported with the path that worked — the contract says prevented, not delayed.
-**Result:** icon ☐ ____ · Settings ☐ ____ · Play ☐ ____
+→ Uninstall. Then separately: deactivate the device admin first, and retry each path.
+
+**What to record:**
+- ☐ uninstall refused while the admin is **active**, in all three paths — record the exact system message
+- ☐ the warning text appears when deactivation is requested
+- ☐ after deactivation, the parent gets a notification and the dashboard shows protection as degraded
+
+**Do not mark this scenario pass/fail against the word ممنوع.** Record the observed behaviour and compare it to
+the clarification the client agreed to in writing. **If that written agreement does not exist yet, this scenario
+is contractually unresolved** — flag it, do not quietly score it.
 
 ### 10 — Attempt to disable the accessibility service, or force stop
-**Contract result:** requires the parent PIN.
+**Contract result:** requires the parent PIN. ⚠️ **Partly achievable — the force-stop path is not.**
+
 **Steps:** (a) Settings → Accessibility → Nojoumi → toggle off. (b) Settings → Apps → Nojoumi → Force stop.
 (c) Settings → Apps → Nojoumi → Deactivate device admin.
-**Look for:** a PIN gate on each path; after cancelling, the service is still enabled and blocking still works —
-re-test scenario 2 immediately after.
-**Record:** the exact screen where the PIN gate did or did not appear, per path. Overlay behaviour over Settings
-is version-dependent; this is the single largest acceptance risk.
-**Result:** a11y off ☐ ____ · force stop ☐ ____ · admin off ☐ ____ · blocking still live after? ☐ yes ☐ no
+
+**What to record, per path:**
+- ☐ (a) does a PIN gate appear over the accessibility screen? **This is the largest open unknown in the project**
+  — overlay behaviour over Settings screens is version- and OEM-dependent and has not been verified anywhere yet
+  (`android-behaviour-notes.md` V7)
+- ☐ (b) force stop cannot be intercepted — the button lives in a system screen. Record instead: **how many
+  seconds until protection is live again**, and by what mechanism it recovered
+- ☐ (c) warning shown, deactivation detected, parent notified
+- ☐ after each path, re-run scenario 2 immediately and record whether blocking still works
+
+**Result:** a11y off ☐ ____ · force stop, recovery time ______ s · admin off ☐ ____ · blocking live after? ☐ yes ☐ no
 
 ### 11 — Restart the phone
 **Contract result:** blocking returns automatically.

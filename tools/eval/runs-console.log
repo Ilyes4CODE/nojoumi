@@ -1,0 +1,66 @@
+﻿python.exe : WARNING nojoumi.ai groq returned 429 (380 bytes)
+Au caractère Ligne:1 : 424
++ ... lyContinue; & python tools\eval\run_eval.py --set acceptance --grade  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING nojoumi...429 (380 bytes):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING nojoumi.ai groq returned 429 (376 bytes)
+WARNING nojoumi.ai groq returned 429 (374 bytes)
+WARNING nojoumi.ai groq returned 429 (376 bytes)
+WARNING nojoumi.ai groq returned 429 (376 bytes)
+WARNING nojoumi.ai groq returned 429 (376 bytes)
+WARNING nojoumi.ai groq returned 429 (375 bytes)
+WARNING nojoumi.ai groq returned 429 (374 bytes)
+WARNING nojoumi.ai groq returned 429 (374 bytes)
+WARNING nojoumi.ai groq returned 429 (376 bytes)
+WARNING nojoumi.ai groq returned 429 (376 bytes)
+WARNING nojoumi.ai groq returned 429 (376 bytes)
+provider : groq
+model    : qwen/qwen3.6-27b
+set      : acceptance (22 images)
+report   : C:\Users\Ilyes\Desktop\نجومي\tools\eval\runs\20260817-150352-acceptance-groq
+
+  WhatsApp Image 2026-08-17 at 9.50.18 AM.jpeg ✅ 12 cards, 5 questions, 64% Arabic, 2218 ms
+  WhatsApp Image 2026-08-17 at 9.50.19 AM.jpeg ✅ 12 cards, 5 questions, 83% Arabic, 2453 ms
+  WhatsApp Image 2026-08-17 at 9.50.20 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 2389 ms
+  WhatsApp Image 2026-08-17 at 9.50.21 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 2875 ms
+       throttled, waiting 3s (attempt 1/5)
+       throttled, waiting 4s (attempt 2/5)
+  WhatsApp Image 2026-08-17 at 9.50.22 AM.jpeg ✅ 12 cards, 5 questions, 99% Arabic, 9984 ms
+       throttled, waiting 7s (attempt 1/5)
+  WhatsApp Image 2026-08-17 at 9.50.23 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 10343 ms
+  WhatsApp Image 2026-08-17 at 9.50.24 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 2688 ms
+  WhatsApp Image 2026-08-17 at 9.50.25 AM (1).jpeg ✅ 12 cards, 5 questions, 100% Arabic, 2047 ms
+  WhatsApp Image 2026-08-17 at 9.50.25 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 2500 ms
+  WhatsApp Image 2026-08-17 at 9.50.27 AM (1).jpeg ✅ 12 cards, 5 questions, 100% Arabic, 2765 ms
+       throttled, waiting 3s (attempt 1/5)
+  WhatsApp Image 2026-08-17 at 9.50.27 AM.jpeg ❌ الصورة غير واضحة. أعد التصوير بإضاءة أفضل وصفحة مستوية.
+  WhatsApp Image 2026-08-17 at 9.50.28 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 2453 ms
+  WhatsApp Image 2026-08-17 at 9.50.30 AM (1).jpeg ✅ 12 cards, 5 questions, 100% Arabic, 2578 ms
+       throttled, waiting 3s (attempt 1/5)
+       throttled, waiting 4s (attempt 2/5)
+  WhatsApp Image 2026-08-17 at 9.50.30 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 10202 ms
+       throttled, waiting 3s (attempt 1/5)
+  WhatsApp Image 2026-08-17 at 9.50.32 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 5093 ms
+  WhatsApp Image 2026-08-17 at 9.50.33 AM (1).jpeg ✅ 12 cards, 5 questions, 100% Arabic, 2531 ms
+  WhatsApp Image 2026-08-17 at 9.50.33 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 2389 ms
+       throttled, waiting 3s (attempt 1/5)
+  WhatsApp Image 2026-08-17 at 9.50.34 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 6063 ms
+       throttled, waiting 3s (attempt 1/5)
+  WhatsApp Image 2026-08-17 at 9.50.36 AM (1).jpeg ✅ 12 cards, 5 questions, 100% Arabic, 5561 ms
+       throttled, waiting 7s (attempt 1/5)
+  WhatsApp Image 2026-08-17 at 9.50.36 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 10093 ms
+       throttled, waiting 3s (attempt 1/5)
+  WhatsApp Image 2026-08-17 at 9.50.37 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 5890 ms
+       throttled, waiting 3s (attempt 1/5)
+  WhatsApp Image 2026-08-17 at 9.50.38 AM.jpeg ✅ 12 cards, 5 questions, 100% Arabic, 6297 ms
+
+structurally sound: 21/22
+
+⚠️  This is NOT the Article 11.3 result.
+    11.3 requires a summary that is 'سليم لغوياً' and cards/questions
+    'مطابقة لمحتوى الدرس' — soundness and faithfulness need your eyes.
+
+    READ THE CARDS:  C:\Users\Ilyes\Desktop\نجومي\tools\eval\runs\latest.html
+    grading table:   C:\Users\Ilyes\Desktop\نجومي\tools\eval\runs\20260817-150352-acceptance-groq\report.md

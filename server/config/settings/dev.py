@@ -1,0 +1,6 @@
+"""Development settings. SQLite, debug on, no real provider keys."""
+
+from .base import *  # noqa: F401,F403
+
+DEBUG = True
+ALLOWED_HOSTS = ["*"]

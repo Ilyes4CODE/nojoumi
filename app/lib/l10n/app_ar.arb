@@ -1,0 +1,163 @@
+{
+  "@@locale": "ar",
+  "appName": "نجومي",
+  "@appName": {
+    "description": "The app name, shown in the launcher and headers."
+  },
+  "starsBalance": "رصيدك",
+  "starsUnit": "نجمة",
+  "minutesUnit": "دقيقة",
+  "playTimeRemaining": "وقت اللعب المتبقّي",
+  "todayTasks": "مهام اليوم",
+  "taskMemorize": "حفظ",
+  "taskReview": "مراجعة",
+  "taskExercise": "تمرين",
+  "sessionComplete": "أنهيتَ مهام اليوم كلها",
+  "sessionBonusEarned": "مكافأة الإكمال: {stars} نجوم",
+  "@sessionBonusEarned": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      }
+    }
+  },
+  "cardShowAnswer": "أظهر الجواب",
+  "cardIKnewIt": "أعرفها",
+  "cardIDidNot": "لم أعرفها",
+  "answerCorrect": "إجابة صحيحة",
+  "answerWrong": "إجابة خاطئة. ستعود إليها لاحقاً.",
+  "tryAgainMessage": "حاول مرة أخرى",
+  "needStarsToPlay": "تحتاج {stars} نجمة لتفتح هذه اللعبة",
+  "@needStarsToPlay": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedTitle": "وقت اللعب انتهى",
+  "blockedBody": "أنجز مهامك لتكسب نجوماً جديدة",
+  "earnStarsNow": "اكسب نجوماً الآن",
+  "playPausedByParent": "اللعب موقوف مؤقتاً من طرف الوالد",
+  "weeklyTest": "الاختبار الأسبوعي",
+  "weeklyTestResult": "نتيجتك: {percent}%",
+  "@weeklyTestResult": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "parentArea": "لوحة الوالد",
+  "enterPin": "أدخل الرمز السري",
+  "wrongPin": "الرمز غير صحيح",
+  "settings": "الإعدادات",
+  "starValueMinutes": "قيمة النجمة بالدقائق",
+  "dailyStarCeiling": "السقف اليومي للنجوم",
+  "minimumCardSeconds": "الحد الأدنى للوقت على البطاقة",
+  "dailySessionSize": "حجم الجلسة اليومية",
+  "balanceExpiry": "انتهاء صلاحية الرصيد",
+  "expiryDaily": "نهاية اليوم",
+  "expiryWeekly": "نهاية الأسبوع",
+  "grantStars": "منح نجوم",
+  "deductStars": "خصم نجوم",
+  "pausePlay": "إيقاف اللعب مؤقتاً",
+  "managedApps": "الألعاب والتطبيقات المشتّتة",
+  "captureLesson": "التقاط درس",
+  "captureHintFlat": "ضع الصفحة مستوية",
+  "captureHintLight": "إضاءة جيدة، بلا فلاش",
+  "captureHintStraight": "الكاميرا موازية للصفحة",
+  "processing": "جارٍ المعالجة…",
+  "imageUnclear": "الصورة غير واضحة. أعد التصوير بإضاءة أفضل وصفحة مستوية.",
+  "subscription": "الاشتراك",
+  "subscriptionTrial": "تجريبي",
+  "subscriptionActive": "فعّال",
+  "subscriptionGrace": "مهلة سماح",
+  "subscriptionExpired": "منتهٍ",
+  "subscriptionRefunded": "مسترجع",
+  "expiresOn": "ينتهي في {date}",
+  "@expiresOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "enterActivationCode": "أدخل رمز التفعيل",
+  "activate": "تفعيل",
+  "freeModeNotice": "توليد الدروس الجديدة متوقّف. الحجب والنجوم والدروس المحفوظة تعمل كما هي.",
+  "continueAction": "متابعة",
+  "cancel": "إلغاء",
+  "save": "حفظ",
+  "retry": "إعادة المحاولة",
+  "offlineNotice": "لا يوجد اتصال بالإنترنت",
+  "setupTitle": "إعداد نجومي",
+  "setupWelcomeTitle": "أهلاً بك في نجومي",
+  "setupWelcomeBody": "نجومي يحوّل وقت اللعب إلى شيء يكسبه طفلك بالمذاكرة، لا إلى شيء تسحبه منه. الإعداد ثلاث خطوات، ويمكنك تغيير كل شيء لاحقاً.",
+  "setupStepOf": "الخطوة {current} من {total}",
+  "@setupStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "setupGradeTitle": "المستوى الدراسي",
+  "setupGradeBody": "يُستعمل لتوليد دروس مناسبة للعمر. لا نطلب اسم الطفل ولا صورته ولا تاريخ ميلاده.",
+  "setupGradeHint": "مثال: السنة الرابعة ابتدائي",
+  "setupPinTitle": "رمز الوالد",
+  "setupPinBody": "أربعة أرقام على الأقل. يحمي الإعدادات ومنح النجوم. لا يُخزَّن الرمز نفسه، ولا يمكن استرجاعه إلا عبر حسابك على الخادم.",
+  "setupPinCreate": "أدخل رمزاً جديداً",
+  "setupPinConfirm": "أعد إدخال الرمز",
+  "setupPinMismatch": "الرمزان غير متطابقين",
+  "setupPinTooShort": "الرمز أربعة أرقام على الأقل",
+  "setupProtectionTitle": "الحجب ووضع الشاشة الرئيسية",
+  "setupProtectionBody": "هاتان الميزتان اختياريتان تماماً، والتطبيق يعمل بكامل مزاياه بدونهما: الدروس والبطاقات والنجوم والاختبار الأسبوعي ولوحة الوالد كلها تعمل.",
+  "setupEnableBlocking": "تفعيل حجب الألعاب",
+  "setupEnableLauncher": "جعل نجومي الشاشة الرئيسية",
+  "setupSkipProtection": "أكمل بدونهما الآن",
+  "setupDisclosureTitle": "إفصاح مهم قبل منح الإذن",
+  "setupDisclosureBody": "لتفعيل الحجب، يحتاج نجومي إلى خدمة إمكانية الوصول (Accessibility). يستعملها التطبيق لغرض واحد فقط: معرفة أي تطبيق ظهر على الشاشة الآن، ليغلق الألعاب المحجوبة عند نفاد وقت اللعب.\n\nلا يقرأ نجومي محتوى الشاشة، ولا كلمات المرور، ولا الرسائل، ولا يسجّل ما تكتبه، ولا يرسل أي شيء من هذا إلى أي خادم. يمكنك إيقاف الخدمة في أي وقت من إعدادات الهاتف.",
+  "setupDisclosureConsent": "قرأت الإفصاح وأوافق كوليّ أمر",
+  "setupDisclosureDecline": "لا، أكمل بدون حجب",
+  "setupFinish": "ابدأ",
+  "setupDoneTitle": "كل شيء جاهز",
+  "setupDoneBody": "منحنا طفلك {stars} نجمة ترحيبية ليبدأ.",
+  "@setupDoneBody": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreeting": "مرحباً",
+  "startSession": "ابدأ مهام اليوم",
+  "noTasksYet": "لا توجد مهام بعد. اطلب من والدك التقاط درس.",
+  "tasksRemaining": "بقيت {count} مهمة",
+  "@tasksRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyCeilingReached": "بلغتَ سقف اليوم. عد غداً.",
+  "streakDays": "مواظبة {days} يوم",
+  "@streakDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "clockUntrustedTitle": "ساعة الهاتف غير موثوقة",
+  "clockUntrustedBody": "تغيّر تاريخ الهاتف أو ساعته. لا يمكن كسب نجوم جديدة حتى تعود الساعة إلى الضبط التلقائي. النجوم المكسوبة سابقاً ووقت اللعب المتبقّي لم يتأثّرا.",
+  "fixClockAction": "افتح إعدادات التاريخ والوقت",
+  "next": "التالي",
+  "back": "رجوع",
+  "skip": "تخطٍّ",
+  "notNow": "ليس الآن"
+}
