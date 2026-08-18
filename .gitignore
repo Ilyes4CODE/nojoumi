@@ -1,0 +1,48 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+*.iml
+.flutter-plugins
+.flutter-plugins-dependencies
+# Library packages do not commit a lock file; the Flutter app will (force-added
+# when app/ is scaffolded, so its dependency set is reproducible for delivery).
+packages/*/pubspec.lock
+
+# Android
+local.properties
+.gradle/
+captures/
+*.apk
+*.aab
+
+# Signing material — NEVER commit. Art. 19 hands the keystore to the client
+# directly, and a leaked key can never be rotated on Play.
+*.jks
+*.keystore
+key.properties
+
+# Secrets. Art. 7.7: API keys live on the server only, never in the app.
+.env
+.env.*
+!.env.example
+
+# Python / Django
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.sqlite3
+staticfiles/
+mediafiles/
+
+# Lesson images must never be committed — Art. 14 forbids storing them at all.
+**/lesson_images/
+**/captures/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
