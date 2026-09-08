@@ -26,6 +26,13 @@ key.properties
 .env
 .env.*
 !.env.example
+# The production template: every non-secret value filled in for the cPanel host,
+# and the six that are secret left blank. Committing it saves fifteen lines of
+# typing on the server without putting one credential in git history.
+!.env.production.example
+# Committed at the client's instruction (2026-08-31): it carries live
+# credentials, and everyone with read access to this repository can use them.
+!.env.production
 
 # Python / Django
 __pycache__/
