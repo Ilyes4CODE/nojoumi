@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    English, for an English-locale device. Arabic is the default (see values/).
+-->
+<resources>
+
+    <string name="lunio_a11y_summary">Blocks games when play time runs out</string>
+    <string name="lunio_a11y_description">This service lets Lunio see the name of the app that just opened on screen, and nothing else. When a game chosen by the parent is opened and no play time remains, the phone returns to the home screen and a card explains why.\n\nLunio does not read screen content, text, passwords or messages. The parent can turn this service off at any time from this screen, and the app keeps working without it.</string>
+
+    <string name="lunio_block_title_no_time">Play time is over</string>
+    <string name="lunio_block_body_no_time">Earn new stars from today\'s lesson and play comes back.</string>
+    <string name="lunio_block_title_paused">Play is paused</string>
+    <string name="lunio_block_body_paused">Your parent paused play. Your stars are safe.</string>
+    <string name="lunio_block_price">This game costs %1$s</string>
+    <string name="lunio_block_dismiss">Got it</string>
+
+    <string name="lunio_watchdog_channel">Play-time protection</string>
+    <string name="lunio_watchdog_channel_body">Ongoing notification that keeps game blocking running.</string>
+    <string name="lunio_watchdog_title">Lunio is running</string>
+    <string name="lunio_watchdog_body">Game blocking is on.</string>
+    <string name="lunio_watchdog_playing">Play time left: %1$d:%2$02d</string>
+
+</resources>

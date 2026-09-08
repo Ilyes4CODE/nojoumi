@@ -8,7 +8,7 @@ The split that makes this work:
   * the **private** key exists only in the server's environment;
   * the **public** key is embedded in the Android app;
   * so a child who edits the local database produces a snapshot that fails
-    verification, and `nojoumi_subscription` treats an unverified snapshot as no
+    verification, and `lunio_subscription` treats an unverified snapshot as no
     subscription at all (free mode — blocking and stars keep working).
 
 Canonicalisation matters as much as the algorithm: both sides must hash exactly

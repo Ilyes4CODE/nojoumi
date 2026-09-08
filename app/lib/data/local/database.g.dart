@@ -125,7 +125,7 @@ class $AppSettingsTable extends AppSettings
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultValue: const Constant(12),
+    defaultValue: const Constant(0),
   );
   static const VerificationMeta _dailyQuestionCountMeta =
       const VerificationMeta('dailyQuestionCount');
@@ -229,6 +229,18 @@ class $AppSettingsTable extends AppSettings
     requiredDuringInsert: false,
     defaultValue: const Constant(60),
   );
+  static const VerificationMeta _installIdMeta = const VerificationMeta(
+    'installId',
+  );
+  @override
+  late final GeneratedColumn<String> installId = GeneratedColumn<String>(
+    'install_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -249,6 +261,7 @@ class $AppSettingsTable extends AppSettings
     grade,
     onboardingStep,
     utcOffsetMinutes,
+    installId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -397,6 +410,12 @@ class $AppSettingsTable extends AppSettings
         ),
       );
     }
+    if (data.containsKey('install_id')) {
+      context.handle(
+        _installIdMeta,
+        installId.isAcceptableOrUnknown(data['install_id']!, _installIdMeta),
+      );
+    }
     return context;
   }
 
@@ -480,6 +499,10 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.int,
         data['${effectivePrefix}utc_offset_minutes'],
       )!,
+      installId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}install_id'],
+      )!,
     );
   }
 
@@ -513,8 +536,6 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
 
   /// 5–30 cards. Default 12.
   final int dailySessionCards;
-
-  /// 0–15 questions. Default 5 (D-15).
   final int dailyQuestionCount;
 
   /// Which weekday closes the week for the test and the purge (D-13, Friday).
@@ -534,6 +555,20 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
   /// Minutes east of UTC. Injected into DayKey rather than read from the device,
   /// so a timezone change cannot silently move the day boundary.
   final int utcOffsetMinutes;
+
+  /// A random UUID this app generates once, at first launch.
+  ///
+  /// It anchors two rules that the contract puts on the **device** rather than
+  /// on the account: Article 7.1's free trial, «مرة واحدة لكل جهاز», and the
+  /// one-account-per-phone rule the client asked for on 2026-08-28.
+  ///
+  /// **It identifies an installation, never a person or a child.** Not an
+  /// advertising ID — forbidden for Designed for Families (Art. 15.3); not
+  /// IMEI, serial or MAC, which describe a person's hardware and are
+  /// unavailable to ordinary apps in any case; nothing derived from the child
+  /// (Art. 14). Clearing the app's data produces a new one, and that limitation
+  /// is accepted and documented rather than worked around.
+  final String installId;
   const SettingsRow({
     required this.id,
     required this.pinHash,
@@ -553,6 +588,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
     required this.grade,
     required this.onboardingStep,
     required this.utcOffsetMinutes,
+    required this.installId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -579,6 +615,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
     map['grade'] = Variable<String>(grade);
     map['onboarding_step'] = Variable<int>(onboardingStep);
     map['utc_offset_minutes'] = Variable<int>(utcOffsetMinutes);
+    map['install_id'] = Variable<String>(installId);
     return map;
   }
 
@@ -602,6 +639,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
       grade: Value(grade),
       onboardingStep: Value(onboardingStep),
       utcOffsetMinutes: Value(utcOffsetMinutes),
+      installId: Value(installId),
     );
   }
 
@@ -633,6 +671,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
       grade: serializer.fromJson<String>(json['grade']),
       onboardingStep: serializer.fromJson<int>(json['onboardingStep']),
       utcOffsetMinutes: serializer.fromJson<int>(json['utcOffsetMinutes']),
+      installId: serializer.fromJson<String>(json['installId']),
     );
   }
   @override
@@ -659,6 +698,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
       'grade': serializer.toJson<String>(grade),
       'onboardingStep': serializer.toJson<int>(onboardingStep),
       'utcOffsetMinutes': serializer.toJson<int>(utcOffsetMinutes),
+      'installId': serializer.toJson<String>(installId),
     };
   }
 
@@ -681,6 +721,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
     String? grade,
     int? onboardingStep,
     int? utcOffsetMinutes,
+    String? installId,
   }) => SettingsRow(
     id: id ?? this.id,
     pinHash: pinHash ?? this.pinHash,
@@ -700,6 +741,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
     grade: grade ?? this.grade,
     onboardingStep: onboardingStep ?? this.onboardingStep,
     utcOffsetMinutes: utcOffsetMinutes ?? this.utcOffsetMinutes,
+    installId: installId ?? this.installId,
   );
   SettingsRow copyWithCompanion(AppSettingsCompanion data) {
     return SettingsRow(
@@ -749,6 +791,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
       utcOffsetMinutes: data.utcOffsetMinutes.present
           ? data.utcOffsetMinutes.value
           : this.utcOffsetMinutes,
+      installId: data.installId.present ? data.installId.value : this.installId,
     );
   }
 
@@ -772,7 +815,8 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
           ..write('playPaused: $playPaused, ')
           ..write('grade: $grade, ')
           ..write('onboardingStep: $onboardingStep, ')
-          ..write('utcOffsetMinutes: $utcOffsetMinutes')
+          ..write('utcOffsetMinutes: $utcOffsetMinutes, ')
+          ..write('installId: $installId')
           ..write(')'))
         .toString();
   }
@@ -797,6 +841,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
     grade,
     onboardingStep,
     utcOffsetMinutes,
+    installId,
   );
   @override
   bool operator ==(Object other) =>
@@ -819,7 +864,8 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
           other.playPaused == this.playPaused &&
           other.grade == this.grade &&
           other.onboardingStep == this.onboardingStep &&
-          other.utcOffsetMinutes == this.utcOffsetMinutes);
+          other.utcOffsetMinutes == this.utcOffsetMinutes &&
+          other.installId == this.installId);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
@@ -841,6 +887,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
   final Value<String> grade;
   final Value<int> onboardingStep;
   final Value<int> utcOffsetMinutes;
+  final Value<String> installId;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.pinHash = const Value.absent(),
@@ -860,6 +907,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
     this.grade = const Value.absent(),
     this.onboardingStep = const Value.absent(),
     this.utcOffsetMinutes = const Value.absent(),
+    this.installId = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -880,6 +928,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
     this.grade = const Value.absent(),
     this.onboardingStep = const Value.absent(),
     this.utcOffsetMinutes = const Value.absent(),
+    this.installId = const Value.absent(),
   });
   static Insertable<SettingsRow> custom({
     Expression<int>? id,
@@ -900,6 +949,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
     Expression<String>? grade,
     Expression<int>? onboardingStep,
     Expression<int>? utcOffsetMinutes,
+    Expression<String>? installId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -922,6 +972,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
       if (grade != null) 'grade': grade,
       if (onboardingStep != null) 'onboarding_step': onboardingStep,
       if (utcOffsetMinutes != null) 'utc_offset_minutes': utcOffsetMinutes,
+      if (installId != null) 'install_id': installId,
     });
   }
 
@@ -944,6 +995,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
     Value<String>? grade,
     Value<int>? onboardingStep,
     Value<int>? utcOffsetMinutes,
+    Value<String>? installId,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
@@ -965,6 +1017,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
       grade: grade ?? this.grade,
       onboardingStep: onboardingStep ?? this.onboardingStep,
       utcOffsetMinutes: utcOffsetMinutes ?? this.utcOffsetMinutes,
+      installId: installId ?? this.installId,
     );
   }
 
@@ -1029,6 +1082,9 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
     if (utcOffsetMinutes.present) {
       map['utc_offset_minutes'] = Variable<int>(utcOffsetMinutes.value);
     }
+    if (installId.present) {
+      map['install_id'] = Variable<String>(installId.value);
+    }
     return map;
   }
 
@@ -1052,7 +1108,8 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
           ..write('playPaused: $playPaused, ')
           ..write('grade: $grade, ')
           ..write('onboardingStep: $onboardingStep, ')
-          ..write('utcOffsetMinutes: $utcOffsetMinutes')
+          ..write('utcOffsetMinutes: $utcOffsetMinutes, ')
+          ..write('installId: $installId')
           ..write(')'))
         .toString();
   }
@@ -5258,6 +5315,18 @@ class $DayProgressRowsTable extends DayProgressRows
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _freePlaySecondsMeta = const VerificationMeta(
+    'freePlaySeconds',
+  );
+  @override
+  late final GeneratedColumn<int> freePlaySeconds = GeneratedColumn<int>(
+    'free_play_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _tasksTotalMeta = const VerificationMeta(
     'tasksTotal',
   );
@@ -5327,6 +5396,7 @@ class $DayProgressRowsTable extends DayProgressRows
     earnedUnits,
     grantedUnits,
     usedPlaySeconds,
+    freePlaySeconds,
     tasksTotal,
     tasksAnswered,
     sessionBonusAwarded,
@@ -5375,6 +5445,15 @@ class $DayProgressRowsTable extends DayProgressRows
         usedPlaySeconds.isAcceptableOrUnknown(
           data['used_play_seconds']!,
           _usedPlaySecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('free_play_seconds')) {
+      context.handle(
+        _freePlaySecondsMeta,
+        freePlaySeconds.isAcceptableOrUnknown(
+          data['free_play_seconds']!,
+          _freePlaySecondsMeta,
         ),
       );
     }
@@ -5445,6 +5524,10 @@ class $DayProgressRowsTable extends DayProgressRows
         DriftSqlType.int,
         data['${effectivePrefix}used_play_seconds'],
       )!,
+      freePlaySeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}free_play_seconds'],
+      )!,
       tasksTotal: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}tasks_total'],
@@ -5484,6 +5567,10 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
   /// from the ceiling — the parent's authority is "فوق النظام" (appendix §4).
   final int grantedUnits;
   final int usedPlaySeconds;
+
+  /// Play seconds the parent handed over directly today — see
+  /// `DayProgress.freePlaySeconds`. Not stars, and never in the star ledger.
+  final int freePlaySeconds;
   final int tasksTotal;
   final int tasksAnswered;
   final bool sessionBonusAwarded;
@@ -5494,6 +5581,7 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
     required this.earnedUnits,
     required this.grantedUnits,
     required this.usedPlaySeconds,
+    required this.freePlaySeconds,
     required this.tasksTotal,
     required this.tasksAnswered,
     required this.sessionBonusAwarded,
@@ -5507,6 +5595,7 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
     map['earned_units'] = Variable<int>(earnedUnits);
     map['granted_units'] = Variable<int>(grantedUnits);
     map['used_play_seconds'] = Variable<int>(usedPlaySeconds);
+    map['free_play_seconds'] = Variable<int>(freePlaySeconds);
     map['tasks_total'] = Variable<int>(tasksTotal);
     map['tasks_answered'] = Variable<int>(tasksAnswered);
     map['session_bonus_awarded'] = Variable<bool>(sessionBonusAwarded);
@@ -5523,6 +5612,7 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
       earnedUnits: Value(earnedUnits),
       grantedUnits: Value(grantedUnits),
       usedPlaySeconds: Value(usedPlaySeconds),
+      freePlaySeconds: Value(freePlaySeconds),
       tasksTotal: Value(tasksTotal),
       tasksAnswered: Value(tasksAnswered),
       sessionBonusAwarded: Value(sessionBonusAwarded),
@@ -5543,6 +5633,7 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
       earnedUnits: serializer.fromJson<int>(json['earnedUnits']),
       grantedUnits: serializer.fromJson<int>(json['grantedUnits']),
       usedPlaySeconds: serializer.fromJson<int>(json['usedPlaySeconds']),
+      freePlaySeconds: serializer.fromJson<int>(json['freePlaySeconds']),
       tasksTotal: serializer.fromJson<int>(json['tasksTotal']),
       tasksAnswered: serializer.fromJson<int>(json['tasksAnswered']),
       sessionBonusAwarded: serializer.fromJson<bool>(
@@ -5560,6 +5651,7 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
       'earnedUnits': serializer.toJson<int>(earnedUnits),
       'grantedUnits': serializer.toJson<int>(grantedUnits),
       'usedPlaySeconds': serializer.toJson<int>(usedPlaySeconds),
+      'freePlaySeconds': serializer.toJson<int>(freePlaySeconds),
       'tasksTotal': serializer.toJson<int>(tasksTotal),
       'tasksAnswered': serializer.toJson<int>(tasksAnswered),
       'sessionBonusAwarded': serializer.toJson<bool>(sessionBonusAwarded),
@@ -5573,6 +5665,7 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
     int? earnedUnits,
     int? grantedUnits,
     int? usedPlaySeconds,
+    int? freePlaySeconds,
     int? tasksTotal,
     int? tasksAnswered,
     bool? sessionBonusAwarded,
@@ -5583,6 +5676,7 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
     earnedUnits: earnedUnits ?? this.earnedUnits,
     grantedUnits: grantedUnits ?? this.grantedUnits,
     usedPlaySeconds: usedPlaySeconds ?? this.usedPlaySeconds,
+    freePlaySeconds: freePlaySeconds ?? this.freePlaySeconds,
     tasksTotal: tasksTotal ?? this.tasksTotal,
     tasksAnswered: tasksAnswered ?? this.tasksAnswered,
     sessionBonusAwarded: sessionBonusAwarded ?? this.sessionBonusAwarded,
@@ -5601,6 +5695,9 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
       usedPlaySeconds: data.usedPlaySeconds.present
           ? data.usedPlaySeconds.value
           : this.usedPlaySeconds,
+      freePlaySeconds: data.freePlaySeconds.present
+          ? data.freePlaySeconds.value
+          : this.freePlaySeconds,
       tasksTotal: data.tasksTotal.present
           ? data.tasksTotal.value
           : this.tasksTotal,
@@ -5626,6 +5723,7 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
           ..write('earnedUnits: $earnedUnits, ')
           ..write('grantedUnits: $grantedUnits, ')
           ..write('usedPlaySeconds: $usedPlaySeconds, ')
+          ..write('freePlaySeconds: $freePlaySeconds, ')
           ..write('tasksTotal: $tasksTotal, ')
           ..write('tasksAnswered: $tasksAnswered, ')
           ..write('sessionBonusAwarded: $sessionBonusAwarded, ')
@@ -5641,6 +5739,7 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
     earnedUnits,
     grantedUnits,
     usedPlaySeconds,
+    freePlaySeconds,
     tasksTotal,
     tasksAnswered,
     sessionBonusAwarded,
@@ -5655,6 +5754,7 @@ class DayProgressRow extends DataClass implements Insertable<DayProgressRow> {
           other.earnedUnits == this.earnedUnits &&
           other.grantedUnits == this.grantedUnits &&
           other.usedPlaySeconds == this.usedPlaySeconds &&
+          other.freePlaySeconds == this.freePlaySeconds &&
           other.tasksTotal == this.tasksTotal &&
           other.tasksAnswered == this.tasksAnswered &&
           other.sessionBonusAwarded == this.sessionBonusAwarded &&
@@ -5667,6 +5767,7 @@ class DayProgressRowsCompanion extends UpdateCompanion<DayProgressRow> {
   final Value<int> earnedUnits;
   final Value<int> grantedUnits;
   final Value<int> usedPlaySeconds;
+  final Value<int> freePlaySeconds;
   final Value<int> tasksTotal;
   final Value<int> tasksAnswered;
   final Value<bool> sessionBonusAwarded;
@@ -5677,6 +5778,7 @@ class DayProgressRowsCompanion extends UpdateCompanion<DayProgressRow> {
     this.earnedUnits = const Value.absent(),
     this.grantedUnits = const Value.absent(),
     this.usedPlaySeconds = const Value.absent(),
+    this.freePlaySeconds = const Value.absent(),
     this.tasksTotal = const Value.absent(),
     this.tasksAnswered = const Value.absent(),
     this.sessionBonusAwarded = const Value.absent(),
@@ -5688,6 +5790,7 @@ class DayProgressRowsCompanion extends UpdateCompanion<DayProgressRow> {
     this.earnedUnits = const Value.absent(),
     this.grantedUnits = const Value.absent(),
     this.usedPlaySeconds = const Value.absent(),
+    this.freePlaySeconds = const Value.absent(),
     this.tasksTotal = const Value.absent(),
     this.tasksAnswered = const Value.absent(),
     this.sessionBonusAwarded = const Value.absent(),
@@ -5699,6 +5802,7 @@ class DayProgressRowsCompanion extends UpdateCompanion<DayProgressRow> {
     Expression<int>? earnedUnits,
     Expression<int>? grantedUnits,
     Expression<int>? usedPlaySeconds,
+    Expression<int>? freePlaySeconds,
     Expression<int>? tasksTotal,
     Expression<int>? tasksAnswered,
     Expression<bool>? sessionBonusAwarded,
@@ -5710,6 +5814,7 @@ class DayProgressRowsCompanion extends UpdateCompanion<DayProgressRow> {
       if (earnedUnits != null) 'earned_units': earnedUnits,
       if (grantedUnits != null) 'granted_units': grantedUnits,
       if (usedPlaySeconds != null) 'used_play_seconds': usedPlaySeconds,
+      if (freePlaySeconds != null) 'free_play_seconds': freePlaySeconds,
       if (tasksTotal != null) 'tasks_total': tasksTotal,
       if (tasksAnswered != null) 'tasks_answered': tasksAnswered,
       if (sessionBonusAwarded != null)
@@ -5725,6 +5830,7 @@ class DayProgressRowsCompanion extends UpdateCompanion<DayProgressRow> {
     Value<int>? earnedUnits,
     Value<int>? grantedUnits,
     Value<int>? usedPlaySeconds,
+    Value<int>? freePlaySeconds,
     Value<int>? tasksTotal,
     Value<int>? tasksAnswered,
     Value<bool>? sessionBonusAwarded,
@@ -5736,6 +5842,7 @@ class DayProgressRowsCompanion extends UpdateCompanion<DayProgressRow> {
       earnedUnits: earnedUnits ?? this.earnedUnits,
       grantedUnits: grantedUnits ?? this.grantedUnits,
       usedPlaySeconds: usedPlaySeconds ?? this.usedPlaySeconds,
+      freePlaySeconds: freePlaySeconds ?? this.freePlaySeconds,
       tasksTotal: tasksTotal ?? this.tasksTotal,
       tasksAnswered: tasksAnswered ?? this.tasksAnswered,
       sessionBonusAwarded: sessionBonusAwarded ?? this.sessionBonusAwarded,
@@ -5758,6 +5865,9 @@ class DayProgressRowsCompanion extends UpdateCompanion<DayProgressRow> {
     }
     if (usedPlaySeconds.present) {
       map['used_play_seconds'] = Variable<int>(usedPlaySeconds.value);
+    }
+    if (freePlaySeconds.present) {
+      map['free_play_seconds'] = Variable<int>(freePlaySeconds.value);
     }
     if (tasksTotal.present) {
       map['tasks_total'] = Variable<int>(tasksTotal.value);
@@ -5784,6 +5894,7 @@ class DayProgressRowsCompanion extends UpdateCompanion<DayProgressRow> {
           ..write('earnedUnits: $earnedUnits, ')
           ..write('grantedUnits: $grantedUnits, ')
           ..write('usedPlaySeconds: $usedPlaySeconds, ')
+          ..write('freePlaySeconds: $freePlaySeconds, ')
           ..write('tasksTotal: $tasksTotal, ')
           ..write('tasksAnswered: $tasksAnswered, ')
           ..write('sessionBonusAwarded: $sessionBonusAwarded, ')
@@ -9004,6 +9115,371 @@ class ClockStatesCompanion extends UpdateCompanion<ClockStateRow> {
   }
 }
 
+class $AuthTokensTable extends AuthTokens
+    with TableInfo<$AuthTokensTable, AuthTokenRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AuthTokensTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _accessTokenMeta = const VerificationMeta(
+    'accessToken',
+  );
+  @override
+  late final GeneratedColumn<String> accessToken = GeneratedColumn<String>(
+    'access_token',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _refreshTokenMeta = const VerificationMeta(
+    'refreshToken',
+  );
+  @override
+  late final GeneratedColumn<String> refreshToken = GeneratedColumn<String>(
+    'refresh_token',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _signedInAtMsMeta = const VerificationMeta(
+    'signedInAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> signedInAtMs = GeneratedColumn<int>(
+    'signed_in_at_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    accessToken,
+    refreshToken,
+    email,
+    signedInAtMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'auth_tokens';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AuthTokenRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('access_token')) {
+      context.handle(
+        _accessTokenMeta,
+        accessToken.isAcceptableOrUnknown(
+          data['access_token']!,
+          _accessTokenMeta,
+        ),
+      );
+    }
+    if (data.containsKey('refresh_token')) {
+      context.handle(
+        _refreshTokenMeta,
+        refreshToken.isAcceptableOrUnknown(
+          data['refresh_token']!,
+          _refreshTokenMeta,
+        ),
+      );
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('signed_in_at_ms')) {
+      context.handle(
+        _signedInAtMsMeta,
+        signedInAtMs.isAcceptableOrUnknown(
+          data['signed_in_at_ms']!,
+          _signedInAtMsMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AuthTokenRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AuthTokenRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      accessToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}access_token'],
+      )!,
+      refreshToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}refresh_token'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      )!,
+      signedInAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}signed_in_at_ms'],
+      ),
+    );
+  }
+
+  @override
+  $AuthTokensTable createAlias(String alias) {
+    return $AuthTokensTable(attachedDatabase, alias);
+  }
+}
+
+class AuthTokenRow extends DataClass implements Insertable<AuthTokenRow> {
+  final int id;
+  final String accessToken;
+  final String refreshToken;
+
+  /// The account the tokens belong to, for the parent's own reference. An email
+  /// is a parent identifier, which Article 14 permits — it forbids identifiers of
+  /// the **child**.
+  final String email;
+
+  /// Trusted time of the last successful sign-in.
+  final int? signedInAtMs;
+  const AuthTokenRow({
+    required this.id,
+    required this.accessToken,
+    required this.refreshToken,
+    required this.email,
+    this.signedInAtMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['access_token'] = Variable<String>(accessToken);
+    map['refresh_token'] = Variable<String>(refreshToken);
+    map['email'] = Variable<String>(email);
+    if (!nullToAbsent || signedInAtMs != null) {
+      map['signed_in_at_ms'] = Variable<int>(signedInAtMs);
+    }
+    return map;
+  }
+
+  AuthTokensCompanion toCompanion(bool nullToAbsent) {
+    return AuthTokensCompanion(
+      id: Value(id),
+      accessToken: Value(accessToken),
+      refreshToken: Value(refreshToken),
+      email: Value(email),
+      signedInAtMs: signedInAtMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(signedInAtMs),
+    );
+  }
+
+  factory AuthTokenRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AuthTokenRow(
+      id: serializer.fromJson<int>(json['id']),
+      accessToken: serializer.fromJson<String>(json['accessToken']),
+      refreshToken: serializer.fromJson<String>(json['refreshToken']),
+      email: serializer.fromJson<String>(json['email']),
+      signedInAtMs: serializer.fromJson<int?>(json['signedInAtMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'accessToken': serializer.toJson<String>(accessToken),
+      'refreshToken': serializer.toJson<String>(refreshToken),
+      'email': serializer.toJson<String>(email),
+      'signedInAtMs': serializer.toJson<int?>(signedInAtMs),
+    };
+  }
+
+  AuthTokenRow copyWith({
+    int? id,
+    String? accessToken,
+    String? refreshToken,
+    String? email,
+    Value<int?> signedInAtMs = const Value.absent(),
+  }) => AuthTokenRow(
+    id: id ?? this.id,
+    accessToken: accessToken ?? this.accessToken,
+    refreshToken: refreshToken ?? this.refreshToken,
+    email: email ?? this.email,
+    signedInAtMs: signedInAtMs.present ? signedInAtMs.value : this.signedInAtMs,
+  );
+  AuthTokenRow copyWithCompanion(AuthTokensCompanion data) {
+    return AuthTokenRow(
+      id: data.id.present ? data.id.value : this.id,
+      accessToken: data.accessToken.present
+          ? data.accessToken.value
+          : this.accessToken,
+      refreshToken: data.refreshToken.present
+          ? data.refreshToken.value
+          : this.refreshToken,
+      email: data.email.present ? data.email.value : this.email,
+      signedInAtMs: data.signedInAtMs.present
+          ? data.signedInAtMs.value
+          : this.signedInAtMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AuthTokenRow(')
+          ..write('id: $id, ')
+          ..write('accessToken: $accessToken, ')
+          ..write('refreshToken: $refreshToken, ')
+          ..write('email: $email, ')
+          ..write('signedInAtMs: $signedInAtMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, accessToken, refreshToken, email, signedInAtMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AuthTokenRow &&
+          other.id == this.id &&
+          other.accessToken == this.accessToken &&
+          other.refreshToken == this.refreshToken &&
+          other.email == this.email &&
+          other.signedInAtMs == this.signedInAtMs);
+}
+
+class AuthTokensCompanion extends UpdateCompanion<AuthTokenRow> {
+  final Value<int> id;
+  final Value<String> accessToken;
+  final Value<String> refreshToken;
+  final Value<String> email;
+  final Value<int?> signedInAtMs;
+  const AuthTokensCompanion({
+    this.id = const Value.absent(),
+    this.accessToken = const Value.absent(),
+    this.refreshToken = const Value.absent(),
+    this.email = const Value.absent(),
+    this.signedInAtMs = const Value.absent(),
+  });
+  AuthTokensCompanion.insert({
+    this.id = const Value.absent(),
+    this.accessToken = const Value.absent(),
+    this.refreshToken = const Value.absent(),
+    this.email = const Value.absent(),
+    this.signedInAtMs = const Value.absent(),
+  });
+  static Insertable<AuthTokenRow> custom({
+    Expression<int>? id,
+    Expression<String>? accessToken,
+    Expression<String>? refreshToken,
+    Expression<String>? email,
+    Expression<int>? signedInAtMs,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (accessToken != null) 'access_token': accessToken,
+      if (refreshToken != null) 'refresh_token': refreshToken,
+      if (email != null) 'email': email,
+      if (signedInAtMs != null) 'signed_in_at_ms': signedInAtMs,
+    });
+  }
+
+  AuthTokensCompanion copyWith({
+    Value<int>? id,
+    Value<String>? accessToken,
+    Value<String>? refreshToken,
+    Value<String>? email,
+    Value<int?>? signedInAtMs,
+  }) {
+    return AuthTokensCompanion(
+      id: id ?? this.id,
+      accessToken: accessToken ?? this.accessToken,
+      refreshToken: refreshToken ?? this.refreshToken,
+      email: email ?? this.email,
+      signedInAtMs: signedInAtMs ?? this.signedInAtMs,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (accessToken.present) {
+      map['access_token'] = Variable<String>(accessToken.value);
+    }
+    if (refreshToken.present) {
+      map['refresh_token'] = Variable<String>(refreshToken.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (signedInAtMs.present) {
+      map['signed_in_at_ms'] = Variable<int>(signedInAtMs.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AuthTokensCompanion(')
+          ..write('id: $id, ')
+          ..write('accessToken: $accessToken, ')
+          ..write('refreshToken: $refreshToken, ')
+          ..write('email: $email, ')
+          ..write('signedInAtMs: $signedInAtMs')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $EventLogTable extends EventLog
     with TableInfo<$EventLogTable, EventLogRow> {
   @override
@@ -9292,9 +9768,9 @@ class EventLogCompanion extends UpdateCompanion<EventLogRow> {
   }
 }
 
-abstract class _$NojoumiDatabase extends GeneratedDatabase {
-  _$NojoumiDatabase(QueryExecutor e) : super(e);
-  $NojoumiDatabaseManager get managers => $NojoumiDatabaseManager(this);
+abstract class _$LunioDatabase extends GeneratedDatabase {
+  _$LunioDatabase(QueryExecutor e) : super(e);
+  $LunioDatabaseManager get managers => $LunioDatabaseManager(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $ManagedAppsTable managedApps = $ManagedAppsTable(this);
   late final $LessonsTable lessons = $LessonsTable(this);
@@ -9317,6 +9793,7 @@ abstract class _$NojoumiDatabase extends GeneratedDatabase {
   late final $SubscriptionCachesTable subscriptionCaches =
       $SubscriptionCachesTable(this);
   late final $ClockStatesTable clockStates = $ClockStatesTable(this);
+  late final $AuthTokensTable authTokens = $AuthTokensTable(this);
   late final $EventLogTable eventLog = $EventLogTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -9340,6 +9817,7 @@ abstract class _$NojoumiDatabase extends GeneratedDatabase {
     playSessions,
     subscriptionCaches,
     clockStates,
+    authTokens,
     eventLog,
   ];
   @override
@@ -9395,6 +9873,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<String> grade,
       Value<int> onboardingStep,
       Value<int> utcOffsetMinutes,
+      Value<String> installId,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -9416,10 +9895,11 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<String> grade,
       Value<int> onboardingStep,
       Value<int> utcOffsetMinutes,
+      Value<String> installId,
     });
 
 class $$AppSettingsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $AppSettingsTable> {
+    extends Composer<_$LunioDatabase, $AppSettingsTable> {
   $$AppSettingsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -9517,10 +9997,15 @@ class $$AppSettingsTableFilterComposer
     column: $table.utcOffsetMinutes,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get installId => $composableBuilder(
+    column: $table.installId,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$AppSettingsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $AppSettingsTable> {
+    extends Composer<_$LunioDatabase, $AppSettingsTable> {
   $$AppSettingsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -9617,10 +10102,15 @@ class $$AppSettingsTableOrderingComposer
     column: $table.utcOffsetMinutes,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get installId => $composableBuilder(
+    column: $table.installId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $AppSettingsTable> {
+    extends Composer<_$LunioDatabase, $AppSettingsTable> {
   $$AppSettingsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -9710,12 +10200,15 @@ class $$AppSettingsTableAnnotationComposer
     column: $table.utcOffsetMinutes,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get installId =>
+      $composableBuilder(column: $table.installId, builder: (column) => column);
 }
 
 class $$AppSettingsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $AppSettingsTable,
           SettingsRow,
           $$AppSettingsTableFilterComposer,
@@ -9725,12 +10218,12 @@ class $$AppSettingsTableTableManager
           $$AppSettingsTableUpdateCompanionBuilder,
           (
             SettingsRow,
-            BaseReferences<_$NojoumiDatabase, $AppSettingsTable, SettingsRow>,
+            BaseReferences<_$LunioDatabase, $AppSettingsTable, SettingsRow>,
           ),
           SettingsRow,
           PrefetchHooks Function()
         > {
-  $$AppSettingsTableTableManager(_$NojoumiDatabase db, $AppSettingsTable table)
+  $$AppSettingsTableTableManager(_$LunioDatabase db, $AppSettingsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -9761,6 +10254,7 @@ class $$AppSettingsTableTableManager
                 Value<String> grade = const Value.absent(),
                 Value<int> onboardingStep = const Value.absent(),
                 Value<int> utcOffsetMinutes = const Value.absent(),
+                Value<String> installId = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 pinHash: pinHash,
@@ -9780,6 +10274,7 @@ class $$AppSettingsTableTableManager
                 grade: grade,
                 onboardingStep: onboardingStep,
                 utcOffsetMinutes: utcOffsetMinutes,
+                installId: installId,
               ),
           createCompanionCallback:
               ({
@@ -9801,6 +10296,7 @@ class $$AppSettingsTableTableManager
                 Value<String> grade = const Value.absent(),
                 Value<int> onboardingStep = const Value.absent(),
                 Value<int> utcOffsetMinutes = const Value.absent(),
+                Value<String> installId = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 pinHash: pinHash,
@@ -9820,6 +10316,7 @@ class $$AppSettingsTableTableManager
                 grade: grade,
                 onboardingStep: onboardingStep,
                 utcOffsetMinutes: utcOffsetMinutes,
+                installId: installId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -9831,7 +10328,7 @@ class $$AppSettingsTableTableManager
 
 typedef $$AppSettingsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $AppSettingsTable,
       SettingsRow,
       $$AppSettingsTableFilterComposer,
@@ -9841,7 +10338,7 @@ typedef $$AppSettingsTableProcessedTableManager =
       $$AppSettingsTableUpdateCompanionBuilder,
       (
         SettingsRow,
-        BaseReferences<_$NojoumiDatabase, $AppSettingsTable, SettingsRow>,
+        BaseReferences<_$LunioDatabase, $AppSettingsTable, SettingsRow>,
       ),
       SettingsRow,
       PrefetchHooks Function()
@@ -9866,7 +10363,7 @@ typedef $$ManagedAppsTableUpdateCompanionBuilder =
     });
 
 class $$ManagedAppsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $ManagedAppsTable> {
+    extends Composer<_$LunioDatabase, $ManagedAppsTable> {
   $$ManagedAppsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -9902,7 +10399,7 @@ class $$ManagedAppsTableFilterComposer
 }
 
 class $$ManagedAppsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $ManagedAppsTable> {
+    extends Composer<_$LunioDatabase, $ManagedAppsTable> {
   $$ManagedAppsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -9937,7 +10434,7 @@ class $$ManagedAppsTableOrderingComposer
 }
 
 class $$ManagedAppsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $ManagedAppsTable> {
+    extends Composer<_$LunioDatabase, $ManagedAppsTable> {
   $$ManagedAppsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -9968,7 +10465,7 @@ class $$ManagedAppsTableAnnotationComposer
 class $$ManagedAppsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $ManagedAppsTable,
           ManagedAppRow,
           $$ManagedAppsTableFilterComposer,
@@ -9978,12 +10475,12 @@ class $$ManagedAppsTableTableManager
           $$ManagedAppsTableUpdateCompanionBuilder,
           (
             ManagedAppRow,
-            BaseReferences<_$NojoumiDatabase, $ManagedAppsTable, ManagedAppRow>,
+            BaseReferences<_$LunioDatabase, $ManagedAppsTable, ManagedAppRow>,
           ),
           ManagedAppRow,
           PrefetchHooks Function()
         > {
-  $$ManagedAppsTableTableManager(_$NojoumiDatabase db, $ManagedAppsTable table)
+  $$ManagedAppsTableTableManager(_$LunioDatabase db, $ManagedAppsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -10036,7 +10533,7 @@ class $$ManagedAppsTableTableManager
 
 typedef $$ManagedAppsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $ManagedAppsTable,
       ManagedAppRow,
       $$ManagedAppsTableFilterComposer,
@@ -10046,7 +10543,7 @@ typedef $$ManagedAppsTableProcessedTableManager =
       $$ManagedAppsTableUpdateCompanionBuilder,
       (
         ManagedAppRow,
-        BaseReferences<_$NojoumiDatabase, $ManagedAppsTable, ManagedAppRow>,
+        BaseReferences<_$LunioDatabase, $ManagedAppsTable, ManagedAppRow>,
       ),
       ManagedAppRow,
       PrefetchHooks Function()
@@ -10075,11 +10572,11 @@ typedef $$LessonsTableUpdateCompanionBuilder =
     });
 
 final class $$LessonsTableReferences
-    extends BaseReferences<_$NojoumiDatabase, $LessonsTable, LessonRow> {
+    extends BaseReferences<_$LunioDatabase, $LessonsTable, LessonRow> {
   $$LessonsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static MultiTypedResultKey<$LessonImagesTable, List<LessonImageRow>>
-  _lessonImagesRefsTable(_$NojoumiDatabase db) => MultiTypedResultKey.fromTable(
+  _lessonImagesRefsTable(_$LunioDatabase db) => MultiTypedResultKey.fromTable(
     db.lessonImages,
     aliasName: $_aliasNameGenerator(db.lessons.id, db.lessonImages.lessonId),
   );
@@ -10097,7 +10594,7 @@ final class $$LessonsTableReferences
   }
 
   static MultiTypedResultKey<$CardsTable, List<CardRow>> _cardsRefsTable(
-    _$NojoumiDatabase db,
+    _$LunioDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.cards,
     aliasName: $_aliasNameGenerator(db.lessons.id, db.cards.lessonId),
@@ -10116,7 +10613,7 @@ final class $$LessonsTableReferences
   }
 
   static MultiTypedResultKey<$QuestionsTable, List<QuestionRow>>
-  _questionsRefsTable(_$NojoumiDatabase db) => MultiTypedResultKey.fromTable(
+  _questionsRefsTable(_$LunioDatabase db) => MultiTypedResultKey.fromTable(
     db.questions,
     aliasName: $_aliasNameGenerator(db.lessons.id, db.questions.lessonId),
   );
@@ -10135,7 +10632,7 @@ final class $$LessonsTableReferences
 }
 
 class $$LessonsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $LessonsTable> {
+    extends Composer<_$LunioDatabase, $LessonsTable> {
   $$LessonsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -10260,7 +10757,7 @@ class $$LessonsTableFilterComposer
 }
 
 class $$LessonsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $LessonsTable> {
+    extends Composer<_$LunioDatabase, $LessonsTable> {
   $$LessonsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -10310,7 +10807,7 @@ class $$LessonsTableOrderingComposer
 }
 
 class $$LessonsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $LessonsTable> {
+    extends Composer<_$LunioDatabase, $LessonsTable> {
   $$LessonsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -10425,7 +10922,7 @@ class $$LessonsTableAnnotationComposer
 class $$LessonsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $LessonsTable,
           LessonRow,
           $$LessonsTableFilterComposer,
@@ -10441,7 +10938,7 @@ class $$LessonsTableTableManager
             bool questionsRefs,
           })
         > {
-  $$LessonsTableTableManager(_$NojoumiDatabase db, $LessonsTable table)
+  $$LessonsTableTableManager(_$LunioDatabase db, $LessonsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -10585,7 +11082,7 @@ class $$LessonsTableTableManager
 
 typedef $$LessonsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $LessonsTable,
       LessonRow,
       $$LessonsTableFilterComposer,
@@ -10620,10 +11117,10 @@ typedef $$LessonImagesTableUpdateCompanionBuilder =
 
 final class $$LessonImagesTableReferences
     extends
-        BaseReferences<_$NojoumiDatabase, $LessonImagesTable, LessonImageRow> {
+        BaseReferences<_$LunioDatabase, $LessonImagesTable, LessonImageRow> {
   $$LessonImagesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $LessonsTable _lessonIdTable(_$NojoumiDatabase db) =>
+  static $LessonsTable _lessonIdTable(_$LunioDatabase db) =>
       db.lessons.createAlias(
         $_aliasNameGenerator(db.lessonImages.lessonId, db.lessons.id),
       );
@@ -10644,7 +11141,7 @@ final class $$LessonImagesTableReferences
 }
 
 class $$LessonImagesTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $LessonImagesTable> {
+    extends Composer<_$LunioDatabase, $LessonImagesTable> {
   $$LessonImagesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -10697,7 +11194,7 @@ class $$LessonImagesTableFilterComposer
 }
 
 class $$LessonImagesTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $LessonImagesTable> {
+    extends Composer<_$LunioDatabase, $LessonImagesTable> {
   $$LessonImagesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -10750,7 +11247,7 @@ class $$LessonImagesTableOrderingComposer
 }
 
 class $$LessonImagesTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $LessonImagesTable> {
+    extends Composer<_$LunioDatabase, $LessonImagesTable> {
   $$LessonImagesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -10801,7 +11298,7 @@ class $$LessonImagesTableAnnotationComposer
 class $$LessonImagesTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $LessonImagesTable,
           LessonImageRow,
           $$LessonImagesTableFilterComposer,
@@ -10813,10 +11310,8 @@ class $$LessonImagesTableTableManager
           LessonImageRow,
           PrefetchHooks Function({bool lessonId})
         > {
-  $$LessonImagesTableTableManager(
-    _$NojoumiDatabase db,
-    $LessonImagesTable table,
-  ) : super(
+  $$LessonImagesTableTableManager(_$LunioDatabase db, $LessonImagesTable table)
+    : super(
         TableManagerState(
           db: db,
           table: table,
@@ -10909,7 +11404,7 @@ class $$LessonImagesTableTableManager
 
 typedef $$LessonImagesTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $LessonImagesTable,
       LessonImageRow,
       $$LessonImagesTableFilterComposer,
@@ -10951,10 +11446,10 @@ typedef $$CardsTableUpdateCompanionBuilder =
     });
 
 final class $$CardsTableReferences
-    extends BaseReferences<_$NojoumiDatabase, $CardsTable, CardRow> {
+    extends BaseReferences<_$LunioDatabase, $CardsTable, CardRow> {
   $$CardsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $LessonsTable _lessonIdTable(_$NojoumiDatabase db) => db.lessons
+  static $LessonsTable _lessonIdTable(_$LunioDatabase db) => db.lessons
       .createAlias($_aliasNameGenerator(db.cards.lessonId, db.lessons.id));
 
   $$LessonsTableProcessedTableManager get lessonId {
@@ -10973,7 +11468,7 @@ final class $$CardsTableReferences
 }
 
 class $$CardsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $CardsTable> {
+    extends Composer<_$LunioDatabase, $CardsTable> {
   $$CardsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -11056,7 +11551,7 @@ class $$CardsTableFilterComposer
 }
 
 class $$CardsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $CardsTable> {
+    extends Composer<_$LunioDatabase, $CardsTable> {
   $$CardsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -11139,7 +11634,7 @@ class $$CardsTableOrderingComposer
 }
 
 class $$CardsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $CardsTable> {
+    extends Composer<_$LunioDatabase, $CardsTable> {
   $$CardsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -11214,7 +11709,7 @@ class $$CardsTableAnnotationComposer
 class $$CardsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $CardsTable,
           CardRow,
           $$CardsTableFilterComposer,
@@ -11226,7 +11721,7 @@ class $$CardsTableTableManager
           CardRow,
           PrefetchHooks Function({bool lessonId})
         > {
-  $$CardsTableTableManager(_$NojoumiDatabase db, $CardsTable table)
+  $$CardsTableTableManager(_$LunioDatabase db, $CardsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -11342,7 +11837,7 @@ class $$CardsTableTableManager
 
 typedef $$CardsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $CardsTable,
       CardRow,
       $$CardsTableFilterComposer,
@@ -11374,10 +11869,10 @@ typedef $$QuestionsTableUpdateCompanionBuilder =
     });
 
 final class $$QuestionsTableReferences
-    extends BaseReferences<_$NojoumiDatabase, $QuestionsTable, QuestionRow> {
+    extends BaseReferences<_$LunioDatabase, $QuestionsTable, QuestionRow> {
   $$QuestionsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $LessonsTable _lessonIdTable(_$NojoumiDatabase db) => db.lessons
+  static $LessonsTable _lessonIdTable(_$LunioDatabase db) => db.lessons
       .createAlias($_aliasNameGenerator(db.questions.lessonId, db.lessons.id));
 
   $$LessonsTableProcessedTableManager get lessonId {
@@ -11396,7 +11891,7 @@ final class $$QuestionsTableReferences
 }
 
 class $$QuestionsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $QuestionsTable> {
+    extends Composer<_$LunioDatabase, $QuestionsTable> {
   $$QuestionsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -11454,7 +11949,7 @@ class $$QuestionsTableFilterComposer
 }
 
 class $$QuestionsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $QuestionsTable> {
+    extends Composer<_$LunioDatabase, $QuestionsTable> {
   $$QuestionsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -11512,7 +12007,7 @@ class $$QuestionsTableOrderingComposer
 }
 
 class $$QuestionsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $QuestionsTable> {
+    extends Composer<_$LunioDatabase, $QuestionsTable> {
   $$QuestionsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -11568,7 +12063,7 @@ class $$QuestionsTableAnnotationComposer
 class $$QuestionsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $QuestionsTable,
           QuestionRow,
           $$QuestionsTableFilterComposer,
@@ -11580,7 +12075,7 @@ class $$QuestionsTableTableManager
           QuestionRow,
           PrefetchHooks Function({bool lessonId})
         > {
-  $$QuestionsTableTableManager(_$NojoumiDatabase db, $QuestionsTable table)
+  $$QuestionsTableTableManager(_$LunioDatabase db, $QuestionsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -11678,7 +12173,7 @@ class $$QuestionsTableTableManager
 
 typedef $$QuestionsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $QuestionsTable,
       QuestionRow,
       $$QuestionsTableFilterComposer,
@@ -11712,7 +12207,7 @@ typedef $$TaskInstancesTableUpdateCompanionBuilder =
     });
 
 class $$TaskInstancesTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $TaskInstancesTable> {
+    extends Composer<_$LunioDatabase, $TaskInstancesTable> {
   $$TaskInstancesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -11759,7 +12254,7 @@ class $$TaskInstancesTableFilterComposer
 }
 
 class $$TaskInstancesTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $TaskInstancesTable> {
+    extends Composer<_$LunioDatabase, $TaskInstancesTable> {
   $$TaskInstancesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -11804,7 +12299,7 @@ class $$TaskInstancesTableOrderingComposer
 }
 
 class $$TaskInstancesTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $TaskInstancesTable> {
+    extends Composer<_$LunioDatabase, $TaskInstancesTable> {
   $$TaskInstancesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -11839,7 +12334,7 @@ class $$TaskInstancesTableAnnotationComposer
 class $$TaskInstancesTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $TaskInstancesTable,
           TaskInstanceRow,
           $$TaskInstancesTableFilterComposer,
@@ -11850,7 +12345,7 @@ class $$TaskInstancesTableTableManager
           (
             TaskInstanceRow,
             BaseReferences<
-              _$NojoumiDatabase,
+              _$LunioDatabase,
               $TaskInstancesTable,
               TaskInstanceRow
             >,
@@ -11859,7 +12354,7 @@ class $$TaskInstancesTableTableManager
           PrefetchHooks Function()
         > {
   $$TaskInstancesTableTableManager(
-    _$NojoumiDatabase db,
+    _$LunioDatabase db,
     $TaskInstancesTable table,
   ) : super(
         TableManagerState(
@@ -11917,7 +12412,7 @@ class $$TaskInstancesTableTableManager
 
 typedef $$TaskInstancesTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $TaskInstancesTable,
       TaskInstanceRow,
       $$TaskInstancesTableFilterComposer,
@@ -11927,7 +12422,7 @@ typedef $$TaskInstancesTableProcessedTableManager =
       $$TaskInstancesTableUpdateCompanionBuilder,
       (
         TaskInstanceRow,
-        BaseReferences<_$NojoumiDatabase, $TaskInstancesTable, TaskInstanceRow>,
+        BaseReferences<_$LunioDatabase, $TaskInstancesTable, TaskInstanceRow>,
       ),
       TaskInstanceRow,
       PrefetchHooks Function()
@@ -11966,7 +12461,7 @@ typedef $$AttemptsTableUpdateCompanionBuilder =
     });
 
 class $$AttemptsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $AttemptsTable> {
+    extends Composer<_$LunioDatabase, $AttemptsTable> {
   $$AttemptsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -12044,7 +12539,7 @@ class $$AttemptsTableFilterComposer
 }
 
 class $$AttemptsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $AttemptsTable> {
+    extends Composer<_$LunioDatabase, $AttemptsTable> {
   $$AttemptsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -12119,7 +12614,7 @@ class $$AttemptsTableOrderingComposer
 }
 
 class $$AttemptsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $AttemptsTable> {
+    extends Composer<_$LunioDatabase, $AttemptsTable> {
   $$AttemptsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -12183,7 +12678,7 @@ class $$AttemptsTableAnnotationComposer
 class $$AttemptsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $AttemptsTable,
           AttemptRow,
           $$AttemptsTableFilterComposer,
@@ -12193,12 +12688,12 @@ class $$AttemptsTableTableManager
           $$AttemptsTableUpdateCompanionBuilder,
           (
             AttemptRow,
-            BaseReferences<_$NojoumiDatabase, $AttemptsTable, AttemptRow>,
+            BaseReferences<_$LunioDatabase, $AttemptsTable, AttemptRow>,
           ),
           AttemptRow,
           PrefetchHooks Function()
         > {
-  $$AttemptsTableTableManager(_$NojoumiDatabase db, $AttemptsTable table)
+  $$AttemptsTableTableManager(_$LunioDatabase db, $AttemptsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -12279,7 +12774,7 @@ class $$AttemptsTableTableManager
 
 typedef $$AttemptsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $AttemptsTable,
       AttemptRow,
       $$AttemptsTableFilterComposer,
@@ -12287,10 +12782,7 @@ typedef $$AttemptsTableProcessedTableManager =
       $$AttemptsTableAnnotationComposer,
       $$AttemptsTableCreateCompanionBuilder,
       $$AttemptsTableUpdateCompanionBuilder,
-      (
-        AttemptRow,
-        BaseReferences<_$NojoumiDatabase, $AttemptsTable, AttemptRow>,
-      ),
+      (AttemptRow, BaseReferences<_$LunioDatabase, $AttemptsTable, AttemptRow>),
       AttemptRow,
       PrefetchHooks Function()
     >;
@@ -12320,7 +12812,7 @@ typedef $$StarLedgerTableUpdateCompanionBuilder =
     });
 
 class $$StarLedgerTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $StarLedgerTable> {
+    extends Composer<_$LunioDatabase, $StarLedgerTable> {
   $$StarLedgerTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -12377,7 +12869,7 @@ class $$StarLedgerTableFilterComposer
 }
 
 class $$StarLedgerTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $StarLedgerTable> {
+    extends Composer<_$LunioDatabase, $StarLedgerTable> {
   $$StarLedgerTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -12432,7 +12924,7 @@ class $$StarLedgerTableOrderingComposer
 }
 
 class $$StarLedgerTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $StarLedgerTable> {
+    extends Composer<_$LunioDatabase, $StarLedgerTable> {
   $$StarLedgerTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -12476,7 +12968,7 @@ class $$StarLedgerTableAnnotationComposer
 class $$StarLedgerTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $StarLedgerTable,
           StarLedgerRow,
           $$StarLedgerTableFilterComposer,
@@ -12486,12 +12978,12 @@ class $$StarLedgerTableTableManager
           $$StarLedgerTableUpdateCompanionBuilder,
           (
             StarLedgerRow,
-            BaseReferences<_$NojoumiDatabase, $StarLedgerTable, StarLedgerRow>,
+            BaseReferences<_$LunioDatabase, $StarLedgerTable, StarLedgerRow>,
           ),
           StarLedgerRow,
           PrefetchHooks Function()
         > {
-  $$StarLedgerTableTableManager(_$NojoumiDatabase db, $StarLedgerTable table)
+  $$StarLedgerTableTableManager(_$LunioDatabase db, $StarLedgerTable table)
     : super(
         TableManagerState(
           db: db,
@@ -12556,7 +13048,7 @@ class $$StarLedgerTableTableManager
 
 typedef $$StarLedgerTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $StarLedgerTable,
       StarLedgerRow,
       $$StarLedgerTableFilterComposer,
@@ -12566,7 +13058,7 @@ typedef $$StarLedgerTableProcessedTableManager =
       $$StarLedgerTableUpdateCompanionBuilder,
       (
         StarLedgerRow,
-        BaseReferences<_$NojoumiDatabase, $StarLedgerTable, StarLedgerRow>,
+        BaseReferences<_$LunioDatabase, $StarLedgerTable, StarLedgerRow>,
       ),
       StarLedgerRow,
       PrefetchHooks Function()
@@ -12577,6 +13069,7 @@ typedef $$DayProgressRowsTableCreateCompanionBuilder =
       Value<int> earnedUnits,
       Value<int> grantedUnits,
       Value<int> usedPlaySeconds,
+      Value<int> freePlaySeconds,
       Value<int> tasksTotal,
       Value<int> tasksAnswered,
       Value<bool> sessionBonusAwarded,
@@ -12589,6 +13082,7 @@ typedef $$DayProgressRowsTableUpdateCompanionBuilder =
       Value<int> earnedUnits,
       Value<int> grantedUnits,
       Value<int> usedPlaySeconds,
+      Value<int> freePlaySeconds,
       Value<int> tasksTotal,
       Value<int> tasksAnswered,
       Value<bool> sessionBonusAwarded,
@@ -12597,7 +13091,7 @@ typedef $$DayProgressRowsTableUpdateCompanionBuilder =
     });
 
 class $$DayProgressRowsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $DayProgressRowsTable> {
+    extends Composer<_$LunioDatabase, $DayProgressRowsTable> {
   $$DayProgressRowsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -12622,6 +13116,11 @@ class $$DayProgressRowsTableFilterComposer
 
   ColumnFilters<int> get usedPlaySeconds => $composableBuilder(
     column: $table.usedPlaySeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get freePlaySeconds => $composableBuilder(
+    column: $table.freePlaySeconds,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12652,7 +13151,7 @@ class $$DayProgressRowsTableFilterComposer
 }
 
 class $$DayProgressRowsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $DayProgressRowsTable> {
+    extends Composer<_$LunioDatabase, $DayProgressRowsTable> {
   $$DayProgressRowsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -12677,6 +13176,11 @@ class $$DayProgressRowsTableOrderingComposer
 
   ColumnOrderings<int> get usedPlaySeconds => $composableBuilder(
     column: $table.usedPlaySeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get freePlaySeconds => $composableBuilder(
+    column: $table.freePlaySeconds,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -12707,7 +13211,7 @@ class $$DayProgressRowsTableOrderingComposer
 }
 
 class $$DayProgressRowsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $DayProgressRowsTable> {
+    extends Composer<_$LunioDatabase, $DayProgressRowsTable> {
   $$DayProgressRowsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -12730,6 +13234,11 @@ class $$DayProgressRowsTableAnnotationComposer
 
   GeneratedColumn<int> get usedPlaySeconds => $composableBuilder(
     column: $table.usedPlaySeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get freePlaySeconds => $composableBuilder(
+    column: $table.freePlaySeconds,
     builder: (column) => column,
   );
 
@@ -12762,7 +13271,7 @@ class $$DayProgressRowsTableAnnotationComposer
 class $$DayProgressRowsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $DayProgressRowsTable,
           DayProgressRow,
           $$DayProgressRowsTableFilterComposer,
@@ -12773,7 +13282,7 @@ class $$DayProgressRowsTableTableManager
           (
             DayProgressRow,
             BaseReferences<
-              _$NojoumiDatabase,
+              _$LunioDatabase,
               $DayProgressRowsTable,
               DayProgressRow
             >,
@@ -12782,7 +13291,7 @@ class $$DayProgressRowsTableTableManager
           PrefetchHooks Function()
         > {
   $$DayProgressRowsTableTableManager(
-    _$NojoumiDatabase db,
+    _$LunioDatabase db,
     $DayProgressRowsTable table,
   ) : super(
         TableManagerState(
@@ -12800,6 +13309,7 @@ class $$DayProgressRowsTableTableManager
                 Value<int> earnedUnits = const Value.absent(),
                 Value<int> grantedUnits = const Value.absent(),
                 Value<int> usedPlaySeconds = const Value.absent(),
+                Value<int> freePlaySeconds = const Value.absent(),
                 Value<int> tasksTotal = const Value.absent(),
                 Value<int> tasksAnswered = const Value.absent(),
                 Value<bool> sessionBonusAwarded = const Value.absent(),
@@ -12810,6 +13320,7 @@ class $$DayProgressRowsTableTableManager
                 earnedUnits: earnedUnits,
                 grantedUnits: grantedUnits,
                 usedPlaySeconds: usedPlaySeconds,
+                freePlaySeconds: freePlaySeconds,
                 tasksTotal: tasksTotal,
                 tasksAnswered: tasksAnswered,
                 sessionBonusAwarded: sessionBonusAwarded,
@@ -12822,6 +13333,7 @@ class $$DayProgressRowsTableTableManager
                 Value<int> earnedUnits = const Value.absent(),
                 Value<int> grantedUnits = const Value.absent(),
                 Value<int> usedPlaySeconds = const Value.absent(),
+                Value<int> freePlaySeconds = const Value.absent(),
                 Value<int> tasksTotal = const Value.absent(),
                 Value<int> tasksAnswered = const Value.absent(),
                 Value<bool> sessionBonusAwarded = const Value.absent(),
@@ -12832,6 +13344,7 @@ class $$DayProgressRowsTableTableManager
                 earnedUnits: earnedUnits,
                 grantedUnits: grantedUnits,
                 usedPlaySeconds: usedPlaySeconds,
+                freePlaySeconds: freePlaySeconds,
                 tasksTotal: tasksTotal,
                 tasksAnswered: tasksAnswered,
                 sessionBonusAwarded: sessionBonusAwarded,
@@ -12848,7 +13361,7 @@ class $$DayProgressRowsTableTableManager
 
 typedef $$DayProgressRowsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $DayProgressRowsTable,
       DayProgressRow,
       $$DayProgressRowsTableFilterComposer,
@@ -12858,11 +13371,7 @@ typedef $$DayProgressRowsTableProcessedTableManager =
       $$DayProgressRowsTableUpdateCompanionBuilder,
       (
         DayProgressRow,
-        BaseReferences<
-          _$NojoumiDatabase,
-          $DayProgressRowsTable,
-          DayProgressRow
-        >,
+        BaseReferences<_$LunioDatabase, $DayProgressRowsTable, DayProgressRow>,
       ),
       DayProgressRow,
       PrefetchHooks Function()
@@ -12885,7 +13394,7 @@ typedef $$CountedTargetsTableUpdateCompanionBuilder =
     });
 
 class $$CountedTargetsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $CountedTargetsTable> {
+    extends Composer<_$LunioDatabase, $CountedTargetsTable> {
   $$CountedTargetsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -12916,7 +13425,7 @@ class $$CountedTargetsTableFilterComposer
 }
 
 class $$CountedTargetsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $CountedTargetsTable> {
+    extends Composer<_$LunioDatabase, $CountedTargetsTable> {
   $$CountedTargetsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -12946,7 +13455,7 @@ class $$CountedTargetsTableOrderingComposer
 }
 
 class $$CountedTargetsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $CountedTargetsTable> {
+    extends Composer<_$LunioDatabase, $CountedTargetsTable> {
   $$CountedTargetsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -12970,7 +13479,7 @@ class $$CountedTargetsTableAnnotationComposer
 class $$CountedTargetsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $CountedTargetsTable,
           CountedTargetRow,
           $$CountedTargetsTableFilterComposer,
@@ -12981,7 +13490,7 @@ class $$CountedTargetsTableTableManager
           (
             CountedTargetRow,
             BaseReferences<
-              _$NojoumiDatabase,
+              _$LunioDatabase,
               $CountedTargetsTable,
               CountedTargetRow
             >,
@@ -12990,7 +13499,7 @@ class $$CountedTargetsTableTableManager
           PrefetchHooks Function()
         > {
   $$CountedTargetsTableTableManager(
-    _$NojoumiDatabase db,
+    _$LunioDatabase db,
     $CountedTargetsTable table,
   ) : super(
         TableManagerState(
@@ -13040,7 +13549,7 @@ class $$CountedTargetsTableTableManager
 
 typedef $$CountedTargetsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $CountedTargetsTable,
       CountedTargetRow,
       $$CountedTargetsTableFilterComposer,
@@ -13050,11 +13559,7 @@ typedef $$CountedTargetsTableProcessedTableManager =
       $$CountedTargetsTableUpdateCompanionBuilder,
       (
         CountedTargetRow,
-        BaseReferences<
-          _$NojoumiDatabase,
-          $CountedTargetsTable,
-          CountedTargetRow
-        >,
+        BaseReferences<_$LunioDatabase, $CountedTargetsTable, CountedTargetRow>,
       ),
       CountedTargetRow,
       PrefetchHooks Function()
@@ -13075,7 +13580,7 @@ typedef $$StreakStatesTableUpdateCompanionBuilder =
     });
 
 class $$StreakStatesTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $StreakStatesTable> {
+    extends Composer<_$LunioDatabase, $StreakStatesTable> {
   $$StreakStatesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -13105,7 +13610,7 @@ class $$StreakStatesTableFilterComposer
 }
 
 class $$StreakStatesTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $StreakStatesTable> {
+    extends Composer<_$LunioDatabase, $StreakStatesTable> {
   $$StreakStatesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -13135,7 +13640,7 @@ class $$StreakStatesTableOrderingComposer
 }
 
 class $$StreakStatesTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $StreakStatesTable> {
+    extends Composer<_$LunioDatabase, $StreakStatesTable> {
   $$StreakStatesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -13163,7 +13668,7 @@ class $$StreakStatesTableAnnotationComposer
 class $$StreakStatesTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $StreakStatesTable,
           StreakRow,
           $$StreakStatesTableFilterComposer,
@@ -13173,15 +13678,13 @@ class $$StreakStatesTableTableManager
           $$StreakStatesTableUpdateCompanionBuilder,
           (
             StreakRow,
-            BaseReferences<_$NojoumiDatabase, $StreakStatesTable, StreakRow>,
+            BaseReferences<_$LunioDatabase, $StreakStatesTable, StreakRow>,
           ),
           StreakRow,
           PrefetchHooks Function()
         > {
-  $$StreakStatesTableTableManager(
-    _$NojoumiDatabase db,
-    $StreakStatesTable table,
-  ) : super(
+  $$StreakStatesTableTableManager(_$LunioDatabase db, $StreakStatesTable table)
+    : super(
         TableManagerState(
           db: db,
           table: table,
@@ -13225,7 +13728,7 @@ class $$StreakStatesTableTableManager
 
 typedef $$StreakStatesTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $StreakStatesTable,
       StreakRow,
       $$StreakStatesTableFilterComposer,
@@ -13235,7 +13738,7 @@ typedef $$StreakStatesTableProcessedTableManager =
       $$StreakStatesTableUpdateCompanionBuilder,
       (
         StreakRow,
-        BaseReferences<_$NojoumiDatabase, $StreakStatesTable, StreakRow>,
+        BaseReferences<_$LunioDatabase, $StreakStatesTable, StreakRow>,
       ),
       StreakRow,
       PrefetchHooks Function()
@@ -13266,12 +13769,11 @@ typedef $$WeeklyTestsTableUpdateCompanionBuilder =
     });
 
 final class $$WeeklyTestsTableReferences
-    extends
-        BaseReferences<_$NojoumiDatabase, $WeeklyTestsTable, WeeklyTestRow> {
+    extends BaseReferences<_$LunioDatabase, $WeeklyTestsTable, WeeklyTestRow> {
   $$WeeklyTestsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static MultiTypedResultKey<$WeeklyTestItemsTable, List<WeeklyTestItemRow>>
-  _weeklyTestItemsRefsTable(_$NojoumiDatabase db) =>
+  _weeklyTestItemsRefsTable(_$LunioDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.weeklyTestItems,
         aliasName: $_aliasNameGenerator(
@@ -13296,7 +13798,7 @@ final class $$WeeklyTestsTableReferences
 }
 
 class $$WeeklyTestsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $WeeklyTestsTable> {
+    extends Composer<_$LunioDatabase, $WeeklyTestsTable> {
   $$WeeklyTestsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -13376,7 +13878,7 @@ class $$WeeklyTestsTableFilterComposer
 }
 
 class $$WeeklyTestsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $WeeklyTestsTable> {
+    extends Composer<_$LunioDatabase, $WeeklyTestsTable> {
   $$WeeklyTestsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -13431,7 +13933,7 @@ class $$WeeklyTestsTableOrderingComposer
 }
 
 class $$WeeklyTestsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $WeeklyTestsTable> {
+    extends Composer<_$LunioDatabase, $WeeklyTestsTable> {
   $$WeeklyTestsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -13509,7 +14011,7 @@ class $$WeeklyTestsTableAnnotationComposer
 class $$WeeklyTestsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $WeeklyTestsTable,
           WeeklyTestRow,
           $$WeeklyTestsTableFilterComposer,
@@ -13521,7 +14023,7 @@ class $$WeeklyTestsTableTableManager
           WeeklyTestRow,
           PrefetchHooks Function({bool weeklyTestItemsRefs})
         > {
-  $$WeeklyTestsTableTableManager(_$NojoumiDatabase db, $WeeklyTestsTable table)
+  $$WeeklyTestsTableTableManager(_$LunioDatabase db, $WeeklyTestsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -13622,7 +14124,7 @@ class $$WeeklyTestsTableTableManager
 
 typedef $$WeeklyTestsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $WeeklyTestsTable,
       WeeklyTestRow,
       $$WeeklyTestsTableFilterComposer,
@@ -13654,7 +14156,7 @@ typedef $$WeeklyTestItemsTableUpdateCompanionBuilder =
 final class $$WeeklyTestItemsTableReferences
     extends
         BaseReferences<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $WeeklyTestItemsTable,
           WeeklyTestItemRow
         > {
@@ -13664,7 +14166,7 @@ final class $$WeeklyTestItemsTableReferences
     super.$_typedResult,
   );
 
-  static $WeeklyTestsTable _testIdTable(_$NojoumiDatabase db) =>
+  static $WeeklyTestsTable _testIdTable(_$LunioDatabase db) =>
       db.weeklyTests.createAlias(
         $_aliasNameGenerator(db.weeklyTestItems.testId, db.weeklyTests.id),
       );
@@ -13685,7 +14187,7 @@ final class $$WeeklyTestItemsTableReferences
 }
 
 class $$WeeklyTestItemsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $WeeklyTestItemsTable> {
+    extends Composer<_$LunioDatabase, $WeeklyTestItemsTable> {
   $$WeeklyTestItemsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -13738,7 +14240,7 @@ class $$WeeklyTestItemsTableFilterComposer
 }
 
 class $$WeeklyTestItemsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $WeeklyTestItemsTable> {
+    extends Composer<_$LunioDatabase, $WeeklyTestItemsTable> {
   $$WeeklyTestItemsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -13791,7 +14293,7 @@ class $$WeeklyTestItemsTableOrderingComposer
 }
 
 class $$WeeklyTestItemsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $WeeklyTestItemsTable> {
+    extends Composer<_$LunioDatabase, $WeeklyTestItemsTable> {
   $$WeeklyTestItemsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -13842,7 +14344,7 @@ class $$WeeklyTestItemsTableAnnotationComposer
 class $$WeeklyTestItemsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $WeeklyTestItemsTable,
           WeeklyTestItemRow,
           $$WeeklyTestItemsTableFilterComposer,
@@ -13855,7 +14357,7 @@ class $$WeeklyTestItemsTableTableManager
           PrefetchHooks Function({bool testId})
         > {
   $$WeeklyTestItemsTableTableManager(
-    _$NojoumiDatabase db,
+    _$LunioDatabase db,
     $WeeklyTestItemsTable table,
   ) : super(
         TableManagerState(
@@ -13952,7 +14454,7 @@ class $$WeeklyTestItemsTableTableManager
 
 typedef $$WeeklyTestItemsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $WeeklyTestItemsTable,
       WeeklyTestItemRow,
       $$WeeklyTestItemsTableFilterComposer,
@@ -13986,7 +14488,7 @@ typedef $$PlaySessionsTableUpdateCompanionBuilder =
     });
 
 class $$PlaySessionsTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $PlaySessionsTable> {
+    extends Composer<_$LunioDatabase, $PlaySessionsTable> {
   $$PlaySessionsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -14032,7 +14534,7 @@ class $$PlaySessionsTableFilterComposer
 }
 
 class $$PlaySessionsTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $PlaySessionsTable> {
+    extends Composer<_$LunioDatabase, $PlaySessionsTable> {
   $$PlaySessionsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -14077,7 +14579,7 @@ class $$PlaySessionsTableOrderingComposer
 }
 
 class $$PlaySessionsTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $PlaySessionsTable> {
+    extends Composer<_$LunioDatabase, $PlaySessionsTable> {
   $$PlaySessionsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -14116,7 +14618,7 @@ class $$PlaySessionsTableAnnotationComposer
 class $$PlaySessionsTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $PlaySessionsTable,
           PlaySessionRow,
           $$PlaySessionsTableFilterComposer,
@@ -14126,19 +14628,13 @@ class $$PlaySessionsTableTableManager
           $$PlaySessionsTableUpdateCompanionBuilder,
           (
             PlaySessionRow,
-            BaseReferences<
-              _$NojoumiDatabase,
-              $PlaySessionsTable,
-              PlaySessionRow
-            >,
+            BaseReferences<_$LunioDatabase, $PlaySessionsTable, PlaySessionRow>,
           ),
           PlaySessionRow,
           PrefetchHooks Function()
         > {
-  $$PlaySessionsTableTableManager(
-    _$NojoumiDatabase db,
-    $PlaySessionsTable table,
-  ) : super(
+  $$PlaySessionsTableTableManager(_$LunioDatabase db, $PlaySessionsTable table)
+    : super(
         TableManagerState(
           db: db,
           table: table,
@@ -14194,7 +14690,7 @@ class $$PlaySessionsTableTableManager
 
 typedef $$PlaySessionsTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $PlaySessionsTable,
       PlaySessionRow,
       $$PlaySessionsTableFilterComposer,
@@ -14204,7 +14700,7 @@ typedef $$PlaySessionsTableProcessedTableManager =
       $$PlaySessionsTableUpdateCompanionBuilder,
       (
         PlaySessionRow,
-        BaseReferences<_$NojoumiDatabase, $PlaySessionsTable, PlaySessionRow>,
+        BaseReferences<_$LunioDatabase, $PlaySessionsTable, PlaySessionRow>,
       ),
       PlaySessionRow,
       PrefetchHooks Function()
@@ -14233,7 +14729,7 @@ typedef $$SubscriptionCachesTableUpdateCompanionBuilder =
     });
 
 class $$SubscriptionCachesTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $SubscriptionCachesTable> {
+    extends Composer<_$LunioDatabase, $SubscriptionCachesTable> {
   $$SubscriptionCachesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -14288,7 +14784,7 @@ class $$SubscriptionCachesTableFilterComposer
 }
 
 class $$SubscriptionCachesTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $SubscriptionCachesTable> {
+    extends Composer<_$LunioDatabase, $SubscriptionCachesTable> {
   $$SubscriptionCachesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -14338,7 +14834,7 @@ class $$SubscriptionCachesTableOrderingComposer
 }
 
 class $$SubscriptionCachesTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $SubscriptionCachesTable> {
+    extends Composer<_$LunioDatabase, $SubscriptionCachesTable> {
   $$SubscriptionCachesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -14382,7 +14878,7 @@ class $$SubscriptionCachesTableAnnotationComposer
 class $$SubscriptionCachesTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $SubscriptionCachesTable,
           SubscriptionCacheRow,
           $$SubscriptionCachesTableFilterComposer,
@@ -14393,7 +14889,7 @@ class $$SubscriptionCachesTableTableManager
           (
             SubscriptionCacheRow,
             BaseReferences<
-              _$NojoumiDatabase,
+              _$LunioDatabase,
               $SubscriptionCachesTable,
               SubscriptionCacheRow
             >,
@@ -14402,7 +14898,7 @@ class $$SubscriptionCachesTableTableManager
           PrefetchHooks Function()
         > {
   $$SubscriptionCachesTableTableManager(
-    _$NojoumiDatabase db,
+    _$LunioDatabase db,
     $SubscriptionCachesTable table,
   ) : super(
         TableManagerState(
@@ -14467,7 +14963,7 @@ class $$SubscriptionCachesTableTableManager
 
 typedef $$SubscriptionCachesTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $SubscriptionCachesTable,
       SubscriptionCacheRow,
       $$SubscriptionCachesTableFilterComposer,
@@ -14478,7 +14974,7 @@ typedef $$SubscriptionCachesTableProcessedTableManager =
       (
         SubscriptionCacheRow,
         BaseReferences<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $SubscriptionCachesTable,
           SubscriptionCacheRow
         >,
@@ -14512,7 +15008,7 @@ typedef $$ClockStatesTableUpdateCompanionBuilder =
     });
 
 class $$ClockStatesTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $ClockStatesTable> {
+    extends Composer<_$LunioDatabase, $ClockStatesTable> {
   $$ClockStatesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -14567,7 +15063,7 @@ class $$ClockStatesTableFilterComposer
 }
 
 class $$ClockStatesTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $ClockStatesTable> {
+    extends Composer<_$LunioDatabase, $ClockStatesTable> {
   $$ClockStatesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -14622,7 +15118,7 @@ class $$ClockStatesTableOrderingComposer
 }
 
 class $$ClockStatesTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $ClockStatesTable> {
+    extends Composer<_$LunioDatabase, $ClockStatesTable> {
   $$ClockStatesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -14677,7 +15173,7 @@ class $$ClockStatesTableAnnotationComposer
 class $$ClockStatesTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $ClockStatesTable,
           ClockStateRow,
           $$ClockStatesTableFilterComposer,
@@ -14687,12 +15183,12 @@ class $$ClockStatesTableTableManager
           $$ClockStatesTableUpdateCompanionBuilder,
           (
             ClockStateRow,
-            BaseReferences<_$NojoumiDatabase, $ClockStatesTable, ClockStateRow>,
+            BaseReferences<_$LunioDatabase, $ClockStatesTable, ClockStateRow>,
           ),
           ClockStateRow,
           PrefetchHooks Function()
         > {
-  $$ClockStatesTableTableManager(_$NojoumiDatabase db, $ClockStatesTable table)
+  $$ClockStatesTableTableManager(_$LunioDatabase db, $ClockStatesTable table)
     : super(
         TableManagerState(
           db: db,
@@ -14757,7 +15253,7 @@ class $$ClockStatesTableTableManager
 
 typedef $$ClockStatesTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $ClockStatesTable,
       ClockStateRow,
       $$ClockStatesTableFilterComposer,
@@ -14767,9 +15263,209 @@ typedef $$ClockStatesTableProcessedTableManager =
       $$ClockStatesTableUpdateCompanionBuilder,
       (
         ClockStateRow,
-        BaseReferences<_$NojoumiDatabase, $ClockStatesTable, ClockStateRow>,
+        BaseReferences<_$LunioDatabase, $ClockStatesTable, ClockStateRow>,
       ),
       ClockStateRow,
+      PrefetchHooks Function()
+    >;
+typedef $$AuthTokensTableCreateCompanionBuilder =
+    AuthTokensCompanion Function({
+      Value<int> id,
+      Value<String> accessToken,
+      Value<String> refreshToken,
+      Value<String> email,
+      Value<int?> signedInAtMs,
+    });
+typedef $$AuthTokensTableUpdateCompanionBuilder =
+    AuthTokensCompanion Function({
+      Value<int> id,
+      Value<String> accessToken,
+      Value<String> refreshToken,
+      Value<String> email,
+      Value<int?> signedInAtMs,
+    });
+
+class $$AuthTokensTableFilterComposer
+    extends Composer<_$LunioDatabase, $AuthTokensTable> {
+  $$AuthTokensTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get signedInAtMs => $composableBuilder(
+    column: $table.signedInAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AuthTokensTableOrderingComposer
+    extends Composer<_$LunioDatabase, $AuthTokensTable> {
+  $$AuthTokensTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get signedInAtMs => $composableBuilder(
+    column: $table.signedInAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AuthTokensTableAnnotationComposer
+    extends Composer<_$LunioDatabase, $AuthTokensTable> {
+  $$AuthTokensTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get accessToken => $composableBuilder(
+    column: $table.accessToken,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get refreshToken => $composableBuilder(
+    column: $table.refreshToken,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<int> get signedInAtMs => $composableBuilder(
+    column: $table.signedInAtMs,
+    builder: (column) => column,
+  );
+}
+
+class $$AuthTokensTableTableManager
+    extends
+        RootTableManager<
+          _$LunioDatabase,
+          $AuthTokensTable,
+          AuthTokenRow,
+          $$AuthTokensTableFilterComposer,
+          $$AuthTokensTableOrderingComposer,
+          $$AuthTokensTableAnnotationComposer,
+          $$AuthTokensTableCreateCompanionBuilder,
+          $$AuthTokensTableUpdateCompanionBuilder,
+          (
+            AuthTokenRow,
+            BaseReferences<_$LunioDatabase, $AuthTokensTable, AuthTokenRow>,
+          ),
+          AuthTokenRow,
+          PrefetchHooks Function()
+        > {
+  $$AuthTokensTableTableManager(_$LunioDatabase db, $AuthTokensTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AuthTokensTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AuthTokensTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AuthTokensTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> accessToken = const Value.absent(),
+                Value<String> refreshToken = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<int?> signedInAtMs = const Value.absent(),
+              }) => AuthTokensCompanion(
+                id: id,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                email: email,
+                signedInAtMs: signedInAtMs,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> accessToken = const Value.absent(),
+                Value<String> refreshToken = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<int?> signedInAtMs = const Value.absent(),
+              }) => AuthTokensCompanion.insert(
+                id: id,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                email: email,
+                signedInAtMs: signedInAtMs,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AuthTokensTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LunioDatabase,
+      $AuthTokensTable,
+      AuthTokenRow,
+      $$AuthTokensTableFilterComposer,
+      $$AuthTokensTableOrderingComposer,
+      $$AuthTokensTableAnnotationComposer,
+      $$AuthTokensTableCreateCompanionBuilder,
+      $$AuthTokensTableUpdateCompanionBuilder,
+      (
+        AuthTokenRow,
+        BaseReferences<_$LunioDatabase, $AuthTokensTable, AuthTokenRow>,
+      ),
+      AuthTokenRow,
       PrefetchHooks Function()
     >;
 typedef $$EventLogTableCreateCompanionBuilder =
@@ -14788,7 +15484,7 @@ typedef $$EventLogTableUpdateCompanionBuilder =
     });
 
 class $$EventLogTableFilterComposer
-    extends Composer<_$NojoumiDatabase, $EventLogTable> {
+    extends Composer<_$LunioDatabase, $EventLogTable> {
   $$EventLogTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -14818,7 +15514,7 @@ class $$EventLogTableFilterComposer
 }
 
 class $$EventLogTableOrderingComposer
-    extends Composer<_$NojoumiDatabase, $EventLogTable> {
+    extends Composer<_$LunioDatabase, $EventLogTable> {
   $$EventLogTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -14848,7 +15544,7 @@ class $$EventLogTableOrderingComposer
 }
 
 class $$EventLogTableAnnotationComposer
-    extends Composer<_$NojoumiDatabase, $EventLogTable> {
+    extends Composer<_$LunioDatabase, $EventLogTable> {
   $$EventLogTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -14872,7 +15568,7 @@ class $$EventLogTableAnnotationComposer
 class $$EventLogTableTableManager
     extends
         RootTableManager<
-          _$NojoumiDatabase,
+          _$LunioDatabase,
           $EventLogTable,
           EventLogRow,
           $$EventLogTableFilterComposer,
@@ -14882,12 +15578,12 @@ class $$EventLogTableTableManager
           $$EventLogTableUpdateCompanionBuilder,
           (
             EventLogRow,
-            BaseReferences<_$NojoumiDatabase, $EventLogTable, EventLogRow>,
+            BaseReferences<_$LunioDatabase, $EventLogTable, EventLogRow>,
           ),
           EventLogRow,
           PrefetchHooks Function()
         > {
-  $$EventLogTableTableManager(_$NojoumiDatabase db, $EventLogTable table)
+  $$EventLogTableTableManager(_$LunioDatabase db, $EventLogTable table)
     : super(
         TableManagerState(
           db: db,
@@ -14932,7 +15628,7 @@ class $$EventLogTableTableManager
 
 typedef $$EventLogTableProcessedTableManager =
     ProcessedTableManager<
-      _$NojoumiDatabase,
+      _$LunioDatabase,
       $EventLogTable,
       EventLogRow,
       $$EventLogTableFilterComposer,
@@ -14942,15 +15638,15 @@ typedef $$EventLogTableProcessedTableManager =
       $$EventLogTableUpdateCompanionBuilder,
       (
         EventLogRow,
-        BaseReferences<_$NojoumiDatabase, $EventLogTable, EventLogRow>,
+        BaseReferences<_$LunioDatabase, $EventLogTable, EventLogRow>,
       ),
       EventLogRow,
       PrefetchHooks Function()
     >;
 
-class $NojoumiDatabaseManager {
-  final _$NojoumiDatabase _db;
-  $NojoumiDatabaseManager(this._db);
+class $LunioDatabaseManager {
+  final _$LunioDatabase _db;
+  $LunioDatabaseManager(this._db);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
   $$ManagedAppsTableTableManager get managedApps =>
@@ -14985,6 +15681,8 @@ class $NojoumiDatabaseManager {
       $$SubscriptionCachesTableTableManager(_db, _db.subscriptionCaches);
   $$ClockStatesTableTableManager get clockStates =>
       $$ClockStatesTableTableManager(_db, _db.clockStates);
+  $$AuthTokensTableTableManager get authTokens =>
+      $$AuthTokensTableTableManager(_db, _db.authTokens);
   $$EventLogTableTableManager get eventLog =>
       $$EventLogTableTableManager(_db, _db.eventLog);
 }

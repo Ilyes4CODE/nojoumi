@@ -77,6 +77,7 @@ def start_trial(*, parent, install: Install, now=None) -> Subscription:
             "التجربة المجانية استُعملت مرة واحدة على هذا الجهاز."
         )
 
+
     subscription = Subscription.objects.create(
         parent=parent,
         plan=PlanCode.TRIAL,

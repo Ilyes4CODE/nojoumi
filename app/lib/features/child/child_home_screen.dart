@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nojoumi_stars/nojoumi_stars.dart';
+import 'package:lunio_stars/lunio_stars.dart';
 
+import '../../core/format.dart';
+import '../../core/illustrations.dart';
 import '../../core/providers.dart';
+import '../../data/repositories/session_repository.dart';
 import '../../core/theme.dart';
 import '../../l10n/app_localizations.dart';
-import '../session/session_screen.dart';
+import '../parent/parent_dashboard.dart';
+import 'balance_card.dart';
+import '../session/session_controller.dart';
+import '../session/lesson_picker_screen.dart';
+import '../weekly/weekly_test_screen.dart';
 
 /// What the child sees.
 ///
@@ -29,25 +36,71 @@ class ChildHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context)!;
     final progress = ref.watch(todayProgressProvider);
+
+    // **Watched here, and this is what makes the app work at all.**
+    //
+    // The day's tasks are created by `SessionRepository.sessionFor`, which runs
+    // when this controller is first read. Until 2026-08-29 nothing on this
+    // screen read it: the session was only built when the session *screen*
+    // opened, and the button that opens it was disabled until the session had
+    // been built. A parent could photograph two lessons and the child would be
+    // told «لا توجد مهام بعد» for ever, with no way in — the cards were saved
+    // correctly and simply unreachable.
+    //
+    // Reading it here breaks that circle: arriving at the home screen is what
+    // creates the day.
+    final session = ref.watch(sessionControllerProvider);
     final rules = ref.watch(starRulesProvider);
     final clockOk = ref.watch(clockIsTrustworthyProvider);
     final paused = ref.watch(settingsProvider).value?.playPaused ?? false;
+    final weeklyDue = ref.watch(weeklyTestDueProvider).value ?? false;
+
+    // Watching is what runs it. The welcome balance of appendix §5 is granted
+    // on the first day the clock can be defended, not at the end of setup, so
+    // this screen is where it lands — and the child is told, because ten stars
+    // appearing with no explanation reads as a glitch.
+    ref.listen<AsyncValue<int?>>(welcomeGrantProvider, (previous, next) {
+      final units = next.value;
+      if (units == null || units == 0) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.setupDoneBody(Fmt.stars(units)))),
+      );
+    });
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.appName)),
+      appBar: AppBar(
+        title: Text(l10n.appName),
+        actions: [
+          // The way in is deliberately plain and always visible. Hiding it
+          // behind a long-press or a secret gesture would only mean the parent
+          // cannot find it either — the PIN is the lock, not the doorway.
+          IconButton(
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            tooltip: l10n.parentArea,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const ParentDashboard()),
+            ),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(trustedNowProvider.notifier).refresh(),
         child: ListView(
-          padding: NojoumiSpacing.page,
+          padding: LunioSpacing.page,
           children: [
             if (!clockOk) const _ClockUntrustedCard(),
-            _BalanceCard(
+            BalanceCard(
               progress: progress.value,
               rules: rules.value,
               paused: paused,
             ),
-            const SizedBox(height: NojoumiSpacing.l),
-            _TasksCard(progress: progress.value),
+            const SizedBox(height: LunioSpacing.l),
+            const _BlockingBrokenBanner(),
+            _TasksCard(progress: progress.value, session: session.value),
+            if (weeklyDue) ...[
+              const SizedBox(height: LunioSpacing.l),
+              _WeeklyTestCard(),
+            ],
           ],
         ),
       ),
@@ -69,33 +122,32 @@ class _ClockUntrustedCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Card(
       color: scheme.errorContainer,
-      margin: const EdgeInsets.only(bottom: NojoumiSpacing.m),
+      margin: const EdgeInsets.only(bottom: LunioSpacing.m),
       child: Padding(
-        padding: const EdgeInsets.all(NojoumiSpacing.m),
+        padding: const EdgeInsets.all(LunioSpacing.m),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(Icons.schedule, color: scheme.onErrorContainer),
-                const SizedBox(width: NojoumiSpacing.s),
+                const SizedBox(width: LunioSpacing.s),
                 Expanded(
                   child: Text(
                     l10n.clockUntrustedTitle,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: scheme.onErrorContainer,
-                        ),
+                      color: scheme.onErrorContainer,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: NojoumiSpacing.s),
+            const SizedBox(height: LunioSpacing.s),
             Text(
               l10n.clockUntrustedBody,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: scheme.onErrorContainer),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onErrorContainer),
             ),
           ],
         ),
@@ -104,117 +156,115 @@ class _ClockUntrustedCard extends StatelessWidget {
   }
 }
 
-/// The balance and what it buys.
+/// Shown when blocking is switched on but is not actually running.
 ///
-/// Play time is shown as `mm:ss` rather than rounded minutes because the star
-/// value may be half a minute (appendix §5), so half a star is thirty seconds
-/// and rounding it to "1 minute" would be a lie the child can measure.
-class _BalanceCard extends StatelessWidget {
-  const _BalanceCard({
-    required this.progress,
-    required this.rules,
-    required this.paused,
-  });
-
-  final DayProgress? progress;
-  final StarRules? rules;
-  final bool paused;
+/// **The most dangerous state this app has**, and until 2026-08-30 it was also
+/// the quietest. The parent turned blocking on, the switch says on, and nothing
+/// is blocked and no play time is counted — because the accessibility service is
+/// not bound. A parental-control app that believes it is guarding when it is not
+/// is worse than one that is honestly off: the parent stops watching.
+///
+/// It is not a rare state. **Every app update clears the grant**, which during
+/// development means every `flutter run`, and in production means every Play
+/// update. Three separate rounds of "the counter does not work" turned out to
+/// include this, and nothing on screen said so — the only place that showed it
+/// was a row inside the parent's blocking screen, which nobody opens unless they
+/// already suspect something.
+///
+/// So it is on the first screen, in a colour that is not the ordinary palette,
+/// with the one action that fixes it.
+class _BlockingBrokenBanner extends ConsumerWidget {
+  const _BlockingBrokenBanner();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context)!;
     final theme = Theme.of(context);
 
-    final units = progress?.balanceUnits ?? 0;
-    final seconds =
-        (rules == null || progress == null) ? 0 : progress!.remainingPlaySeconds(rules!);
+    final settings = ref.watch(settingsProvider).value;
+    final status = ref.watch(blockingStatusProvider).value;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(NojoumiSpacing.l),
+    // Silent unless the parent asked for blocking *and* the engine is not there.
+    // Blocking switched off is a legitimate state (Art. 15.2) and says nothing.
+    final broken =
+        (settings?.blockingEnabled ?? false) &&
+        status != null &&
+        status.available &&
+        !status.accessibilityEnabled;
+    if (!broken) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: LunioSpacing.m),
+      child: Container(
+        padding: const EdgeInsets.all(LunioSpacing.m),
+        decoration: BoxDecoration(
+          color: LunioTheme.tintPeach,
+          borderRadius: BorderRadius.circular(LunioRadius.card),
+        ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l10n.starsBalance, style: theme.textTheme.titleMedium),
-            const SizedBox(height: NojoumiSpacing.s),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.star_rounded,
-                    color: NojoumiTheme.star, size: 44),
-                const SizedBox(width: NojoumiSpacing.s),
-                Text(
-                  _formatStars(units),
-                  style: theme.textTheme.displaySmall
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                const Icon(Icons.warning_amber, color: LunioTheme.celebrate),
+                const SizedBox(width: LunioSpacing.s),
+                Expanded(
+                  child: Text(
+                    l10n.blockingNotRunningTitle,
+                    style: theme.textTheme.titleSmall,
+                  ),
                 ),
               ],
             ),
-            const Divider(height: NojoumiSpacing.xl),
-            Text(l10n.playTimeRemaining, style: theme.textTheme.titleSmall),
-            const SizedBox(height: NojoumiSpacing.xs),
-            Text(
-              _formatDuration(seconds),
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: seconds > 0 ? NojoumiTheme.play : NojoumiTheme.blocked,
-                fontWeight: FontWeight.bold,
-                fontFeatures: const [FontFeature.tabularFigures()],
+            const SizedBox(height: LunioSpacing.xs),
+            Text(l10n.blockingNotRunningBody, style: theme.textTheme.bodySmall),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                onPressed: () => ref
+                    .read(blockingChannelProvider)
+                    .openAccessibilitySettings(),
+                child: Text(l10n.blockingNotRunningAction),
               ),
             ),
-            if (paused) ...[
-              const SizedBox(height: NojoumiSpacing.s),
-              Text(
-                l10n.playPausedByParent,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.primary),
-              ),
-            ],
           ],
         ),
       ),
     );
-  }
-
-  /// Half stars are real (Art. 5), so "3.5" must be representable — but "4.0"
-  /// must not be, because a whole number written with a decimal point reads as
-  /// an approximation of something.
-  static String _formatStars(int units) {
-    final whole = units ~/ starUnit;
-    final remainder = units % starUnit;
-    if (remainder == 0) return '$whole';
-    return (units / starUnit).toStringAsFixed(1);
-  }
-
-  static String _formatDuration(int seconds) {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
   }
 }
 
 /// Today's session, and the way into it.
 class _TasksCard extends StatelessWidget {
-  const _TasksCard({required this.progress});
+  const _TasksCard({required this.progress, required this.session});
 
   final DayProgress? progress;
+
+  /// Today's task list, once built.
+  ///
+  /// Preferred over [progress] for the counts because it is the thing that was
+  /// just created: `DayProgress` is updated by the same build, but through a
+  /// separate stream, and on the first frame after a lesson is captured the
+  /// session is right while the progress row is still catching up.
+  final DailySession? session;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context)!;
     final theme = Theme.of(context);
 
-    final total = progress?.tasksTotal ?? 0;
-    final answered = progress?.tasksAnswered ?? 0;
+    final total = session?.total ?? progress?.tasksTotal ?? 0;
+    final answered = session?.answered ?? progress?.tasksAnswered ?? 0;
     final remaining = total - answered;
 
     if (total == 0) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(NojoumiSpacing.l),
+          padding: const EdgeInsets.all(LunioSpacing.l),
           child: Column(
             children: [
-              const Icon(Icons.menu_book_outlined, size: 40),
-              const SizedBox(height: NojoumiSpacing.s),
+              Illustration.astronaut.show(size: 120),
+              const SizedBox(height: LunioSpacing.s),
               Text(
                 l10n.noTasksYet,
                 textAlign: TextAlign.center,
@@ -228,18 +278,18 @@ class _TasksCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(NojoumiSpacing.l),
+        padding: const EdgeInsets.all(LunioSpacing.l),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(l10n.todayTasks, style: theme.textTheme.titleMedium),
-            const SizedBox(height: NojoumiSpacing.m),
+            const SizedBox(height: LunioSpacing.m),
             LinearProgressIndicator(
               value: total == 0 ? 0 : answered / total,
               minHeight: 10,
-              borderRadius: BorderRadius.circular(NojoumiRadius.button),
+              borderRadius: BorderRadius.circular(LunioRadius.button),
             ),
-            const SizedBox(height: NojoumiSpacing.m),
+            const SizedBox(height: LunioSpacing.m),
             Text(
               remaining > 0
                   ? l10n.tasksRemaining('$remaining')
@@ -247,16 +297,66 @@ class _TasksCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge,
             ),
-            const SizedBox(height: NojoumiSpacing.m),
+            const SizedBox(height: LunioSpacing.m),
+            // The shelf, not the queue. Asked for by the client on
+            // 2026-08-30: the child picks a lesson rather than being marched
+            // through the day in one line. Article 6.5 still counts the day as
+            // a whole — see LessonPickerScreen.
             FilledButton(
               onPressed: remaining > 0
                   ? () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SessionScreen(),
-                        ),
-                      )
+                      MaterialPageRoute<void>(
+                        builder: (_) => const LessonPickerScreen(),
+                      ),
+                    )
                   : null,
               child: Text(l10n.startSession),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Article 4.8's moment, surfaced on the day it arrives.
+///
+/// Only on the parent's chosen weekday, only once a week, and only when the week
+/// holds at least five cards (D-13). It appears below the day's tasks rather than
+/// above them, because the daily session is still the thing that earns stars.
+class _WeeklyTestCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context)!;
+    final theme = Theme.of(context);
+
+    return Card(
+      color: LunioTheme.tintPeach,
+      child: Padding(
+        padding: const EdgeInsets.all(LunioSpacing.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.emoji_events_outlined, size: 32),
+                const SizedBox(width: LunioSpacing.m),
+                Expanded(
+                  child: Text(
+                    l10n.weeklyTestDue,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: LunioSpacing.m),
+            FilledButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const WeeklyTestScreen(),
+                ),
+              ),
+              child: Text(l10n.weeklyTestStart),
             ),
           ],
         ),

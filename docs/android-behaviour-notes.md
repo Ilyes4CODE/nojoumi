@@ -75,7 +75,7 @@ current availability of their corresponding actions. To determine if a global ac
 `getSystemActions()`."*
 
 **What we rely on:** `performGlobalAction(GLOBAL_ACTION_HOME)` as the primary eviction mechanism, with the
-return value checked and logged (`NJM_BLOCKING`), and `getSystemActions()` consulted at service-connect time so
+return value checked and logged (`LNO_BLOCKING`), and `getSystemActions()` consulted at service-connect time so
 we discover unavailability at startup rather than at the moment a child opens a game.
 
 ---
@@ -208,7 +208,7 @@ Until then, the PIN gate on scenarios 8 and 10 is **unproven**.
   and that is exactly the scenario Article 12.12 tests.
 
 **What we rely on:** `elapsedRealtime()` as the monotonic witness inside one boot session, and
-`System.currentTimeMillis()` as the input we check *against* it. This is precisely the split `nojoumi_time`
+`System.currentTimeMillis()` as the input we check *against* it. This is precisely the split `lunio_time`
 was written for.
 
 ### The boot id is derived, because Android does not give apps one
@@ -237,14 +237,73 @@ mechanism above is chosen so the failure mode is a lost anchor, never an inflate
 **UNVERIFIED-ON-HARDWARE, and this is a device fact, not a documentation fact.** What the developer must check
 once the reference device exists:
 
-- reboot the phone and confirm `NJM_CLOCK` logs a token rotation on the first reading after boot;
+- reboot the phone and confirm `LNO_CLOCK` logs a token rotation on the first reading after boot;
 - reboot after a *long* uptime and confirm rotation still happens (that is signal 2 doing its job);
 - change the clock forward a day, then back, and confirm the token rotates and the star balance does not move —
   this is checklist scenario 12;
 - confirm `elapsedRealtime()` does not regress across a Doze cycle overnight, since a false rotation every
   morning would mean a re-anchor every morning.
 
-Logcat: `adb logcat -s NJM_CLOCK`.
+Logcat: `adb logcat -s LNO_CLOCK`.
+
+---
+
+## V10 — `UsageStatsManager` as the tier-2 safety net (AD-8)
+
+**Verified in local framework source** `android-36.1/android/app/usage/UsageStatsManager.java` and
+`UsageEvents.java`, 2026-08-21. This was the open item V8 listed as "needed by Phase 2".
+
+**The permission is not an ordinary permission**, quoted verbatim from the class javadoc:
+
+> *"Most methods on this API require the permission `android.permission.PACKAGE_USAGE_STATS`. However,
+> **declaring the permission implies intention to use the API and the user of the device still needs to grant
+> permission through the Settings application**. See `Settings#ACTION_USAGE_ACCESS_SETTINGS`."*
+
+So it behaves like the accessibility grant: declared in the manifest, then granted by hand in a system screen we
+cannot open past. **That is a second special-access screen the setup wizard has to walk the parent through**, on
+top of accessibility and overlay — and the more of those a parent faces, the more of them abandon setup. It is
+the reason `UsageStatsManager` is tier 2 in AD-8 and not tier 1: the app must work with only accessibility
+granted, and treat usage access as an upgrade.
+
+**`queryEvents` returns null on a locked device**, quoted:
+
+> *"Starting from Android R, if the user's device is not in an unlocked state (as defined by
+> `UserManager#isUserUnlocked()`), then `null` will be returned."*
+
+Harmless for us — nothing can be launched from a locked screen either — but the poller must tolerate a null
+result rather than treat it as "no app in the foreground".
+
+**The event constants**, verified: `UsageEvents.Event.ACTIVITY_RESUMED = MOVE_TO_FOREGROUND = 1`, and
+`ACTIVITY_PAUSED = MOVE_TO_BACKGROUND = 2`. `ACTIVITY_RESUMED` is the alias, so the numeric value is stable
+across the rename and either name compiles.
+
+**What we rely on:** a short backward window queried on a cadence, taking the most recent `ACTIVITY_RESUMED`
+event as the current foreground package. Not `queryUsageStats`, which aggregates by interval and cannot answer
+"what is in front right now".
+
+**Still unverified, and it is the whole reason this tier exists:** the polling cost on an Article 13 device
+(2 GB, Android 10), and whether the accessibility tier misses window changes often enough to need it at all. Both
+are device facts. If tier 1 proves reliable on hardware, the honest move is to leave usage access ungranted
+rather than ask a parent for a third permission that buys nothing.
+
+## V11 — `TYPE_APPLICATION_OVERLAY` and what it costs
+
+**Verified in local framework source** `android-36.1/android/view/WindowManager.java`, 2026-08-21:
+
+`TYPE_APPLICATION_OVERLAY = FIRST_SYSTEM_WINDOW + 38`, present and not deprecated, with this note in its
+javadoc that is worth having in writing:
+
+> *"The system will adjust the importance of processes with this window type to reduce the chance of the
+> low-memory-killer killing them."*
+
+That is a real, documented benefit for us: an overlay window makes our process **harder** to kill on the 2 GB
+device of Article 13. It does not make it impossible, and it says nothing about OEM battery managers, which are
+policy rather than memory pressure — so it is not a substitute for the foreground service, and scenario 11 is
+still decided on hardware.
+
+Also relevant, and already recorded in V2: from Android 15, `SYSTEM_ALERT_WINDOW` only exempts a background
+foreground-service start **if a `TYPE_APPLICATION_OVERLAY` window is already visible**. The two mechanisms are
+coupled, so the overlay is not only the visible surface — it is part of what keeps the watchdog startable.
 
 ---
 
@@ -253,7 +312,7 @@ Logcat: `adb logcat -s NJM_CLOCK`.
 | Item | Needed by | Why |
 |---|---|---|
 | `QUERY_ALL_PACKAGES` Play policy + accepted justifications | Phase 2 | the parent's game picker depends on it |
-| `PACKAGE_USAGE_STATS` / `UsageStatsManager` polling cost + accuracy on Android 10 | Phase 2 | AD-8 tier 2 safety net, on a 2 GB device |
+| ~~`PACKAGE_USAGE_STATS` / `UsageStatsManager`~~ | ~~Phase 2~~ | **done — V10.** Polling *cost* stays a device fact |
 | Accessibility API Play policy — current declaration wording for parental control | Phase 7 | #1 rejection cause (Art. 16) |
 | Designed for Families policy vs. accessibility + device admin | Phase 7 | Art. 15.3 |
 | Exact-alarm permission rules for day-rollover scheduling | Phase 4 | end-of-day balance expiry (Art. 6) |
@@ -274,3 +333,42 @@ Logcat: `adb logcat -s NJM_CLOCK`.
 - Local framework sources: `android-36.1/android/accessibilityservice/AccessibilityService.java`,
   `android-36.1/android/app/admin/DeviceAdminReceiver.java`,
   `android-36.1/android/app/admin/DevicePolicyManager.java`
+
+---
+
+## V12 — Android 10 (API 29) is a different code path, not just an older one
+
+Recorded 2026-08-27, when the first device turned out to be an **Oppo A15 · ColorOS · Android 10 · API 29**
+— our `minSdk` exactly, and four API levels below the Article 13 reference device.
+
+Three places where the same source takes a different branch there, all of them in the blocking spike:
+
+**1. Foreground-service types do not exist.** `android:foregroundServiceType="specialUse"` (V4) was added in
+API 34. On API 29 the attribute value is unknown to the platform and the service simply runs untyped. So
+`BlockingWatchdogService` starting successfully on the Oppo says **nothing** about whether it starts on
+Android 14+, and vice versa. Both have to be verified; neither substitutes for the other.
+
+**2. Restricted settings do not exist.** V6's Android 13+ flow — where a sideloaded app's accessibility toggle
+is greyed out until the user goes through app info → "Allow restricted settings" — is absent on Android 10.
+Enabling the service from a sideloaded APK is **easier** here than it will be on the reference device. A
+smooth grant on the Oppo is therefore not evidence that the reference device will be smooth.
+
+**3. `POST_NOTIFICATIONS` is not a runtime permission.** Added in API 33. On Android 10 the watchdog's
+notification appears without any prompt, so the "notifications granted" row on the blocking screen will read
+as granted from the start. The row is still correct on newer devices; it is simply not exercised here.
+
+**What Android 10 *does* test better than anything else available:** it is the release that introduced the
+background-activity-launch restrictions the whole of V2 is built on. A design that quietly relied on
+`startActivity` from a background service would fail here as surely as on API 36 — which makes the Oppo a
+genuine check on the one constraint that shapes the entire blocking design.
+
+**ColorOS, specifically.** Oppo's startup manager withholds `BOOT_COMPLETED` from apps the user has not
+explicitly permitted, and reports nothing when it does. This is the same class of OEM behaviour as One UI's
+"Sleeping apps" and MIUI's autostart list, and it is the reason `BootReceiver` logs on entry before doing
+anything: an absent log line after a reboot is the diagnosis. `LunioBlockingBridge.AUTOSTART_COMPONENTS` holds
+the observed activity names for ColorOS, One UI, MIUI, HyperOS, EMUI and Funtouch — **undocumented, versioned
+by skin, and best-effort by construction**, which is why the blocking screen shows that row only when one of
+them actually resolves.
+
+**Still unverified, and not verifiable on this device:** V7 (overlay over One UI Settings), Article 11.2's two
+seconds on the reference hardware, and One UI's own battery behaviour.

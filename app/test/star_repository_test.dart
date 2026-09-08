@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nojoumi/data/local/database.dart';
-import 'package:nojoumi/data/local/tables.dart';
-import 'package:nojoumi/data/repositories/star_repository.dart';
-import 'package:nojoumi_stars/nojoumi_stars.dart';
-import 'package:nojoumi_time/nojoumi_time.dart';
+import 'package:lunio/data/local/database.dart';
+import 'package:lunio/data/local/tables.dart';
+import 'package:lunio/data/repositories/star_repository.dart';
+import 'package:lunio_stars/lunio_stars.dart';
+import 'package:lunio_time/lunio_time.dart';
 
 import 'support/test_db.dart';
 
@@ -13,7 +13,7 @@ import 'support/test_db.dart';
 /// the ledger stays the authority for the balance (AD-4), and that a rejection
 /// leaves evidence behind rather than nothing.
 void main() {
-  late NojoumiDatabase db;
+  late LunioDatabase db;
   late StarRepository stars;
 
   final rules = StarRules();

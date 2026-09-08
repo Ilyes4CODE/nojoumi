@@ -41,7 +41,7 @@ PNG_1PX = (
 )
 
 # A marker we can search for anywhere it must not appear.
-SECRET_MARKER = b"NOJOUMI-IMAGE-BYTES-MUST-NEVER-PERSIST"
+SECRET_MARKER = b"LUNIO-IMAGE-BYTES-MUST-NEVER-PERSIST"
 
 
 class RecordingProcessor(LessonProcessor):

@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nojoumi/data/local/database.dart';
-import 'package:nojoumi/data/repositories/clock_repository.dart';
-import 'package:nojoumi_time/nojoumi_time.dart';
+import 'package:lunio/data/local/database.dart';
+import 'package:lunio/data/repositories/clock_repository.dart';
+import 'package:lunio_time/lunio_time.dart';
 
 import 'support/fake_clock_source.dart';
 import 'support/test_db.dart';
 
-/// `nojoumi_time` proves the *rules* in 21 tests. What is unproven until here is
+/// `lunio_time` proves the *rules* in 21 tests. What is unproven until here is
 /// that the rules survive the round trip through SQLite: that the forward-only
 /// high-water mark is actually persisted, that a tamper signal is recorded where
 /// the parent dashboard can read it, and that a dead clock channel degrades to
@@ -15,7 +15,7 @@ import 'support/test_db.dart';
 /// Article 12 scenario 12 is run for real on hardware. These tests are what make
 /// that run a confirmation rather than a discovery.
 void main() {
-  late NojoumiDatabase db;
+  late LunioDatabase db;
   late FakeClockSource source;
   late ClockRepository clock;
 

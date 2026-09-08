@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:nojoumi_stars/nojoumi_stars.dart';
-import 'package:nojoumi_time/nojoumi_time.dart';
+import 'package:lunio_stars/lunio_stars.dart';
+import 'package:lunio_time/lunio_time.dart';
 
 import '../local/database.dart';
 import '../local/tables.dart';
@@ -21,7 +21,7 @@ class RecordedAttempt {
 
 /// Everything that touches the star ledger.
 ///
-/// Two rules from CLAUDE.md are structural here, not stylistic:
+/// Two rules from docs/CONVENTIONS.md are structural here, not stylistic:
 ///
 ///  * **AD-4 — the ledger is append-only and rejections are recorded.** Every
 ///    evaluated attempt writes a row to `attempts`, awarded or not, with the
@@ -33,22 +33,22 @@ class RecordedAttempt {
 ///    appears as an `if` in this file, it is in the wrong place.
 class StarRepository {
   StarRepository(this._db, {StarEngine engine = const StarEngine()})
-      : _engine = engine;
+    : _engine = engine;
 
-  final NojoumiDatabase _db;
+  final LunioDatabase _db;
   final StarEngine _engine;
 
   // ---------------------------------------------------------------- reading
 
   /// Load one day, including the Article 6.2 set of already-counted targets.
   Future<DayProgress> dayProgress(DayKey day) async {
-    final row = await (_db.select(_db.dayProgressRows)
-          ..where((t) => t.dayKey.equals(day.daysSinceEpoch)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.dayProgressRows,
+    )..where((t) => t.dayKey.equals(day.daysSinceEpoch))).getSingleOrNull();
 
-    final counted = await (_db.select(_db.countedTargets)
-          ..where((t) => t.dayKey.equals(day.daysSinceEpoch)))
-        .get();
+    final counted = await (_db.select(
+      _db.countedTargets,
+    )..where((t) => t.dayKey.equals(day.daysSinceEpoch))).get();
 
     if (row == null) return DayProgress(dayKey: day);
 
@@ -57,8 +57,10 @@ class StarRepository {
       earnedUnits: row.earnedUnits,
       grantedUnits: row.grantedUnits,
       usedPlaySeconds: row.usedPlaySeconds,
-      countedTargetIds:
-          counted.map((c) => _targetKey(c.kind, c.targetId)).toSet(),
+      freePlaySeconds: row.freePlaySeconds,
+      countedTargetIds: counted
+          .map((c) => _targetKey(c.kind, c.targetId))
+          .toSet(),
       tasksTotal: row.tasksTotal,
       tasksAnswered: row.tasksAnswered,
       sessionBonusAwarded: row.sessionBonusAwarded,
@@ -74,12 +76,13 @@ class StarRepository {
   }
 
   Future<StreakState> streak() async {
-    final row =
-        await (_db.select(_db.streakStates)..where((t) => t.id.equals(1)))
-            .getSingle();
+    final row = await (_db.select(
+      _db.streakStates,
+    )..where((t) => t.id.equals(1))).getSingle();
     return StreakState(
-      lastActiveDay:
-          row.lastActiveDay == null ? null : DayKey(row.lastActiveDay!),
+      lastActiveDay: row.lastActiveDay == null
+          ? null
+          : DayKey(row.lastActiveDay!),
       consecutiveDays: row.consecutiveDays,
       best: row.best,
     );
@@ -92,10 +95,31 @@ class StarRepository {
   /// after a long sequence of awards, deductions and expiries — if they ever
   /// drift, that test is where it surfaces, not the parent's screen.
   Future<int> derivedBalanceUnits(DayKey day) async {
-    final rows = await (_db.select(_db.starLedger)
-          ..where((t) => t.dayKey.equals(day.daysSinceEpoch)))
-        .get();
+    final rows = await (_db.select(
+      _db.starLedger,
+    )..where((t) => t.dayKey.equals(day.daysSinceEpoch))).get();
     return rows.fold<int>(0, (sum, row) => sum + row.starUnits);
+  }
+
+  /// Every balance movement for a day, newest first.
+  ///
+  /// AD-4's payoff: when the client asks where twelve stars went, the answer is
+  /// this list with timestamps on it, not a recollection.
+  Stream<List<StarLedgerRow>> watchLedger(DayKey day) {
+    return (_db.select(_db.starLedger)
+          ..where((t) => t.dayKey.equals(day.daysSinceEpoch))
+          ..orderBy([(t) => OrderingTerm.desc(t.id)]))
+        .watch();
+  }
+
+  /// Attempts that earned nothing, with the Article 6 condition that stopped
+  /// them. This is the query behind the parent's "why was no star granted?".
+  Stream<List<AttemptRow>> watchRejections(DayKey day) {
+    return (_db.select(_db.attempts)
+          ..where((t) => t.dayKey.equals(day.daysSinceEpoch))
+          ..where((t) => t.rejection.equalsValue(RejectionRow.none).not())
+          ..orderBy([(t) => OrderingTerm.desc(t.id)]))
+        .watch();
   }
 
   // ---------------------------------------------------------------- writing
@@ -123,7 +147,9 @@ class StarRepository {
       final kind = _taskKindOf(attempt.kind);
       final targetId = int.parse(attempt.targetId.split(':').last);
 
-      await _db.into(_db.attempts).insert(
+      await _db
+          .into(_db.attempts)
+          .insert(
             AttemptsCompanion.insert(
               dayKey: day.daysSinceEpoch,
               kind: kind,
@@ -150,7 +176,9 @@ class StarRepository {
 
       final next = _engine.applyEarned(progress, attempt, decision);
 
-      await _db.into(_db.countedTargets).insert(
+      await _db
+          .into(_db.countedTargets)
+          .insert(
             CountedTargetsCompanion.insert(
               dayKey: day.daysSinceEpoch,
               kind: kind,
@@ -287,9 +315,9 @@ class StarRepository {
     required TrustedInstant now,
   }) async {
     return _db.transaction(() async {
-      final settings =
-          await (_db.select(_db.appSettings)..where((t) => t.id.equals(1)))
-              .getSingle();
+      final settings = await (_db.select(
+        _db.appSettings,
+      )..where((t) => t.id.equals(1))).getSingle();
       if (settings.welcomeGranted || rules.welcomeUnits == 0) return null;
 
       final progress = await dayProgress(day);
@@ -302,8 +330,9 @@ class StarRepository {
         balanceAfter: next.balanceUnits,
         now: now,
       );
-      await (_db.update(_db.appSettings)..where((t) => t.id.equals(1)))
-          .write(const AppSettingsCompanion(welcomeGranted: Value(true)));
+      await (_db.update(_db.appSettings)..where((t) => t.id.equals(1))).write(
+        const AppSettingsCompanion(welcomeGranted: Value(true)),
+      );
       return next;
     });
   }
@@ -322,8 +351,9 @@ class StarRepository {
       final progress = await dayProgress(day);
       // The weekly test is not part of the daily session, so it lands in the
       // granted bucket and is not squeezed by the daily earning ceiling.
-      final next =
-          progress.copyWith(grantedUnits: progress.grantedUnits + units);
+      final next = progress.copyWith(
+        grantedUnits: progress.grantedUnits + units,
+      );
       await _upsertDay(next);
       await _appendLedger(
         day: day,
@@ -369,10 +399,11 @@ class StarRepository {
     int expiryWeekday = DateTime.friday,
   }) async {
     return _db.transaction(() async {
-      final lastRow = await (_db.select(_db.dayProgressRows)
-            ..orderBy([(t) => OrderingTerm.desc(t.dayKey)])
-            ..limit(1))
-          .getSingleOrNull();
+      final lastRow =
+          await (_db.select(_db.dayProgressRows)
+                ..orderBy([(t) => OrderingTerm.desc(t.dayKey)])
+                ..limit(1))
+              .getSingleOrNull();
 
       if (lastRow == null) {
         final fresh = DayProgress(dayKey: to);
@@ -431,13 +462,62 @@ class StarRepository {
 
   // ------------------------------------------------------------- internals
 
+  /// Article 6.9 — the parent hands the child play time directly.
+  ///
+  /// Requested by the client on 2026-08-30: a button on the parent dashboard
+  /// for free play, with a duration.
+  ///
+  /// **It adds; it does not set.** A parent who taps "one hour" twice has given
+  /// two hours, which is what those two taps mean. Setting would silently throw
+  /// the first hour away, and worse, would do nothing at all once the child had
+  /// spent part of it — the screen would look like the button was broken.
+  ///
+  /// **No star ever enters the ledger for this.** The child did not earn
+  /// anything, Article 5's table is the only thing that may put stars in the
+  /// balance, and AD-4 says the ledger must be able to answer for every star in
+  /// it. This lands in the event log instead, so the question "why did my child
+  /// play for three hours" still has an answer.
+  ///
+  /// Exempt from the daily ceiling, like every parent grant — Article 6.4 caps
+  /// what the child *earns*. Not exempt from Article 6.7: it lives on the day,
+  /// so it is gone tomorrow.
+  Future<DayProgress> addFreePlay({
+    required DayKey day,
+    required int seconds,
+    required TrustedInstant now,
+  }) async {
+    return _db.transaction(() async {
+      final progress = await dayProgress(day);
+      // Clamped at zero rather than rejected: a negative here would mean a
+      // caller wanted to take play time away, and the way to do that is the
+      // pause switch, which stops play without rewriting what was given.
+      final total = progress.freePlaySeconds + seconds;
+      final next = progress.copyWith(freePlaySeconds: total < 0 ? 0 : total);
+      await _upsertDay(next);
+
+      await _db
+          .into(_db.eventLog)
+          .insert(
+            EventLogCompanion.insert(
+              type: 'free_play_granted',
+              detail: Value('$seconds'),
+              atMs: now.epochMs,
+            ),
+          );
+      return next;
+    });
+  }
+
   Future<void> _upsertDay(DayProgress day) async {
-    await _db.into(_db.dayProgressRows).insertOnConflictUpdate(
+    await _db
+        .into(_db.dayProgressRows)
+        .insertOnConflictUpdate(
           DayProgressRowsCompanion.insert(
             dayKey: Value(day.dayKey.daysSinceEpoch),
             earnedUnits: Value(day.earnedUnits),
             grantedUnits: Value(day.grantedUnits),
             usedPlaySeconds: Value(day.usedPlaySeconds),
+            freePlaySeconds: Value(day.freePlaySeconds),
             tasksTotal: Value(day.tasksTotal),
             tasksAnswered: Value(day.tasksAnswered),
             sessionBonusAwarded: Value(day.sessionBonusAwarded),
@@ -455,7 +535,9 @@ class StarRepository {
     int? sourceRef,
     String note = '',
   }) async {
-    await _db.into(_db.starLedger).insert(
+    await _db
+        .into(_db.starLedger)
+        .insert(
           StarLedgerCompanion.insert(
             dayKey: day.daysSinceEpoch,
             kind: kind,
@@ -488,24 +570,25 @@ class StarRepository {
       _targetKey(_taskKindOf(kind), id);
 
   static TaskKind _taskKindOf(EarnKind kind) => switch (kind) {
-        EarnKind.memorizeCardFirstTime => TaskKind.memorize,
-        EarnKind.cardInLaterReview => TaskKind.memorize,
-        EarnKind.reviewQuestion => TaskKind.review,
-      };
+    EarnKind.memorizeCardFirstTime => TaskKind.memorize,
+    EarnKind.cardInLaterReview => TaskKind.memorize,
+    EarnKind.reviewQuestion => TaskKind.review,
+  };
 
   static LedgerKind _ledgerKindOf(EarnKind kind) => switch (kind) {
-        EarnKind.memorizeCardFirstTime => LedgerKind.cardFirstTime,
-        EarnKind.cardInLaterReview => LedgerKind.cardReview,
-        EarnKind.reviewQuestion => LedgerKind.reviewQuestion,
-      };
+    EarnKind.memorizeCardFirstTime => LedgerKind.cardFirstTime,
+    EarnKind.cardInLaterReview => LedgerKind.cardReview,
+    EarnKind.reviewQuestion => LedgerKind.reviewQuestion,
+  };
 
   static TrustLevelRow _trustRow(TrustLevel level) => switch (level) {
-        TrustLevel.serverAnchored => TrustLevelRow.serverAnchored,
-        TrustLevel.monotonic => TrustLevelRow.monotonic,
-        TrustLevel.untrusted => TrustLevelRow.untrusted,
-      };
+    TrustLevel.serverAnchored => TrustLevelRow.serverAnchored,
+    TrustLevel.monotonic => TrustLevelRow.monotonic,
+    TrustLevel.untrusted => TrustLevelRow.untrusted,
+  };
 
-  static RejectionRow _rejectionRow(Rejection? rejection) => switch (rejection) {
+  static RejectionRow _rejectionRow(Rejection? rejection) =>
+      switch (rejection) {
         null => RejectionRow.none,
         Rejection.untrustedClock => RejectionRow.untrustedClock,
         Rejection.wrongAnswer => RejectionRow.wrongAnswer,

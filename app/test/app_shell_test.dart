@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nojoumi/core/providers.dart';
-import 'package:nojoumi/data/local/database.dart';
-import 'package:nojoumi/features/child/child_home_screen.dart';
-import 'package:nojoumi/features/setup/setup_wizard.dart';
-import 'package:nojoumi_stars/nojoumi_stars.dart';
-import 'package:nojoumi_time/nojoumi_time.dart';
+import 'package:lunio/core/providers.dart';
+import 'package:lunio/data/local/database.dart';
+import 'package:lunio/features/child/child_home_screen.dart';
+import 'package:lunio/features/setup/setup_wizard.dart';
+import 'package:lunio_stars/lunio_stars.dart';
+import 'package:lunio_time/lunio_time.dart';
 
 import 'support/widget_harness.dart';
 
@@ -36,6 +36,7 @@ void main() {
             onBlockingChanged: (_) {},
             onLauncherChanged: (_) {},
             onFinish: () {},
+            onSkip: () {},
           ),
         ),
       );
@@ -83,7 +84,7 @@ void main() {
       await pumpStep(tester, consented: false);
       // The negative half of the disclosure is what Play looks for, and it is
       // the half that is easy to lose in a rewrite.
-      expect(find.textContaining('لا يقرأ نجومي محتوى الشاشة'), findsOneWidget);
+      expect(find.textContaining('لا يقرأ Lunio محتوى الشاشة'), findsOneWidget);
     });
   });
 
@@ -111,6 +112,13 @@ void main() {
             ),
           ),
           clockIsTrustworthyProvider.overrideWithValue(clockTrustworthy),
+          // The screen runs the appendix §5 welcome grant, which writes to the
+          // database. A widget test states the balance it wants directly, so
+          // the grant is stubbed out rather than performed.
+          welcomeGrantProvider.overrideWith((ref) async => null),
+          // The home offers the weekly test when it is due, which asks the
+          // database. Not due is the state these tests are about.
+          weeklyTestDueProvider.overrideWith((ref) async => false),
         ],
       );
       await tester.pump();

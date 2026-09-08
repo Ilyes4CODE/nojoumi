@@ -1,7 +1,7 @@
 # Blocking checklist — Article 12 · daily hardware run
 
 **Purpose:** Article 12's twelve scenarios are the gate on Article 11 acceptance and on the final 30 % payment.
-They cannot be verified on an emulator or by the assistant. Re-run this **every day** that native code changed,
+They cannot be verified on an emulator. Re-run this **every day** that native code changed,
 on the reference device, and record the result. A scenario that passed yesterday and was never re-run today
 counts as **unknown**, not as pass.
 
@@ -20,9 +20,9 @@ video frames — "felt fast" is not a measurement.
 | Device model |  |
 | Android version + OEM skin |  |
 | RAM |  |
-| Launcher mode | Nojoumi is default launcher / not default launcher |
+| Launcher mode | Lunio is default launcher / not default launcher |
 | Blocking opt-in | on / off |
-| Battery optimisation for Nojoumi | unrestricted / optimised |
+| Battery optimisation for Lunio | unrestricted / optimised |
 | Star balance at start of run | 0 stars (required for scenarios 1–7) |
 | Target game package used |  |
 | Subscription state | trial / active / grace / expired / refunded |
@@ -33,16 +33,16 @@ the parent, accessibility service enabled, DeviceAdmin active, phone unplugged f
 Logcat one-liner:
 
 ```
-adb logcat -c && adb logcat -s NJM_BLOCKING NJM_LAUNCHER NJM_OVERLAY NJM_ADMIN NJM_BOOT NJM_CLOCK
+adb logcat -c && adb logcat -s LNO_BLOCKING LNO_LAUNCHER LNO_OVERLAY LNO_ADMIN LNO_BOOT LNO_CLOCK
 ```
 
 ---
 
 ## The twelve scenarios
 
-### 1 — Open the game from the Nojoumi home screen, balance zero
+### 1 — Open the game from the Lunio home screen, balance zero
 **Contract result:** the icon is **blocked** (الأيقونة محجوبة).
-**Steps:** open the Nojoumi home screen → locate the game.
+**Steps:** open the Lunio home screen → locate the game.
 **Look for:** the icon is not launchable — blocked/hidden per the agreed UX — and tapping it leads to the tasks
 screen, not to the game. No flash of the game at all.
 **Time:** n/a (prevention, not interception).
@@ -54,7 +54,7 @@ mark N/A and say so.
 **Contract result:** immediate close.
 **Steps:** launch the game while balance > 0 (or before blocking arms), leave it, empty the balance, open recents,
 tap the game.
-**Look for:** the game appears and is closed; Nojoumi's block card appears. **Measure the seconds.**
+**Look for:** the game appears and is closed; Lunio's block card appears. **Measure the seconds.**
 **Result:** ☐ pass ☐ fail · observed time: ______ s
 
 ### 3 — Open the game from Settings → Apps → Open
@@ -79,7 +79,7 @@ app page in a loop.
 ### 6 — Open the game via phone search or the voice assistant
 **Contract result:** immediate close.
 **Steps:** run both — (a) the device search field, (b) the voice assistant ("open <game>").
-**Look for:** closed within 2 s in **both** paths. Record them separately; the assistant path often behaves
+**Look for:** closed within 2 s in **both** paths. Record them separately; the accessibility path often behaves
 differently because the launch comes from a system component.
 **Result:** search ☐ pass ☐ fail (______ s) · assistant ☐ pass ☐ fail (______ s)
 
@@ -93,12 +93,12 @@ differently because the launch comes from a system component.
 **Contract result:** requires the parent PIN.
 **Steps:** Settings → Apps → Default apps → Home app → pick another launcher. Also try the OEM shortcut if the
 skin has one, and the "Home" chooser that appears on pressing home.
-**Look for:** a PIN prompt appears before the change can complete, and cancelling leaves Nojoumi as home.
+**Look for:** a PIN prompt appears before the change can complete, and cancelling leaves Lunio as home.
 **Record:** whether the PIN surface actually appears **on top of Settings** — this is the riskiest part of the
 whole checklist and OEM/Android version behaviour varies.
 **Result:** ☐ pass ☐ fail · what appeared: ____________
 
-### 9 — Attempt to uninstall Nojoumi
+### 9 — Attempt to uninstall Lunio
 **Contract result:** prevented (ممنوع). ⚠️ **Not achievable as literally worded — see below.**
 
 **Established fact, not a hypothesis:** `setUninstallBlocked` requires device owner or profile owner
@@ -107,7 +107,7 @@ whole checklist and OEM/Android version behaviour varies.
 refusal while the admin is active, a warning on `onDisableRequested`, detection via `onDisabled`, and a parent
 notification.
 
-**Steps:** try all of — long-press icon → uninstall; Settings → Apps → Nojoumi → Uninstall; Play Store → My apps
+**Steps:** try all of — long-press icon → uninstall; Settings → Apps → Lunio → Uninstall; Play Store → My apps
 → Uninstall. Then separately: deactivate the device admin first, and retry each path.
 
 **What to record:**
@@ -122,8 +122,8 @@ is contractually unresolved** — flag it, do not quietly score it.
 ### 10 — Attempt to disable the accessibility service, or force stop
 **Contract result:** requires the parent PIN. ⚠️ **Partly achievable — the force-stop path is not.**
 
-**Steps:** (a) Settings → Accessibility → Nojoumi → toggle off. (b) Settings → Apps → Nojoumi → Force stop.
-(c) Settings → Apps → Nojoumi → Deactivate device admin.
+**Steps:** (a) Settings → Accessibility → Lunio → toggle off. (b) Settings → Apps → Lunio → Force stop.
+(c) Settings → Apps → Lunio → Deactivate device admin.
 
 **What to record, per path:**
 - ☐ (a) does a PIN gate appear over the accessibility screen? **This is the largest open unknown in the project**
@@ -138,7 +138,7 @@ is contractually unresolved** — flag it, do not quietly score it.
 
 ### 11 — Restart the phone
 **Contract result:** blocking returns automatically.
-**Steps:** reboot. Do **not** open Nojoumi. Wait 60 s, then run scenario 2 or 3.
+**Steps:** reboot. Do **not** open Lunio. Wait 60 s, then run scenario 2 or 3.
 **Look for:** blocking works with no parent action and no app launch. Note how many seconds after boot it becomes
 effective, and whether the launcher is still the home app.
 **Also test:** reboot with the screen locked and left locked for 5 minutes before unlocking.

@@ -1,9 +1,9 @@
-import 'package:nojoumi/platform/clock_source.dart';
-import 'package:nojoumi_time/nojoumi_time.dart';
+import 'package:lunio/platform/clock_source.dart';
+import 'package:lunio_time/lunio_time.dart';
 
 /// A [ClockSource] the test drives by hand.
 ///
-/// The point of `nojoumi_time` is that tampering is a property of the *readings*,
+/// The point of `lunio_time` is that tampering is a property of the *readings*,
 /// not of the device — so a test can stage a clock change exactly, with no phone
 /// and no waiting. Article 12 scenario 12 is expensive to run on hardware and
 /// free to run here; hardware then only has to confirm that the platform reports

@@ -1,4 +1,4 @@
-# ar first, always (CLAUDE.md conventions). RTL is the default direction.
+# ar first, always (docs/CONVENTIONS.md conventions). RTL is the default direction.
 arb-dir: lib/l10n
 template-arb-file: app_ar.arb
 output-localization-file: app_localizations.dart

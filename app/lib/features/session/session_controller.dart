@@ -19,8 +19,8 @@ final sessionRepositoryProvider = Provider<SessionRepository>((ref) {
 /// reaches the screen.
 final sessionControllerProvider =
     AsyncNotifierProvider<SessionController, DailySession>(
-  SessionController.new,
-);
+      SessionController.new,
+    );
 
 class SessionController extends AsyncNotifier<DailySession> {
   @override
@@ -29,10 +29,9 @@ class SessionController extends AsyncNotifier<DailySession> {
       starRulesProvider.select((v) async => v.requireValue),
     );
     final day = ref.watch(todayProvider).requireValue;
-    return ref.watch(sessionRepositoryProvider).sessionFor(
-          day: day,
-          rules: rules,
-        );
+    return ref
+        .watch(sessionRepositoryProvider)
+        .sessionFor(day: day, rules: rules);
   }
 
   /// Record one answer and refresh the session.
@@ -57,23 +56,23 @@ class SessionController extends AsyncNotifier<DailySession> {
     // moment the screen opened.
     final now = await ref.read(trustedNowProvider.notifier).refresh();
 
-    final outcome =
-        await ref.read(sessionRepositoryProvider).submitAnswer(
-              day: day,
-              rules: rules,
-              now: now,
-              task: task,
-              correct: correct,
-              attemptNumber: attemptNumber,
-              msOnTarget: msOnTarget,
-              solutionRevealed: solutionRevealed,
-            );
+    final outcome = await ref
+        .read(sessionRepositoryProvider)
+        .submitAnswer(
+          day: day,
+          rules: rules,
+          now: now,
+          task: task,
+          correct: correct,
+          attemptNumber: attemptNumber,
+          msOnTarget: msOnTarget,
+          solutionRevealed: solutionRevealed,
+        );
 
     state = AsyncData(
-      await ref.read(sessionRepositoryProvider).sessionFor(
-            day: day,
-            rules: rules,
-          ),
+      await ref
+          .read(sessionRepositoryProvider)
+          .sessionFor(day: day, rules: rules),
     );
     return outcome;
   }

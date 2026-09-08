@@ -1,6 +1,6 @@
 """Article 7 on the server side.
 
-`packages/nojoumi_subscription` already proves the *device's* reading of Article 7
+`packages/lunio_subscription` already proves the *device's* reading of Article 7
 with 42 tests. This file proves the *server's* — and Art. 7.6 makes the server the
 authority, so the two must agree. Where a rule appears in both, the test name says
 so, and a divergence between them is a bug in whichever one changed last.

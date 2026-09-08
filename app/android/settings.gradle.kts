@@ -24,3 +24,9 @@ plugins {
 }
 
 include(":app")
+
+// AD-7 — enforcement lives in independent Gradle libraries under native/, not in
+// the app module. Blocking has to keep working while the Flutter engine is dead,
+// so its logic is Kotlin and Dart is a client of it, never a dependency of it.
+include(":blocking")
+project(":blocking").projectDir = file("../../native/blocking")

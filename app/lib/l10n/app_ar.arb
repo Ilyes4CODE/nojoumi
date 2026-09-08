@@ -1,6 +1,6 @@
 {
   "@@locale": "ar",
-  "appName": "نجومي",
+  "appName": "Lunio",
   "@appName": {
     "description": "The app name, shown in the launcher and headers."
   },
@@ -91,9 +91,9 @@
   "save": "حفظ",
   "retry": "إعادة المحاولة",
   "offlineNotice": "لا يوجد اتصال بالإنترنت",
-  "setupTitle": "إعداد نجومي",
-  "setupWelcomeTitle": "أهلاً بك في نجومي",
-  "setupWelcomeBody": "نجومي يحوّل وقت اللعب إلى شيء يكسبه طفلك بالمذاكرة، لا إلى شيء تسحبه منه. الإعداد ثلاث خطوات، ويمكنك تغيير كل شيء لاحقاً.",
+  "setupTitle": "إعداد Lunio",
+  "setupWelcomeTitle": "أهلاً بك في Lunio",
+  "setupWelcomeBody": "Lunio يحوّل وقت اللعب إلى شيء يكسبه طفلك بالمذاكرة، لا إلى شيء تسحبه منه. الإعداد ثلاث خطوات، ويمكنك تغيير كل شيء لاحقاً.",
   "setupStepOf": "الخطوة {current} من {total}",
   "@setupStepOf": {
     "placeholders": {
@@ -117,10 +117,10 @@
   "setupProtectionTitle": "الحجب ووضع الشاشة الرئيسية",
   "setupProtectionBody": "هاتان الميزتان اختياريتان تماماً، والتطبيق يعمل بكامل مزاياه بدونهما: الدروس والبطاقات والنجوم والاختبار الأسبوعي ولوحة الوالد كلها تعمل.",
   "setupEnableBlocking": "تفعيل حجب الألعاب",
-  "setupEnableLauncher": "جعل نجومي الشاشة الرئيسية",
+  "setupEnableLauncher": "جعل Lunio الشاشة الرئيسية",
   "setupSkipProtection": "أكمل بدونهما الآن",
   "setupDisclosureTitle": "إفصاح مهم قبل منح الإذن",
-  "setupDisclosureBody": "لتفعيل الحجب، يحتاج نجومي إلى خدمة إمكانية الوصول (Accessibility). يستعملها التطبيق لغرض واحد فقط: معرفة أي تطبيق ظهر على الشاشة الآن، ليغلق الألعاب المحجوبة عند نفاد وقت اللعب.\n\nلا يقرأ نجومي محتوى الشاشة، ولا كلمات المرور، ولا الرسائل، ولا يسجّل ما تكتبه، ولا يرسل أي شيء من هذا إلى أي خادم. يمكنك إيقاف الخدمة في أي وقت من إعدادات الهاتف.",
+  "setupDisclosureBody": "لتفعيل الحجب، يحتاج Lunio إلى خدمة إمكانية الوصول (Accessibility). يستعملها التطبيق لغرض واحد فقط: معرفة أي تطبيق ظهر على الشاشة الآن، ليغلق الألعاب المحجوبة عند نفاد وقت اللعب.\n\nلا يقرأ Lunio محتوى الشاشة، ولا كلمات المرور، ولا الرسائل، ولا يسجّل ما تكتبه، ولا يرسل أي شيء من هذا إلى أي خادم. يمكنك إيقاف الخدمة في أي وقت من إعدادات الهاتف.",
   "setupDisclosureConsent": "قرأت الإفصاح وأوافق كوليّ أمر",
   "setupDisclosureDecline": "لا، أكمل بدون حجب",
   "setupFinish": "ابدأ",
@@ -159,5 +159,345 @@
   "next": "التالي",
   "back": "رجوع",
   "skip": "تخطٍّ",
-  "notNow": "ليس الآن"
+  "notNow": "ليس الآن",
+  "pinLockedFor": "محاولات كثيرة. أعد المحاولة بعد {seconds} ثانية.",
+  "@pinLockedFor": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "parentOverview": "نظرة عامة",
+  "parentStarsToday": "نجوم اليوم",
+  "parentEarnedToday": "كسبها الطفل",
+  "parentGrantedToday": "منحتَها أنت",
+  "parentCeilingUsed": "من السقف اليومي",
+  "parentPlayUsed": "وقت اللعب المستهلك",
+  "parentStreak": "المواظبة",
+  "parentAdjustTitle": "منح أو خصم",
+  "parentAdjustBody": "سلطتك فوق النظام: المنح والخصم لا يخضعان للسقف اليومي، ويعملان حتى لو كانت ساعة الهاتف غير موثوقة.",
+  "parentAdjustAmount": "عدد النجوم",
+  "parentAdjustNote": "السبب (اختياري)",
+  "parentGrantDone": "مُنحت {stars} نجمة",
+  "@parentGrantDone": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      }
+    }
+  },
+  "parentDeductDone": "خُصمت {stars} نجمة",
+  "@parentDeductDone": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      }
+    }
+  },
+  "parentDeductTooMuch": "لا يمكن خصم أكثر من الرصيد الحالي",
+  "parentSettingsTitle": "الأرقام التي تتحكّم فيها",
+  "parentSettingsBody": "كل قيمة هنا لها مدى محدّد في ملحق العقد. القيم خارج المدى تُرفض ولا تُقرّب.",
+  "parentRangeHint": "من {min} إلى {max}",
+  "@parentRangeHint": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "parentDailyPlayMinutes": "دقائق اللعب اليومية",
+  "parentDailyPlayHint": "السقف اليومي × قيمة النجمة",
+  "parentQuestionsPerDay": "عدد أسئلة المراجعة يومياً",
+  "parentWelcomeBalance": "الرصيد الترحيبي",
+  "parentExpiryWeekday": "يوم الاختبار الأسبوعي",
+  "parentPlayPausedOn": "اللعب موقوف الآن",
+  "parentPlayPausedOff": "اللعب مسموح",
+  "parentBlockingSection": "الحجب والشاشة الرئيسية",
+  "parentLedgerTitle": "سجلّ النجوم",
+  "parentLedgerEmpty": "لا حركات بعد",
+  "parentWhyNoStar": "لماذا لم تُمنح نجمة؟",
+  "parentSaved": "حُفظ",
+  "parentInvalidValue": "قيمة غير مقبولة: {reason}",
+  "@parentInvalidValue": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerCardFirstTime": "بطاقة صحيحة أول مرة",
+  "ledgerCardReview": "بطاقة في مراجعة",
+  "ledgerReviewQuestion": "سؤال مراجعة صحيح",
+  "ledgerSessionBonus": "مكافأة إكمال الجلسة",
+  "ledgerStreakBonus": "مكافأة المواظبة",
+  "ledgerWeeklyTest": "الاختبار الأسبوعي",
+  "ledgerWelcomeGrant": "رصيد ترحيبي",
+  "ledgerParentGrant": "منحة من الوالد",
+  "ledgerParentDeduct": "خصم من الوالد",
+  "ledgerExpiry": "انتهاء صلاحية الرصيد",
+  "weekdayMonday": "الاثنين",
+  "weekdayTuesday": "الثلاثاء",
+  "weekdayWednesday": "الأربعاء",
+  "weekdayThursday": "الخميس",
+  "weekdayFriday": "الجمعة",
+  "weekdaySaturday": "السبت",
+  "weekdaySunday": "الأحد",
+  "rejectUntrustedClock": "ساعة الهاتف غير موثوقة (المادة 6.8)",
+  "rejectWrongAnswer": "إجابة خاطئة (المادة 6.1)",
+  "rejectSolutionRevealed": "كُشف الحل قبل الإجابة (المادة 6.1)",
+  "rejectNotFirstAttempt": "ليست المحاولة الأولى (المادة 6.1)",
+  "rejectAlreadyCountedToday": "احتُسبت في اليوم نفسه (المادة 6.2)",
+  "rejectBelowMinimumTime": "الوقت على البطاقة أقل من الحد الأدنى (المادة 6.3)",
+  "rejectDailyCeilingReached": "استُنفد السقف اليومي (المادة 6.4)",
+  "rejectAlreadyAwardedToday": "مُنحت هذه المكافأة اليوم",
+  "rejectSessionIncomplete": "الجلسة اليومية لم تكتمل (المادة 6.5)",
+  "rejectStreakTooShort": "المواظبة أقل من يومين متتاليين (المادة 5)",
+  "accountTitle": "حساب الوالد",
+  "accountWhy": "الحساب لازم لتوليد دروس جديدة فقط. الحجب والنجوم والدروس المحفوظة تعمل بدونه.",
+  "signIn": "تسجيل الدخول",
+  "signUp": "إنشاء حساب",
+  "signOut": "تسجيل الخروج",
+  "emailLabel": "البريد الإلكتروني",
+  "passwordLabel": "كلمة المرور",
+  "phoneOptional": "رقم الهاتف (اختياري)",
+  "noAccountYet": "ليس لديك حساب؟ أنشئ واحداً",
+  "haveAccountAlready": "لديك حساب؟ سجّل الدخول",
+  "signedInAs": "مسجَّل الدخول بـ{email}",
+  "@signedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "signInRequired": "سجّل الدخول لتوليد درس جديد",
+  "serverNotConfigured": "لم يُضبط عنوان الخادم في هذه النسخة.",
+  "captureFromCamera": "التقط بالكاميرا",
+  "captureFromGallery": "اختر من المعرض",
+  "captureIntro": "صوّر صفحة واحدة من كتاب طفلك. تُرسَل الصورة للمعالجة ثم تُحذف من الخادم فوراً، ولا تُحفظ إلا على هذا الهاتف.",
+  "processingHint": "قد تستغرق بضع ثوانٍ",
+  "reviewLesson": "مراجعة الدرس",
+  "summaryHeading": "الملخّص",
+  "cardsHeading": "بطاقات الحفظ",
+  "questionsHeading": "أسئلة المراجعة",
+  "lessonTitleLabel": "عنوان الدرس",
+  "lessonTitleHint": "مثال: الحروف العربية",
+  "subjectOptional": "المادة (اختياري)",
+  "saveLesson": "حفظ الدرس",
+  "discardLesson": "تجاهل",
+  "lessonSaved": "حُفظ الدرس: {cards} بطاقة و{questions} سؤال",
+  "@lessonSaved": {
+    "placeholders": {
+      "cards": {
+        "type": "String"
+      },
+      "questions": {
+        "type": "String"
+      }
+    }
+  },
+  "retakePhoto": "أعد التصوير",
+  "lessonsTitle": "الدروس",
+  "lessonsEmpty": "لم يُلتقط أي درس بعد",
+  "lessonCardsCount": "{count} بطاقة",
+  "@lessonCardsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "imagesDeleted": "حُذفت الصور",
+  "untitledLesson": "درس بلا عنوان",
+  "purgeDoneTitle": "حُذفت صور هذا الأسبوع",
+  "purgeDoneBody": "حُذفت الصور والتمارين من الهاتف. الملخّصات والبطاقات والنتائج محفوظة.",
+  "weeklyTestDue": "حان موعد الاختبار الأسبوعي",
+  "weeklyTestStart": "ابدأ الاختبار",
+  "subscriptionPlan": "الخطة",
+  "subscriptionDaysLeft": "الأيام المتبقّية",
+  "startTrial": "ابدأ الفترة التجريبية",
+  "trialOncePerDevice": "سبعة أيام، مرّة واحدة لكل جهاز",
+  "activationHelp": "تحصل على الرمز بعد الدفع على صفحة الويب.",
+  "renewNotice": "للتجديد، استعمل صفحة الدفع المرتبطة بحسابك.",
+  "activationDone": "تمّ التفعيل",
+  "planMonthly": "شهرية",
+  "planAnnual": "سنوية",
+  "planTrial": "تجريبية",
+  "aiPausedTitle": "توليد الدروس الجديدة متوقّف",
+  "blockingTitle": "الحجب والألعاب",
+  "blockingIntro": "يمنع Lunio فتح الألعاب التي تختارها عندما ينفد وقت اللعب. باقي الهاتف يبقى مفتوحًا كالعادة.",
+  "blockingUnavailable": "الحجب متاح على أندرويد فقط. باقي التطبيق يعمل هنا بشكل كامل.",
+  "blockingEnableSwitch": "تفعيل حجب الألعاب",
+  "blockingReady": "الحجب يعمل",
+  "blockingIncomplete": "ينقص إذن واحد على الأقل",
+  "blockingOff": "الحجب موقوف",
+  "permAccessibility": "خدمة إمكانية الوصول",
+  "permAccessibilityBody": "بدونها لا يعرف Lunio أي تطبيق فُتح، ولا يُحجب شيء.",
+  "permOverlay": "الرسم فوق التطبيقات",
+  "permOverlayBody": "بدونها يعود الهاتف إلى الشاشة الرئيسية دون أن يفهم الطفل السبب.",
+  "permNotifications": "الإشعارات",
+  "permNotificationsBody": "إشعار دائم صامت يبقي محرّك الحجب حيًّا.",
+  "permAutostart": "التشغيل التلقائي",
+  "permAutostartBody": "على أجهزة {brand} قد يمنع النظام عودة الحجب بعد إعادة التشغيل ما لم تسمح بذلك يدويًا.",
+  "@permAutostartBody": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "permGranted": "مُفعّل",
+  "permMissing": "مطلوب",
+  "permOpen": "افتح",
+  "blockingApps": "الألعاب المحجوبة",
+  "blockingAppsCount": "{count} تطبيق محجوب",
+  "@blockingAppsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "blockingAppsEmpty": "لم تختر أي لعبة بعد",
+  "blockingAppsHint": "اختر التطبيقات التي تريد أن تكلّف نجومًا. البقية تبقى مفتوحة دائمًا.",
+  "blockingAppsSearch": "ابحث عن تطبيق",
+  "blockingAppsLoading": "جارٍ قراءة التطبيقات المثبّتة",
+  "blockingProtectedNote": "الإعدادات والهاتف والرسائل ولوحة المفاتيح وLunio نفسه لا يمكن حجبها أبدًا.",
+  "blockingDeviceLine": "{brand} · أندرويد API {sdk}",
+  "@blockingDeviceLine": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      },
+      "sdk": {
+        "type": "String"
+      }
+    }
+  },
+  "setupWelcomeHeadline": "أهلاً بك في",
+  "setupWelcomeLine1": "حوّل وقت اللعب إلى وقت مفيد وممتع.",
+  "setupWelcomeLine2": "مع Lunio، يتعلّم طفلك خطوة بخطوة من خلال أنشطة بسيطة وتفاعلية مناسبة لمستواه العمري.",
+  "setupWelcomePillarSafe": "آمن ومناسب",
+  "setupWelcomePillarProgress": "تقدّم مستمر",
+  "setupWelcomePillarGoals": "أهداف واضحة",
+  "setupAccountTitle": "حساب ولي الأمر",
+  "setupAccountBody": "الحساب لولي الأمر وحده، ويُستعمل لشيئين فقط: توليد الدروس الجديدة من الصور، والاشتراك. لا يُنشأ للطفل أي حساب، ولا تُرسل أي من بياناته إلى الخادم.",
+  "setupAccountRequired": "الحساب مطلوب لإتمام الإعداد.",
+  "setupTrialStarted": "بدأت فترتك التجريبية: 7 أيام بكل المزايا.",
+  "setupTrialAlready": "استُعملت الفترة التجريبية على هذا الجهاز من قبل.",
+  "serverUnreachable": "لا يمكن الوصول إلى الخادم",
+  "serverRetry": "أعد المحاولة",
+  "serverAddress": "العنوان: {url}",
+  "@serverAddress": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "serverDegraded": "الخادم يعمل لكن قاعدة بياناته لا تستجيب",
+  "oneAccountPerDevice": "حساب واحد لكل هاتف. لتغييره، احذف بيانات التطبيق.",
+  "dialogWelcomeTitle": "أهلاً بك في Lunio",
+  "dialogWelcomeBackTitle": "مرحبًا بعودتك",
+  "dialogSetupRemains": "يبقى على هذا الهاتف خطوتان: المستوى الدراسي ورمز ولي الأمر. لا يُحفظان على الخادم أبدًا، لذا يُضبطان على كل جهاز.",
+  "dialogContinue": "متابعة",
+  "dialogStartNow": "ابدأ الآن",
+  "cardRemembered": "أحسنت، تذكّرتها",
+  "cardNotYet": "لا بأس — ستعود إليك قريبًا",
+  "cardRevealedNote": "انظر إليها جيّدًا، وستراها مرّة أخرى",
+  "questionRight": "إجابة صحيحة",
+  "questionShowsAnswer": "الإجابة الصحيحة هي المعلَّمة بالأخضر",
+  "buyActivationCode": "احصل على رمز تفعيل",
+  "buyOpensBrowser": "يفتح صفحة الدفع في المتصفّح. الدفع يتمّ خارج التطبيق على صفحة Chargily الآمنة، ويعود إليك رمز تُدخله هنا.",
+  "permBattery": "تشغيل غير مقيّد",
+  "permBatteryBody": "بدونه يُجمّد النظام التطبيق أثناء اللعب، فيتوقّف العدّاد ولا تُغلق اللعبة في وقتها.",
+  "signedInSubscription": "اشتراكك الحالي: {state}",
+  "@signedInSubscription": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "signedInNothingNew": "لم يتغيّر شيء في حسابك — سجّلنا دخولك فقط.",
+  "blockingNotRunningTitle": "الحجب مُفعَّل لكنّه لا يعمل",
+  "blockingNotRunningBody": "خدمة إمكانية الوصول متوقّفة، فلا يُحجب شيء ولا يُحسب وقت اللعب. يحدث هذا بعد كل تحديث للتطبيق.",
+  "blockingNotRunningAction": "أعد تفعيلها",
+  "lessonIntroHeading": "قبل أن نبدأ",
+  "lessonIntroRead": "اقرأ ملخّص الدرس جيّدًا، ثمّ انتقل إلى البطاقات",
+  "lessonIntroWait": "يمكنك المتابعة بعد {seconds} ثانية",
+  "@lessonIntroWait": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "lessonIntroStart": "ابدأ البطاقات",
+  "cardPickAnswer": "اختر الإجابة الصحيحة",
+  "myLessons": "دروسي",
+  "activatedTitle": "تمّ تفعيل اشتراكك",
+  "activatedUntil": "سارٍ حتى {date}",
+  "@activatedUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "activatedBody": "صار بإمكانك تصوير دروس جديدة وتوليدها. أمّا الحجب والنجوم والدروس المحفوظة فتعمل دائماً، باشتراك أو بدونه.",
+  "questionAgain": "سؤال تعيده",
+  "parentFreePlayTitle": "وقت لعب حرّ",
+  "parentFreePlayBody": "امنح طفلك وقت لعب مباشرة. يُضاف إلى رصيده دون أن يمنحه نجومًا، وينتهي بانتهاء اليوم.",
+  "parentFreePlayGranted": "الممنوح اليوم: {duration}",
+  "@parentFreePlayGranted": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "parentFreePlayAdded": "أُضيف {duration} لعبًا حرًّا",
+  "@parentFreePlayAdded": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "parentPlayRemaining": "المتبقّي من وقت اللعب",
+  "sectionComplete": "أحسنت! أنهيتَ هذا القسم",
+  "lessonProgress": "{done} من {total}",
+  "@lessonProgress": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lessonAllDone": "أنهيتَه",
+  "lessonQuestionsCount": "{count} سؤال",
+  "@lessonQuestionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionLocked": "أنهِ بطاقات الحفظ أوّلًا",
+  "cardStayWith": "تأمّلها {seconds} ثانية",
+  "@cardStayWith": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  }
 }

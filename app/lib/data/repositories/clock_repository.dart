@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import 'package:nojoumi_time/nojoumi_time.dart';
+import 'package:lunio_time/lunio_time.dart';
 
 import '../../platform/clock_source.dart';
 import '../local/database.dart';
@@ -15,10 +15,13 @@ import '../local/database.dart';
 /// That is the point: the forward-only high-water mark and the tamper counter
 /// only work if a tampered reading is recorded, not discarded.
 class ClockRepository {
-  ClockRepository(this._db, this._source, {TrustedClock clock = const TrustedClock()})
-      : _clock = clock;
+  ClockRepository(
+    this._db,
+    this._source, {
+    TrustedClock clock = const TrustedClock(),
+  }) : _clock = clock;
 
-  final NojoumiDatabase _db;
+  final LunioDatabase _db;
   final ClockSource _source;
   final TrustedClock _clock;
 
@@ -69,9 +72,9 @@ class ClockRepository {
   }
 
   Future<ClockState> readState() async {
-    final row = await (_db.select(_db.clockStates)
-          ..where((t) => t.id.equals(_singletonId)))
-        .getSingle();
+    final row = await (_db.select(
+      _db.clockStates,
+    )..where((t) => t.id.equals(_singletonId))).getSingle();
     return ClockState(
       anchorServerEpochMs: row.anchorServerEpochMs,
       anchorElapsedRealtimeMs: row.anchorElapsedRealtimeMs,
@@ -85,8 +88,9 @@ class ClockRepository {
   }
 
   Future<void> _writeState(ClockState state) async {
-    await (_db.update(_db.clockStates)..where((t) => t.id.equals(_singletonId)))
-        .write(
+    await (_db.update(
+      _db.clockStates,
+    )..where((t) => t.id.equals(_singletonId))).write(
       ClockStatesCompanion(
         anchorServerEpochMs: Value(state.anchorServerEpochMs),
         anchorElapsedRealtimeMs: Value(state.anchorElapsedRealtimeMs),
@@ -104,7 +108,9 @@ class ClockRepository {
   /// bytes, never anything about the child (Art. 14).
   Future<void> _logEvent(String type, String detail) async {
     final state = await readState();
-    await _db.into(_db.eventLog).insert(
+    await _db
+        .into(_db.eventLog)
+        .insert(
           EventLogCompanion.insert(
             type: type,
             detail: Value(detail),

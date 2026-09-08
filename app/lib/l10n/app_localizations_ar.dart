@@ -9,7 +9,7 @@ class AppL10nAr extends AppL10n {
   AppL10nAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appName => 'نجومي';
+  String get appName => 'Lunio';
 
   @override
   String get starsBalance => 'رصيدك';
@@ -199,14 +199,14 @@ class AppL10nAr extends AppL10n {
   String get offlineNotice => 'لا يوجد اتصال بالإنترنت';
 
   @override
-  String get setupTitle => 'إعداد نجومي';
+  String get setupTitle => 'إعداد Lunio';
 
   @override
-  String get setupWelcomeTitle => 'أهلاً بك في نجومي';
+  String get setupWelcomeTitle => 'أهلاً بك في Lunio';
 
   @override
   String get setupWelcomeBody =>
-      'نجومي يحوّل وقت اللعب إلى شيء يكسبه طفلك بالمذاكرة، لا إلى شيء تسحبه منه. الإعداد ثلاث خطوات، ويمكنك تغيير كل شيء لاحقاً.';
+      'Lunio يحوّل وقت اللعب إلى شيء يكسبه طفلك بالمذاكرة، لا إلى شيء تسحبه منه. الإعداد ثلاث خطوات، ويمكنك تغيير كل شيء لاحقاً.';
 
   @override
   String setupStepOf(String current, String total) {
@@ -253,7 +253,7 @@ class AppL10nAr extends AppL10n {
   String get setupEnableBlocking => 'تفعيل حجب الألعاب';
 
   @override
-  String get setupEnableLauncher => 'جعل نجومي الشاشة الرئيسية';
+  String get setupEnableLauncher => 'جعل Lunio الشاشة الرئيسية';
 
   @override
   String get setupSkipProtection => 'أكمل بدونهما الآن';
@@ -263,7 +263,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get setupDisclosureBody =>
-      'لتفعيل الحجب، يحتاج نجومي إلى خدمة إمكانية الوصول (Accessibility). يستعملها التطبيق لغرض واحد فقط: معرفة أي تطبيق ظهر على الشاشة الآن، ليغلق الألعاب المحجوبة عند نفاد وقت اللعب.\n\nلا يقرأ نجومي محتوى الشاشة، ولا كلمات المرور، ولا الرسائل، ولا يسجّل ما تكتبه، ولا يرسل أي شيء من هذا إلى أي خادم. يمكنك إيقاف الخدمة في أي وقت من إعدادات الهاتف.';
+      'لتفعيل الحجب، يحتاج Lunio إلى خدمة إمكانية الوصول (Accessibility). يستعملها التطبيق لغرض واحد فقط: معرفة أي تطبيق ظهر على الشاشة الآن، ليغلق الألعاب المحجوبة عند نفاد وقت اللعب.\n\nلا يقرأ Lunio محتوى الشاشة، ولا كلمات المرور، ولا الرسائل، ولا يسجّل ما تكتبه، ولا يرسل أي شيء من هذا إلى أي خادم. يمكنك إيقاف الخدمة في أي وقت من إعدادات الهاتف.';
 
   @override
   String get setupDisclosureConsent => 'قرأت الإفصاح وأوافق كوليّ أمر';
@@ -325,4 +325,632 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get notNow => 'ليس الآن';
+
+  @override
+  String pinLockedFor(String seconds) {
+    return 'محاولات كثيرة. أعد المحاولة بعد $seconds ثانية.';
+  }
+
+  @override
+  String get parentOverview => 'نظرة عامة';
+
+  @override
+  String get parentStarsToday => 'نجوم اليوم';
+
+  @override
+  String get parentEarnedToday => 'كسبها الطفل';
+
+  @override
+  String get parentGrantedToday => 'منحتَها أنت';
+
+  @override
+  String get parentCeilingUsed => 'من السقف اليومي';
+
+  @override
+  String get parentPlayUsed => 'وقت اللعب المستهلك';
+
+  @override
+  String get parentStreak => 'المواظبة';
+
+  @override
+  String get parentAdjustTitle => 'منح أو خصم';
+
+  @override
+  String get parentAdjustBody =>
+      'سلطتك فوق النظام: المنح والخصم لا يخضعان للسقف اليومي، ويعملان حتى لو كانت ساعة الهاتف غير موثوقة.';
+
+  @override
+  String get parentAdjustAmount => 'عدد النجوم';
+
+  @override
+  String get parentAdjustNote => 'السبب (اختياري)';
+
+  @override
+  String parentGrantDone(String stars) {
+    return 'مُنحت $stars نجمة';
+  }
+
+  @override
+  String parentDeductDone(String stars) {
+    return 'خُصمت $stars نجمة';
+  }
+
+  @override
+  String get parentDeductTooMuch => 'لا يمكن خصم أكثر من الرصيد الحالي';
+
+  @override
+  String get parentSettingsTitle => 'الأرقام التي تتحكّم فيها';
+
+  @override
+  String get parentSettingsBody =>
+      'كل قيمة هنا لها مدى محدّد في ملحق العقد. القيم خارج المدى تُرفض ولا تُقرّب.';
+
+  @override
+  String parentRangeHint(String min, String max) {
+    return 'من $min إلى $max';
+  }
+
+  @override
+  String get parentDailyPlayMinutes => 'دقائق اللعب اليومية';
+
+  @override
+  String get parentDailyPlayHint => 'السقف اليومي × قيمة النجمة';
+
+  @override
+  String get parentQuestionsPerDay => 'عدد أسئلة المراجعة يومياً';
+
+  @override
+  String get parentWelcomeBalance => 'الرصيد الترحيبي';
+
+  @override
+  String get parentExpiryWeekday => 'يوم الاختبار الأسبوعي';
+
+  @override
+  String get parentPlayPausedOn => 'اللعب موقوف الآن';
+
+  @override
+  String get parentPlayPausedOff => 'اللعب مسموح';
+
+  @override
+  String get parentBlockingSection => 'الحجب والشاشة الرئيسية';
+
+  @override
+  String get parentLedgerTitle => 'سجلّ النجوم';
+
+  @override
+  String get parentLedgerEmpty => 'لا حركات بعد';
+
+  @override
+  String get parentWhyNoStar => 'لماذا لم تُمنح نجمة؟';
+
+  @override
+  String get parentSaved => 'حُفظ';
+
+  @override
+  String parentInvalidValue(String reason) {
+    return 'قيمة غير مقبولة: $reason';
+  }
+
+  @override
+  String get ledgerCardFirstTime => 'بطاقة صحيحة أول مرة';
+
+  @override
+  String get ledgerCardReview => 'بطاقة في مراجعة';
+
+  @override
+  String get ledgerReviewQuestion => 'سؤال مراجعة صحيح';
+
+  @override
+  String get ledgerSessionBonus => 'مكافأة إكمال الجلسة';
+
+  @override
+  String get ledgerStreakBonus => 'مكافأة المواظبة';
+
+  @override
+  String get ledgerWeeklyTest => 'الاختبار الأسبوعي';
+
+  @override
+  String get ledgerWelcomeGrant => 'رصيد ترحيبي';
+
+  @override
+  String get ledgerParentGrant => 'منحة من الوالد';
+
+  @override
+  String get ledgerParentDeduct => 'خصم من الوالد';
+
+  @override
+  String get ledgerExpiry => 'انتهاء صلاحية الرصيد';
+
+  @override
+  String get weekdayMonday => 'الاثنين';
+
+  @override
+  String get weekdayTuesday => 'الثلاثاء';
+
+  @override
+  String get weekdayWednesday => 'الأربعاء';
+
+  @override
+  String get weekdayThursday => 'الخميس';
+
+  @override
+  String get weekdayFriday => 'الجمعة';
+
+  @override
+  String get weekdaySaturday => 'السبت';
+
+  @override
+  String get weekdaySunday => 'الأحد';
+
+  @override
+  String get rejectUntrustedClock => 'ساعة الهاتف غير موثوقة (المادة 6.8)';
+
+  @override
+  String get rejectWrongAnswer => 'إجابة خاطئة (المادة 6.1)';
+
+  @override
+  String get rejectSolutionRevealed => 'كُشف الحل قبل الإجابة (المادة 6.1)';
+
+  @override
+  String get rejectNotFirstAttempt => 'ليست المحاولة الأولى (المادة 6.1)';
+
+  @override
+  String get rejectAlreadyCountedToday => 'احتُسبت في اليوم نفسه (المادة 6.2)';
+
+  @override
+  String get rejectBelowMinimumTime =>
+      'الوقت على البطاقة أقل من الحد الأدنى (المادة 6.3)';
+
+  @override
+  String get rejectDailyCeilingReached => 'استُنفد السقف اليومي (المادة 6.4)';
+
+  @override
+  String get rejectAlreadyAwardedToday => 'مُنحت هذه المكافأة اليوم';
+
+  @override
+  String get rejectSessionIncomplete => 'الجلسة اليومية لم تكتمل (المادة 6.5)';
+
+  @override
+  String get rejectStreakTooShort =>
+      'المواظبة أقل من يومين متتاليين (المادة 5)';
+
+  @override
+  String get accountTitle => 'حساب الوالد';
+
+  @override
+  String get accountWhy =>
+      'الحساب لازم لتوليد دروس جديدة فقط. الحجب والنجوم والدروس المحفوظة تعمل بدونه.';
+
+  @override
+  String get signIn => 'تسجيل الدخول';
+
+  @override
+  String get signUp => 'إنشاء حساب';
+
+  @override
+  String get signOut => 'تسجيل الخروج';
+
+  @override
+  String get emailLabel => 'البريد الإلكتروني';
+
+  @override
+  String get passwordLabel => 'كلمة المرور';
+
+  @override
+  String get phoneOptional => 'رقم الهاتف (اختياري)';
+
+  @override
+  String get noAccountYet => 'ليس لديك حساب؟ أنشئ واحداً';
+
+  @override
+  String get haveAccountAlready => 'لديك حساب؟ سجّل الدخول';
+
+  @override
+  String signedInAs(String email) {
+    return 'مسجَّل الدخول بـ$email';
+  }
+
+  @override
+  String get signInRequired => 'سجّل الدخول لتوليد درس جديد';
+
+  @override
+  String get serverNotConfigured => 'لم يُضبط عنوان الخادم في هذه النسخة.';
+
+  @override
+  String get captureFromCamera => 'التقط بالكاميرا';
+
+  @override
+  String get captureFromGallery => 'اختر من المعرض';
+
+  @override
+  String get captureIntro =>
+      'صوّر صفحة واحدة من كتاب طفلك. تُرسَل الصورة للمعالجة ثم تُحذف من الخادم فوراً، ولا تُحفظ إلا على هذا الهاتف.';
+
+  @override
+  String get processingHint => 'قد تستغرق بضع ثوانٍ';
+
+  @override
+  String get reviewLesson => 'مراجعة الدرس';
+
+  @override
+  String get summaryHeading => 'الملخّص';
+
+  @override
+  String get cardsHeading => 'بطاقات الحفظ';
+
+  @override
+  String get questionsHeading => 'أسئلة المراجعة';
+
+  @override
+  String get lessonTitleLabel => 'عنوان الدرس';
+
+  @override
+  String get lessonTitleHint => 'مثال: الحروف العربية';
+
+  @override
+  String get subjectOptional => 'المادة (اختياري)';
+
+  @override
+  String get saveLesson => 'حفظ الدرس';
+
+  @override
+  String get discardLesson => 'تجاهل';
+
+  @override
+  String lessonSaved(String cards, String questions) {
+    return 'حُفظ الدرس: $cards بطاقة و$questions سؤال';
+  }
+
+  @override
+  String get retakePhoto => 'أعد التصوير';
+
+  @override
+  String get lessonsTitle => 'الدروس';
+
+  @override
+  String get lessonsEmpty => 'لم يُلتقط أي درس بعد';
+
+  @override
+  String lessonCardsCount(String count) {
+    return '$count بطاقة';
+  }
+
+  @override
+  String get imagesDeleted => 'حُذفت الصور';
+
+  @override
+  String get untitledLesson => 'درس بلا عنوان';
+
+  @override
+  String get purgeDoneTitle => 'حُذفت صور هذا الأسبوع';
+
+  @override
+  String get purgeDoneBody =>
+      'حُذفت الصور والتمارين من الهاتف. الملخّصات والبطاقات والنتائج محفوظة.';
+
+  @override
+  String get weeklyTestDue => 'حان موعد الاختبار الأسبوعي';
+
+  @override
+  String get weeklyTestStart => 'ابدأ الاختبار';
+
+  @override
+  String get subscriptionPlan => 'الخطة';
+
+  @override
+  String get subscriptionDaysLeft => 'الأيام المتبقّية';
+
+  @override
+  String get startTrial => 'ابدأ الفترة التجريبية';
+
+  @override
+  String get trialOncePerDevice => 'سبعة أيام، مرّة واحدة لكل جهاز';
+
+  @override
+  String get activationHelp => 'تحصل على الرمز بعد الدفع على صفحة الويب.';
+
+  @override
+  String get renewNotice => 'للتجديد، استعمل صفحة الدفع المرتبطة بحسابك.';
+
+  @override
+  String get activationDone => 'تمّ التفعيل';
+
+  @override
+  String get planMonthly => 'شهرية';
+
+  @override
+  String get planAnnual => 'سنوية';
+
+  @override
+  String get planTrial => 'تجريبية';
+
+  @override
+  String get aiPausedTitle => 'توليد الدروس الجديدة متوقّف';
+
+  @override
+  String get blockingTitle => 'الحجب والألعاب';
+
+  @override
+  String get blockingIntro =>
+      'يمنع Lunio فتح الألعاب التي تختارها عندما ينفد وقت اللعب. باقي الهاتف يبقى مفتوحًا كالعادة.';
+
+  @override
+  String get blockingUnavailable =>
+      'الحجب متاح على أندرويد فقط. باقي التطبيق يعمل هنا بشكل كامل.';
+
+  @override
+  String get blockingEnableSwitch => 'تفعيل حجب الألعاب';
+
+  @override
+  String get blockingReady => 'الحجب يعمل';
+
+  @override
+  String get blockingIncomplete => 'ينقص إذن واحد على الأقل';
+
+  @override
+  String get blockingOff => 'الحجب موقوف';
+
+  @override
+  String get permAccessibility => 'خدمة إمكانية الوصول';
+
+  @override
+  String get permAccessibilityBody =>
+      'بدونها لا يعرف Lunio أي تطبيق فُتح، ولا يُحجب شيء.';
+
+  @override
+  String get permOverlay => 'الرسم فوق التطبيقات';
+
+  @override
+  String get permOverlayBody =>
+      'بدونها يعود الهاتف إلى الشاشة الرئيسية دون أن يفهم الطفل السبب.';
+
+  @override
+  String get permNotifications => 'الإشعارات';
+
+  @override
+  String get permNotificationsBody => 'إشعار دائم صامت يبقي محرّك الحجب حيًّا.';
+
+  @override
+  String get permAutostart => 'التشغيل التلقائي';
+
+  @override
+  String permAutostartBody(String brand) {
+    return 'على أجهزة $brand قد يمنع النظام عودة الحجب بعد إعادة التشغيل ما لم تسمح بذلك يدويًا.';
+  }
+
+  @override
+  String get permGranted => 'مُفعّل';
+
+  @override
+  String get permMissing => 'مطلوب';
+
+  @override
+  String get permOpen => 'افتح';
+
+  @override
+  String get blockingApps => 'الألعاب المحجوبة';
+
+  @override
+  String blockingAppsCount(String count) {
+    return '$count تطبيق محجوب';
+  }
+
+  @override
+  String get blockingAppsEmpty => 'لم تختر أي لعبة بعد';
+
+  @override
+  String get blockingAppsHint =>
+      'اختر التطبيقات التي تريد أن تكلّف نجومًا. البقية تبقى مفتوحة دائمًا.';
+
+  @override
+  String get blockingAppsSearch => 'ابحث عن تطبيق';
+
+  @override
+  String get blockingAppsLoading => 'جارٍ قراءة التطبيقات المثبّتة';
+
+  @override
+  String get blockingProtectedNote =>
+      'الإعدادات والهاتف والرسائل ولوحة المفاتيح وLunio نفسه لا يمكن حجبها أبدًا.';
+
+  @override
+  String blockingDeviceLine(String brand, String sdk) {
+    return '$brand · أندرويد API $sdk';
+  }
+
+  @override
+  String get setupWelcomeHeadline => 'أهلاً بك في';
+
+  @override
+  String get setupWelcomeLine1 => 'حوّل وقت اللعب إلى وقت مفيد وممتع.';
+
+  @override
+  String get setupWelcomeLine2 =>
+      'مع Lunio، يتعلّم طفلك خطوة بخطوة من خلال أنشطة بسيطة وتفاعلية مناسبة لمستواه العمري.';
+
+  @override
+  String get setupWelcomePillarSafe => 'آمن ومناسب';
+
+  @override
+  String get setupWelcomePillarProgress => 'تقدّم مستمر';
+
+  @override
+  String get setupWelcomePillarGoals => 'أهداف واضحة';
+
+  @override
+  String get setupAccountTitle => 'حساب ولي الأمر';
+
+  @override
+  String get setupAccountBody =>
+      'الحساب لولي الأمر وحده، ويُستعمل لشيئين فقط: توليد الدروس الجديدة من الصور، والاشتراك. لا يُنشأ للطفل أي حساب، ولا تُرسل أي من بياناته إلى الخادم.';
+
+  @override
+  String get setupAccountRequired => 'الحساب مطلوب لإتمام الإعداد.';
+
+  @override
+  String get setupTrialStarted => 'بدأت فترتك التجريبية: 7 أيام بكل المزايا.';
+
+  @override
+  String get setupTrialAlready =>
+      'استُعملت الفترة التجريبية على هذا الجهاز من قبل.';
+
+  @override
+  String get serverUnreachable => 'لا يمكن الوصول إلى الخادم';
+
+  @override
+  String get serverRetry => 'أعد المحاولة';
+
+  @override
+  String serverAddress(String url) {
+    return 'العنوان: $url';
+  }
+
+  @override
+  String get serverDegraded => 'الخادم يعمل لكن قاعدة بياناته لا تستجيب';
+
+  @override
+  String get oneAccountPerDevice =>
+      'حساب واحد لكل هاتف. لتغييره، احذف بيانات التطبيق.';
+
+  @override
+  String get dialogWelcomeTitle => 'أهلاً بك في Lunio';
+
+  @override
+  String get dialogWelcomeBackTitle => 'مرحبًا بعودتك';
+
+  @override
+  String get dialogSetupRemains =>
+      'يبقى على هذا الهاتف خطوتان: المستوى الدراسي ورمز ولي الأمر. لا يُحفظان على الخادم أبدًا، لذا يُضبطان على كل جهاز.';
+
+  @override
+  String get dialogContinue => 'متابعة';
+
+  @override
+  String get dialogStartNow => 'ابدأ الآن';
+
+  @override
+  String get cardRemembered => 'أحسنت، تذكّرتها';
+
+  @override
+  String get cardNotYet => 'لا بأس — ستعود إليك قريبًا';
+
+  @override
+  String get cardRevealedNote => 'انظر إليها جيّدًا، وستراها مرّة أخرى';
+
+  @override
+  String get questionRight => 'إجابة صحيحة';
+
+  @override
+  String get questionShowsAnswer => 'الإجابة الصحيحة هي المعلَّمة بالأخضر';
+
+  @override
+  String get buyActivationCode => 'احصل على رمز تفعيل';
+
+  @override
+  String get buyOpensBrowser =>
+      'يفتح صفحة الدفع في المتصفّح. الدفع يتمّ خارج التطبيق على صفحة Chargily الآمنة، ويعود إليك رمز تُدخله هنا.';
+
+  @override
+  String get permBattery => 'تشغيل غير مقيّد';
+
+  @override
+  String get permBatteryBody =>
+      'بدونه يُجمّد النظام التطبيق أثناء اللعب، فيتوقّف العدّاد ولا تُغلق اللعبة في وقتها.';
+
+  @override
+  String signedInSubscription(String state) {
+    return 'اشتراكك الحالي: $state';
+  }
+
+  @override
+  String get signedInNothingNew => 'لم يتغيّر شيء في حسابك — سجّلنا دخولك فقط.';
+
+  @override
+  String get blockingNotRunningTitle => 'الحجب مُفعَّل لكنّه لا يعمل';
+
+  @override
+  String get blockingNotRunningBody =>
+      'خدمة إمكانية الوصول متوقّفة، فلا يُحجب شيء ولا يُحسب وقت اللعب. يحدث هذا بعد كل تحديث للتطبيق.';
+
+  @override
+  String get blockingNotRunningAction => 'أعد تفعيلها';
+
+  @override
+  String get lessonIntroHeading => 'قبل أن نبدأ';
+
+  @override
+  String get lessonIntroRead =>
+      'اقرأ ملخّص الدرس جيّدًا، ثمّ انتقل إلى البطاقات';
+
+  @override
+  String lessonIntroWait(String seconds) {
+    return 'يمكنك المتابعة بعد $seconds ثانية';
+  }
+
+  @override
+  String get lessonIntroStart => 'ابدأ البطاقات';
+
+  @override
+  String get cardPickAnswer => 'اختر الإجابة الصحيحة';
+
+  @override
+  String get myLessons => 'دروسي';
+
+  @override
+  String get activatedTitle => 'تمّ تفعيل اشتراكك';
+
+  @override
+  String activatedUntil(String date) {
+    return 'سارٍ حتى $date';
+  }
+
+  @override
+  String get activatedBody =>
+      'صار بإمكانك تصوير دروس جديدة وتوليدها. أمّا الحجب والنجوم والدروس المحفوظة فتعمل دائماً، باشتراك أو بدونه.';
+
+  @override
+  String get questionAgain => 'سؤال تعيده';
+
+  @override
+  String get parentFreePlayTitle => 'وقت لعب حرّ';
+
+  @override
+  String get parentFreePlayBody =>
+      'امنح طفلك وقت لعب مباشرة. يُضاف إلى رصيده دون أن يمنحه نجومًا، وينتهي بانتهاء اليوم.';
+
+  @override
+  String parentFreePlayGranted(String duration) {
+    return 'الممنوح اليوم: $duration';
+  }
+
+  @override
+  String parentFreePlayAdded(String duration) {
+    return 'أُضيف $duration لعبًا حرًّا';
+  }
+
+  @override
+  String get parentPlayRemaining => 'المتبقّي من وقت اللعب';
+
+  @override
+  String get sectionComplete => 'أحسنت! أنهيتَ هذا القسم';
+
+  @override
+  String lessonProgress(String done, String total) {
+    return '$done من $total';
+  }
+
+  @override
+  String get lessonAllDone => 'أنهيتَه';
+
+  @override
+  String lessonQuestionsCount(String count) {
+    return '$count سؤال';
+  }
+
+  @override
+  String get sectionLocked => 'أنهِ بطاقات الحفظ أوّلًا';
+
+  @override
+  String cardStayWith(String seconds) {
+    return 'تأمّلها $seconds ثانية';
+  }
 }

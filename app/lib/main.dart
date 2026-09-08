@@ -9,7 +9,7 @@ import 'features/setup/setup_wizard.dart';
 import 'l10n/app_localizations.dart';
 
 void main() {
-  runApp(const ProviderScope(child: NojoumiApp()));
+  runApp(const ProviderScope(child: LunioApp()));
 }
 
 /// The root widget.
@@ -19,16 +19,16 @@ void main() {
 /// right-to-left by default on a phone set to any language. English exists
 /// because Article 14 requires the privacy policy in both, and because the Play
 /// reviewer reads English.
-class NojoumiApp extends StatelessWidget {
-  const NojoumiApp({super.key});
+class LunioApp extends StatelessWidget {
+  const LunioApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       onGenerateTitle: (context) => AppL10n.of(context)!.appName,
       debugShowCheckedModeBanner: false,
-      theme: NojoumiTheme.light(),
-      darkTheme: NojoumiTheme.dark(),
+      theme: LunioTheme.light(),
+      darkTheme: LunioTheme.dark(),
       localizationsDelegates: const [
         AppL10n.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -48,12 +48,79 @@ class NojoumiApp extends StatelessWidget {
 /// no second branch for "is blocking on": the app must be fully evaluable with
 /// blocking and launcher mode both off, so those flags change what the app
 /// *does*, never which screens exist.
-class _Root extends ConsumerWidget {
+class _Root extends ConsumerStatefulWidget {
   const _Root();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_Root> createState() => _RootState();
+}
+
+class _RootState extends ConsumerState<_Root> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // A cold start after the child was playing: the engine may hold seconds
+    // nobody has written down yet.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _collectPlayTime());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _collectPlayTime();
+  }
+
+  /// Write down the play time the engine measured while Dart was not running.
+  ///
+  /// This is the moment the two halves of Article 4.7 meet. The Kotlin engine
+  /// counts seconds down while a game is in the foreground — it must, because no
+  /// window event fires while a child sits inside one app, and because Flutter is
+  /// not running at all — but the ledger is Dart's and append-only (AD-4). The
+  /// child comes back to Lunio, the app resumes, and the seconds are recorded
+  /// here.
+  ///
+  /// Without it the symptom is precisely what the first hardware run reported:
+  /// the balance on screen does not move while the child plays.
+  ///
+  /// Ordering matters and is easy to get backwards. The drain happens **before**
+  /// the next push, because `blockingSyncProvider` overwrites the engine's copy of
+  /// the remaining balance — seconds still sitting in the tally at that moment
+  /// would be handed back to the child for free. Reading the providers below and
+  /// only then invalidating is what keeps that order.
+  Future<void> _collectPlayTime() async {
+    final day = ref.read(todayProvider).value;
+    final rules = ref.read(starRulesProvider).value;
+    if (day == null || rules == null) return;
+
+    final consumed = await ref
+        .read(blockingRepositoryProvider)
+        .collectPlayTime(day: day, rules: rules);
+
+    // Nothing to say when the child was not playing, and invalidating anyway
+    // would rebuild the whole tree on every resume.
+    if (consumed == null || !mounted) return;
+    ref.invalidate(todayProgressProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
+
+    // Watched here, at the root, and deliberately nowhere else that matters.
+    //
+    // The Kotlin engine enforces against a snapshot it was handed and has no way
+    // to know how stale it is — from inside, a forgotten push and a correct one
+    // are the same value. Subscribing at the root means the push follows the app's
+    // whole lifetime instead of one screen's, so a star earned in the session, a
+    // second of play consumed, a parent grant and the day rolling over all reach
+    // the engine without any of those screens having to remember to say so.
+    ref.watch(blockingSyncProvider);
 
     return settings.when(
       loading: () => const _Splash(),
@@ -70,9 +137,7 @@ class _Splash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
@@ -91,13 +156,13 @@ class _StartupFailure extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: NojoumiSpacing.page,
+        padding: LunioSpacing.page,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline, size: 48),
-              const SizedBox(height: NojoumiSpacing.m),
+              const SizedBox(height: LunioSpacing.m),
               Text(
                 '$error',
                 textAlign: TextAlign.center,

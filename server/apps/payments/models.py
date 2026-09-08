@@ -102,10 +102,22 @@ class WebhookEvent(models.Model):
 
     gateway = models.CharField(max_length=32, default="chargily")
 
-    # The gateway's own event id. Unique, which is what makes replay impossible:
-    # a second delivery of the same event violates the constraint and is recorded
-    # as a duplicate instead of being applied again.
-    event_id = models.CharField(max_length=160, unique=True)
+    # The gateway's own event id. Unique **only across signature-verified rows**,
+    # which is what makes replay impossible without letting a forged request lock
+    # a real payment out.
+    #
+    # A plain `unique=True` was wrong, and wrong in a way that cost money. Every
+    # inbound webhook is recorded including the refused ones, so an unsigned
+    # request carrying a guessed event id consumed the idempotency key; the
+    # genuine delivery of that same event then hit the constraint and was
+    # discarded as a duplicate. The parent had paid, no activation code was ever
+    # issued, and the audit trail said "duplicate" — the one word that would have
+    # sent us looking in the wrong place. Found 2026-08-28 by replaying a forged
+    # signature immediately before a valid one.
+    #
+    # The condition is the whole fix: an unverified request can still be recorded
+    # for the audit trail, and can no longer reserve anything.
+    event_id = models.CharField(max_length=160, db_index=True)
 
     signature_valid = models.BooleanField(default=False)
     outcome = models.CharField(max_length=16, choices=Outcome.choices)
@@ -128,6 +140,15 @@ class WebhookEvent(models.Model):
     class Meta:
         ordering = ("-received_at",)
         indexes = [models.Index(fields=["outcome", "-received_at"])]
+        constraints = [
+            # Article 7.3's idempotency, scoped to events we actually
+            # authenticated. Refused deliveries are audit rows and nothing more.
+            models.UniqueConstraint(
+                fields=["event_id"],
+                condition=models.Q(signature_valid=True),
+                name="unique_verified_webhook_event",
+            )
+        ]
 
     def __str__(self) -> str:
         return f"{self.event_id} -> {self.outcome}"

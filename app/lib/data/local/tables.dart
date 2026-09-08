@@ -30,7 +30,7 @@ enum AppPolicy {
   /// Hidden from the child's home screen entirely.
   hidden,
 
-  /// Never blockable — Nojoumi itself, Settings, the dialer, the current IME.
+  /// Never blockable — Lunio itself, Settings, the dialer, the current IME.
   /// A parental-control app that can lock the parent out of Settings has bricked
   /// the phone (decisions.md D-9).
   protected,
@@ -40,7 +40,7 @@ enum TaskKind { memorize, review, exercise }
 
 enum TaskState { pending, answered, skipped }
 
-/// Why an attempt earned nothing, mirroring `Rejection` in nojoumi_stars.
+/// Why an attempt earned nothing, mirroring `Rejection` in lunio_stars.
 enum RejectionRow {
   none,
   untrustedClock,
@@ -112,9 +112,9 @@ class AppSettings extends Table {
       boolean().withDefault(const Constant(false))();
 
   /// 5–30 cards. Default 12.
-  IntColumn get dailySessionCards => integer().withDefault(const Constant(12))();
+  IntColumn get dailySessionCards =>
+      integer().withDefault(const Constant(0))();
 
-  /// 0–15 questions. Default 5 (D-15).
   IntColumn get dailyQuestionCount =>
       integer().withDefault(const Constant(5))();
 
@@ -139,6 +139,20 @@ class AppSettings extends Table {
   /// Minutes east of UTC. Injected into DayKey rather than read from the device,
   /// so a timezone change cannot silently move the day boundary.
   IntColumn get utcOffsetMinutes => integer().withDefault(const Constant(60))();
+
+  /// A random UUID this app generates once, at first launch.
+  ///
+  /// It anchors two rules that the contract puts on the **device** rather than
+  /// on the account: Article 7.1's free trial, «مرة واحدة لكل جهاز», and the
+  /// one-account-per-phone rule the client asked for on 2026-08-28.
+  ///
+  /// **It identifies an installation, never a person or a child.** Not an
+  /// advertising ID — forbidden for Designed for Families (Art. 15.3); not
+  /// IMEI, serial or MAC, which describe a person's hardware and are
+  /// unavailable to ordinary apps in any case; nothing derived from the child
+  /// (Art. 14). Clearing the app's data produces a new one, and that limitation
+  /// is accepted and documented rather than worked around.
+  TextColumn get installId => text().withDefault(const Constant(''))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -303,6 +317,11 @@ class DayProgressRows extends Table {
   IntColumn get grantedUnits => integer().withDefault(const Constant(0))();
 
   IntColumn get usedPlaySeconds => integer().withDefault(const Constant(0))();
+
+  /// Play seconds the parent handed over directly today — see
+  /// `DayProgress.freePlaySeconds`. Not stars, and never in the star ledger.
+  IntColumn get freePlaySeconds => integer().withDefault(const Constant(0))();
+
   IntColumn get tasksTotal => integer().withDefault(const Constant(0))();
   IntColumn get tasksAnswered => integer().withDefault(const Constant(0))();
   BoolColumn get sessionBonusAwarded =>
@@ -435,6 +454,37 @@ class ClockStates extends Table {
       integer().withDefault(const Constant(0))();
   IntColumn get tamperCount => integer().withDefault(const Constant(0))();
   TextColumn get lastTamperSignal => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Singleton. The parent's JWT pair.
+///
+/// **This is the parent's credential, not the child's, and the child has none.**
+/// Article 14 and AD-6 keep every byte about the child on the device; the server
+/// knows only a parent account, a subscription and transactions. So this table
+/// holds the one thing the app needs to talk to that server, and nothing else.
+///
+/// Stored in the app's private database rather than in a dedicated keystore. The
+/// threat model is a child holding an unrooted phone — root is one of Article 12's
+/// four exclusions — and app-private storage already defeats that. A leaked token
+/// grants the subscription account, never the child's data, because the server has
+/// no child data to grant.
+@DataClassName('AuthTokenRow')
+class AuthTokens extends Table {
+  IntColumn get id => integer().withDefault(const Constant(1))();
+
+  TextColumn get accessToken => text().withDefault(const Constant(''))();
+  TextColumn get refreshToken => text().withDefault(const Constant(''))();
+
+  /// The account the tokens belong to, for the parent's own reference. An email
+  /// is a parent identifier, which Article 14 permits — it forbids identifiers of
+  /// the **child**.
+  TextColumn get email => text().withDefault(const Constant(''))();
+
+  /// Trusted time of the last successful sign-in.
+  IntColumn get signedInAtMs => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

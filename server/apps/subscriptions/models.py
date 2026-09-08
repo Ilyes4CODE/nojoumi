@@ -26,9 +26,30 @@ _CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 _CODE_LENGTH = 10
 
 
-def generate_code() -> str:
+def _random_code() -> str:
     raw = "".join(secrets.choice(_CODE_ALPHABET) for _ in range(_CODE_LENGTH))
     return f"{raw[:5]}-{raw[5:]}"
+
+
+def generate_code() -> str:
+    """A code that is not already in the table.
+
+    31**10 is about 8.2e14, so a collision is vanishingly unlikely — and
+    "vanishingly unlikely" is not "handled". `code` carries a unique constraint,
+    so a collision would raise `IntegrityError` from inside the **webhook**, on a
+    payment that has already succeeded: the parent's money is taken, the gateway
+    gets a 500, and the retry hits the same path. Six tries cost nothing and turn
+    a once-in-a-lifetime 500 into a second random string.
+
+    The last attempt is returned unchecked rather than raising, because at that
+    point the unique constraint is still there to catch it and an exception from
+    a helper is no better than an exception from the insert.
+    """
+    for _ in range(6):
+        candidate = _random_code()
+        if not ActivationCode.objects.filter(code=candidate).exists():
+            return candidate
+    return _random_code()
 
 
 class Subscription(models.Model):
@@ -85,7 +106,7 @@ class Subscription(models.Model):
         """State right now, deriving grace and expiry from the clock.
 
         Mirrors `SubscriptionMachine.effectiveState` in
-        `packages/nojoumi_subscription` deliberately: the app derives the same
+        `packages/lunio_subscription` deliberately: the app derives the same
         thing offline from the signed snapshot, and the two must never disagree.
         """
         now = now or timezone.now()

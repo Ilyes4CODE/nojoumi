@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nojoumi/data/local/database.dart';
-import 'package:nojoumi/data/repositories/session_repository.dart';
-import 'package:nojoumi/data/repositories/star_repository.dart';
-import 'package:nojoumi_stars/nojoumi_stars.dart';
-import 'package:nojoumi_time/nojoumi_time.dart';
+import 'package:lunio/data/local/database.dart';
+import 'package:lunio/data/repositories/session_repository.dart';
+import 'package:lunio/data/repositories/star_repository.dart';
+import 'package:lunio_stars/lunio_stars.dart';
+import 'package:lunio_time/lunio_time.dart';
 
 import 'support/test_db.dart';
 
@@ -16,11 +16,15 @@ import 'support/test_db.dart';
 /// the half that lives on hardware: the camera, the blocking, and whether a
 /// child can actually work the screens.
 void main() {
-  late NojoumiDatabase db;
+  late LunioDatabase db;
   late StarRepository stars;
   late SessionRepository sessions;
 
-  final rules = StarRules();
+  // Cards are off by default since 2026-08-31 (D-85), and this file is where
+  // the card machinery is proved to still work — so it asks for them by name.
+  // If the client reverses the amendment, these are the tests that already say
+  // whether Article 5's first two rows still pay.
+  final rules = StarRules(dailySessionCards: 12);
   final today = DayKey(20500);
 
   const trusted = TrustedInstant(
@@ -386,6 +390,71 @@ void main() {
               'earning');
       expect(outcome.sessionBonus?.rejection, Rejection.untrustedClock);
       expect(await stars.derivedBalanceUnits(today), 0);
+    });
+  });
+
+  group('what the screen is handed for the 2026-08-30 lesson flow', () {
+    test('every task names its lesson, and the lesson brings its summary', () async {
+      // The intro page is chosen by the screen from these two facts alone. If
+      // either goes missing the summary silently stops appearing — and nothing
+      // else breaks, which is exactly the kind of regression that ships.
+      await seedLesson(cardCount: 4, questionCount: 2);
+
+      final session = await sessions.sessionFor(day: today, rules: rules);
+
+      expect(session.tasks, isNotEmpty);
+      for (final task in session.tasks) {
+        expect(task.lessonId, greaterThan(0));
+        expect(session.lessons[task.lessonId], isNotNull);
+      }
+      expect(session.lessons.values.single.summary, 'ملخّص الدرس');
+    });
+
+    test('a card is handed options, and the right one is its own answer', () async {
+      await seedLesson(cardCount: 4, questionCount: 0);
+
+      final session = await sessions.sessionFor(day: today, rules: rules);
+      final cards = session.tasks.whereType<CardTask>().toList();
+
+      expect(cards, isNotEmpty);
+      for (final card in cards) {
+        expect(card.options.isUsable, isTrue);
+        expect(
+          card.options.choices[card.options.correctIndex],
+          card.back,
+          reason: 'the shuffled index must still point at this card\'s answer '
+              '— getting it wrong marks a right answer wrong and withholds a '
+              'star the child earned',
+        );
+        expect(card.options.choices, contains(card.back));
+      }
+    });
+
+    test('a lone card falls back to recall rather than a one-option quiz', () async {
+      // The whole device holds one answer, so there is nothing to choose
+      // between. Painting a single button would award a star for one tap, which
+      // is what Article 6.3 exists to refuse.
+      await seedLesson(cardCount: 1, questionCount: 0);
+
+      final session = await sessions.sessionFor(day: today, rules: rules);
+      final card = session.tasks.whereType<CardTask>().single;
+
+      expect(card.options.isUsable, isFalse);
+    });
+
+    test('the options do not change when the session is read again', () async {
+      // A child who leaves mid-card and comes back must find it as they left
+      // it — and must not be able to reopen it until the options get easy.
+      await seedLesson(cardCount: 5, questionCount: 0);
+
+      final first = await sessions.sessionFor(day: today, rules: rules);
+      final again = await sessions.sessionFor(day: today, rules: rules);
+
+      final a = first.tasks.whereType<CardTask>().first;
+      final b = again.tasks.whereType<CardTask>().first;
+
+      expect(b.options.choices, a.options.choices);
+      expect(b.options.correctIndex, a.options.correctIndex);
     });
   });
 }

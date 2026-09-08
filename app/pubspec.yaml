@@ -1,6 +1,6 @@
-name: nojoumi
+name: lunio
 description: >-
-  نجومي — تطبيق تعليمي تحفيزي للأطفال. Arabic-first, RTL.
+  Lunio — تطبيق تعليمي تحفيزي للأطفال. Arabic-first, RTL.
   The Android app. Contract logic lives in ../packages (AD-1); this app is a
   client of it and of the Kotlin blocking layer, never the owner of a rule.
 publish_to: none
@@ -17,14 +17,14 @@ dependencies:
 
   # AD-1 — every contract rule lives in a pure Dart package, tested without a
   # device. The app imports decisions; it does not make them.
-  nojoumi_stars:
-    path: ../packages/nojoumi_stars
-  nojoumi_time:
-    path: ../packages/nojoumi_time
-  nojoumi_subscription:
-    path: ../packages/nojoumi_subscription
-  nojoumi_sm2:
-    path: ../packages/nojoumi_sm2
+  lunio_stars:
+    path: ../packages/lunio_stars
+  lunio_time:
+    path: ../packages/lunio_time
+  lunio_subscription:
+    path: ../packages/lunio_subscription
+  lunio_sm2:
+    path: ../packages/lunio_sm2
 
   # Art. 3 — state management.
   flutter_riverpod: ^2.6.1
@@ -39,6 +39,10 @@ dependencies:
   # Server calls: the AI proxy and the subscription API. No provider keys, ever.
   dio: ^5.7.0
 
+  # Art. 4.1 — the parent photographs a schoolbook page. `image_picker` covers
+  # both the camera and the gallery, which matters because a page photographed
+  # earlier in better light is a better page than one taken in a hurry.
+  image_picker: ^1.1.2
   # Art. 3 — local notifications only. No FCM in scope.
   flutter_local_notifications: ^17.2.3
 
@@ -61,3 +65,28 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  # Artwork. Registered as directories so a newly delivered file needs no
+  # pubspec edit — see assets/README.md for the expected filenames and the
+  # Article 13 size budget. The app runs correctly with both empty.
+  assets:
+    - assets/illustrations/
+    - assets/icons/
+
+  # Tajawal, chosen by the client on 2026-08-28. Bundled rather than pulled at
+  # runtime by `google_fonts`: the app has to open correctly on a phone with no
+  # network — Article 7.1 keeps blocking, stars and saved lessons working when
+  # the subscription lapses, and a first launch that falls back to the system
+  # font because Wi-Fi is off is a different-looking app for no reason.
+  #
+  # Three weights, ~180 KB total. Enough for body, medium and bold; the display
+  # sizes are the same faces scaled, which is what Tajawal is designed for.
+  # Licensed under the SIL Open Font License — see assets/fonts/OFL.txt.
+  fonts:
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Tajawal-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Tajawal-Bold.ttf
+          weight: 700

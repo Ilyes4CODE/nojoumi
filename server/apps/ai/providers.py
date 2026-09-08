@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import json
+import random
 import logging
 import time
 from typing import Any
@@ -25,7 +26,7 @@ from .processors import (
 )
 from .prompts import SYSTEM_PROMPT, user_prompt
 
-log = logging.getLogger("nojoumi.ai")
+log = logging.getLogger("lunio.ai")
 
 _TIMEOUT_SECONDS = 90
 
@@ -38,6 +39,40 @@ def _completion_budget(card_count: int, question_count: int) -> int:
     tokens before the answer, which Qwen does.
     """
     return 500 + card_count * 50 + question_count * 100
+
+
+
+def _shuffled(question: ReviewQuestion) -> ReviewQuestion:
+    """Move the right answer somewhere unpredictable.
+
+    **Language models put the correct choice first far more often than chance**,
+    and the effect is strong enough to be visible in a handful of lessons — it
+    was reported from the device on 2026-08-30 as the answer *always* being
+    first. Left alone it does not merely look sloppy: a child works out within a
+    day that the top option is usually right, the review stops measuring recall,
+    and Article 5's two stars for a correct review question are paid for a
+    pattern rather than for knowing anything.
+
+    Shuffled **here**, once, on the way out of the provider. Every consumer is
+    downstream of this point — the daily session, the weekly test, and anything
+    added later — so there is no second place to remember. Doing it at display
+    time instead would put the same logic in two screens and let one of them
+    drift.
+
+    `random`, not `secrets`: this is presentation order, not a secret. Nothing is
+    protected by it and nobody gains by predicting it — the answer is on the
+    screen either way.
+    """
+    order = list(range(len(question.choices)))
+    random.shuffle(order)
+    return ReviewQuestion(
+        prompt=question.prompt,
+        choices=tuple(question.choices[i] for i in order),
+        # Where the right answer *landed*, which is not the same as where it
+        # came from: `order` maps new position -> old, so the new index is the
+        # position holding the old one.
+        correct_index=order.index(question.correct_index),
+    )
 
 
 def _parse_duration(value: str) -> float | None:
@@ -128,10 +163,12 @@ def _parse_payload(raw: str, *, provider: str, model: str, latency_ms: int,
         if len(choices) < 2 or not isinstance(idx, int) or not 0 <= idx < len(choices):
             continue  # drop a malformed question rather than fail the lesson
         questions.append(
-            ReviewQuestion(
-                prompt=str(q.get("prompt", "")).strip(),
-                choices=choices,
-                correct_index=idx,
+            _shuffled(
+                ReviewQuestion(
+                    prompt=str(q.get("prompt", "")).strip(),
+                    choices=choices,
+                    correct_index=idx,
+                )
             )
         )
 
@@ -271,7 +308,7 @@ class ClaudeProcessor(LessonProcessor):
 
     Deliberately left unimplemented rather than written from memory. Before this
     is filled in, the current Anthropic Messages API shape must be checked
-    against live documentation — the same rule CLAUDE.md applies to Chargily
+    against live documentation — the same rule docs/CONVENTIONS.md applies to Chargily
     applies here.
     """
 

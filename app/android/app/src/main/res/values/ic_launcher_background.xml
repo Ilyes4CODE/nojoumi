@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- #EDEBFB, the pale violet the brand surfaces use. -->
+    <color name="ic_launcher_background">#EDEBFB</color>
+</resources>

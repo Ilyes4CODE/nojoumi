@@ -1,0 +1,148 @@
+{% load static %}<!doctype html>
+{% comment %}
+  The payment page of Article 7.2.
+
+  Written to look like Lunio rather than like a payment form: the same violet,
+  the same soft circles, the same illustrations and the same Tajawal the app
+  uses. A parent who is about to type a card number on the next screen should
+  recognise where they are — an unfamiliar page asking for money is exactly the
+  shape of a scam, and the client will be answering that question from parents
+  if we get it wrong.
+
+  Arabic, right-to-left, and no framework. One stylesheet inline, no CDN, no
+  tracker: this page is reachable from anywhere and it should carry nothing that
+  watches the person reading it.
+
+  **`{% templatetag openvariable %}#  #{% templatetag closevariable %}` is single-line only.**
+  This block was written with it and rendered as visible text at the top of the
+  page — Django's `{% templatetag openblock %}# ... #{% templatetag closeblock %}`
+  syntax stops at the first newline, so everything after it was just markup. The
+  `comment` tag is the multi-line one, and it is stripped from the response
+  rather than shipped as an HTML comment: the note above is for whoever edits
+  this file, not for everyone who views the source of a page that asks for money.
+{% endcomment %}
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{% block title %}Lunio{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --violet: #5B3FD9;
+      --violet-deep: #4B33B4;
+      --ink: #1E2436;
+      --ink-soft: #5A6178;
+      --canvas: #F8F7FC;
+      --lavender: #EDE8FC;
+      --mint: #DCF5E7;
+      --peach: #FDECD4;
+      --star: #FFC22E;
+      --radius: 24px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Tajawal', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--canvas);
+      color: var(--ink);
+      line-height: 1.7;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    /* The same soft circles as the app's welcome screen. Drawn, not shipped as
+       an asset, so they cost nothing and cannot 404. */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      background: var(--lavender);
+      opacity: .55;
+      z-index: 0;
+      pointer-events: none;
+    }
+    body::before { width: 340px; height: 340px; top: -120px; left: -110px; }
+    body::after  { width: 300px; height: 300px; bottom: -130px; right: -100px; }
+
+    .wrap { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; }
+    header { text-align: center; margin-bottom: 32px; }
+    header img { width: 96px; height: 96px; object-fit: contain; }
+    h1 { font-size: 1.9rem; margin: 12px 0 6px; font-weight: 700; }
+    h1 .brand { color: var(--violet); }
+    .lede { color: var(--ink-soft); margin: 0 auto; max-width: 34rem; }
+
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 18px rgba(30,36,54,.06);
+    }
+    .card.featured { outline: 2px solid var(--violet); }
+
+    .badge {
+      display: inline-block; background: var(--star); color: #6B4E00;
+      border-radius: 999px; padding: 2px 12px; font-size: .82rem; font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .plan-name { font-size: 1.25rem; font-weight: 700; margin: 0 0 4px; }
+    .price { font-size: 2.1rem; font-weight: 700; color: var(--violet); }
+    .price span { font-size: 1rem; font-weight: 400; color: var(--ink-soft); }
+    .note { color: var(--ink-soft); font-size: .95rem; margin: 6px 0 18px; }
+
+    button, .btn {
+      display: block; width: 100%; border: 0; cursor: pointer;
+      background: var(--violet); color: #fff;
+      font-family: inherit; font-size: 1.05rem; font-weight: 700;
+      padding: 15px 20px; border-radius: 16px; text-align: center; text-decoration: none;
+    }
+    button:hover, .btn:hover { background: var(--violet-deep); }
+    .btn.ghost { background: transparent; color: var(--violet); font-weight: 500; }
+
+    .plan-head { display: flex; gap: 16px; align-items: center; margin-bottom: 4px; }
+    .plan-art { width: 84px; height: 84px; flex: 0 0 auto; object-fit: contain; }
+    .hero-art { width: 128px; height: 128px; object-fit: contain; }
+
+    .tile { display: flex; gap: 14px; align-items: flex-start; }
+    .tile img { width: 56px; height: 56px; flex: 0 0 auto; object-fit: contain; }
+    .tile p { margin: 0; font-size: .95rem; color: var(--ink-soft); }
+    .tile strong { color: var(--ink); display: block; font-size: 1.02rem; }
+
+    .notice { background: var(--peach); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px; }
+    .notice.calm { background: var(--lavender); }
+    .notice.good { background: var(--mint); }
+
+    .code {
+      font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+      font-size: 2rem; font-weight: 700; letter-spacing: .18em;
+      background: var(--lavender); color: var(--violet);
+      border-radius: 18px; padding: 20px; text-align: center;
+      direction: ltr; user-select: all;
+    }
+    footer { text-align: center; color: var(--ink-soft); font-size: .85rem; margin-top: 36px; }
+    .spinner {
+      width: 38px; height: 38px; margin: 0 auto 14px;
+      border: 4px solid var(--lavender); border-top-color: var(--violet);
+      border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 480px) { h1 { font-size: 1.55rem; } .price { font-size: 1.8rem; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="{% static 'web/img/logo_mark.webp' %}" alt="Lunio">
+      {% block header %}{% endblock %}
+    </header>
+    {% block content %}{% endblock %}
+    <footer>
+      لا يحفظ Lunio أي بيانات بطاقة. تُدخل بياناتك على صفحة Chargily وحدها.
+    </footer>
+  </div>
+</body>
+</html>

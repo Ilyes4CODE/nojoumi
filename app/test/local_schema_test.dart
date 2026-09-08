@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart' hide isNull;
 import 'package:sqlite3/sqlite3.dart' show SqliteException;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nojoumi/data/local/database.dart';
-import 'package:nojoumi/data/local/tables.dart';
+import 'package:lunio/data/local/database.dart';
+import 'package:lunio/data/local/tables.dart';
 
 import 'support/test_db.dart';
 
@@ -12,7 +12,7 @@ import 'support/test_db.dart';
 /// quietly fails. A mocked database would prove nothing about cascades,
 /// defaults, or the primary key that enforces Article 6.2.
 void main() {
-  late NojoumiDatabase db;
+  late LunioDatabase db;
 
   setUp(() async => db = await freshDatabase());
   tearDown(() async => db.close());
@@ -26,7 +26,12 @@ void main() {
       expect(s.minimumTimeOnTargetMs, 1500, reason: '1.5 seconds');
       expect(s.expiryMode, ExpiryModeRow.daily);
       expect(s.welcomeUnits, 1000, reason: '10 stars');
-      expect(s.dailySessionCards, 12);
+      // 0, not the appendix's 12. The client asked on 2026-08-31 for the
+      // memorization cards to be removed and the day to be questions only —
+      // recorded as an amendment in decisions.md D-85. The floor of 5 was what
+      // guaranteed Article 5's first two rows were reachable, so this number
+      // moving is the whole change, and it is asserted here on purpose.
+      expect(s.dailySessionCards, 0);
       expect(s.dailyQuestionCount, 5);
     });
 
@@ -140,7 +145,7 @@ void main() {
       await db.into(db.lessonImages).insert(
             LessonImagesCompanion.insert(
               lessonId: lessonId,
-              filePath: '/data/user/0/dz.nojoumi/files/lesson1.jpg',
+              filePath: '/data/user/0/dz.lunio/files/lesson1.jpg',
               capturedAtMs: 1000,
             ),
           );
@@ -278,6 +283,18 @@ void main() {
         'expiry_date',
       ];
 
+      // Article 14 forbids identifiers of the **child**. The parent is a
+      // different person with a different status: they hold the account, the
+      // subscription and the payment relationship, and D-25 builds that account
+      // on an email precisely because it needs no SMS gateway.
+      //
+      // So this is an allowlist of exact `table.column` pairs, never a relaxed
+      // pattern. `auth_tokens.email` is permitted; an `email` column appearing on
+      // any other table still fails, which is what keeps this test honest.
+      const parentOwned = <String>{
+        'auth_tokens.email',
+      };
+
       final offenders = <String>[];
       for (final t in tables) {
         final name = t.data['name'] as String;
@@ -286,7 +303,9 @@ void main() {
             .get();
         for (final c in cols) {
           final col = (c.data['name'] as String).toLowerCase();
-          if (forbidden.contains(col)) offenders.add('$name.$col');
+          if (!forbidden.contains(col)) continue;
+          if (parentOwned.contains('$name.$col')) continue;
+          offenders.add('$name.$col');
         }
       }
 

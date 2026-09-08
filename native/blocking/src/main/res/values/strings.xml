@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Arabic is the DEFAULT locale, not `values-ar`.
+
+    Article 17 excludes multi-language, so the app is Arabic. But a great many
+    phones in Algeria are set to French, and a French phone falling back to
+    `values/` would show the child an English block card. Putting Arabic in the
+    default folder makes Arabic the answer for every locale that is not English,
+    which is the behaviour the contract describes.
+
+    These strings are seen outside the Flutter app entirely - in the system
+    Settings list, in the notification shade, and on the block card that the
+    accessibility service draws over another app. They cannot come from the ARB
+    files, because there is no Flutter engine alive when they are needed.
+-->
+<resources>
+
+    <!-- Shown in Settings > Accessibility, above the toggle, and reviewed by
+         Google Play. It has to describe exactly what the service does and no more,
+         because the disclosure screen the parent consented to said the same thing
+         and the two must not diverge. -->
+    <string name="lunio_a11y_label">Lunio</string>
+    <string name="lunio_a11y_summary">حجب الألعاب عند نفاد وقت اللعب</string>
+    <string name="lunio_a11y_description">تسمح هذه الخدمة لـ Lunio بمعرفة اسم التطبيق الذي فُتح على الشاشة، لا أكثر. عند فتح لعبة اختارها ولي الأمر ولا يوجد وقت لعب متبقٍ، يعود الهاتف إلى الشاشة الرئيسية وتظهر بطاقة تشرح السبب.\n\nلا تقرأ Lunio محتوى الشاشة، ولا النصوص، ولا كلمات المرور، ولا الرسائل. يمكن لولي الأمر إيقاف هذه الخدمة في أي وقت من هذه الشاشة، ويبقى التطبيق يعمل بدونها.</string>
+
+    <!-- The block card. Two reasons, two messages: a child told "play time is over"
+         when their parent paused play sees a balance on screen that contradicts it,
+         and learns the app is unreliable. -->
+    <string name="lunio_block_title_no_time">انتهى وقت اللعب</string>
+    <string name="lunio_block_body_no_time">اجمع نجومًا جديدة من درس اليوم، ويعود اللعب.</string>
+    <string name="lunio_block_title_paused">اللعب متوقّف مؤقتًا</string>
+    <string name="lunio_block_body_paused">أوقف ولي أمرك اللعب الآن. نجومك محفوظة كما هي.</string>
+    <string name="lunio_block_price">هذه اللعبة تحتاج %1$s</string>
+    <string name="lunio_block_dismiss">فهمت</string>
+
+    <!-- The foreground-service notification. Low importance, no sound: it exists
+         because the platform requires a foreground service to be visible, not
+         because anyone needs to read it. -->
+    <string name="lunio_watchdog_channel">حماية وقت اللعب</string>
+    <string name="lunio_watchdog_channel_body">إشعار دائم يبقي حجب الألعاب يعمل.</string>
+    <string name="lunio_watchdog_title">Lunio يعمل</string>
+    <string name="lunio_watchdog_body">حجب الألعاب مُفعّل.</string>
+    <string name="lunio_watchdog_playing">وقت اللعب المتبقّي: %1$d:%2$02d</string>
+
+</resources>

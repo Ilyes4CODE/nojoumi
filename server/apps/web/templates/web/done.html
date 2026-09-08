@@ -1,0 +1,77 @@
+{% extends "web/base.html" %}
+{% load static %}
+{% block title %}رمز التفعيل{% endblock %}
+
+{% block header %}
+  <h1>شكرًا لك</h1>
+  <p class="lede">نتحقّق من عملية الدفع الآن. لا تغلق هذه الصفحة.</p>
+{% endblock %}
+
+{% block content %}
+  <div class="card" id="waiting">
+    <div class="spinner"></div>
+    <p style="text-align:center;margin:0;color:var(--ink-soft)">
+      في انتظار تأكيد Chargily…
+    </p>
+  </div>
+
+  <div class="card" id="ready" hidden>
+    <div style="text-align:center;margin-bottom:6px">
+      <img class="hero-art" src="{% static 'web/img/code_ticket.webp' %}" alt="">
+      <p style="margin:0 0 4px;font-size:1.15rem;font-weight:700">تمّ الدفع</p>
+      <p class="note" style="margin:0 0 18px">هذا رمز التفعيل الخاص بك.</p>
+    </div>
+    <div class="code" id="code">—</div>
+    <p class="note" style="margin-top:16px">
+      افتح Lunio ← منطقة ولي الأمر ← الاشتراك، وأدخل الرمز.
+      يُستعمل مرّة واحدة، فاحتفظ به حتى تُفعّله.
+    </p>
+  </div>
+
+  <div class="card" id="pending" hidden>
+    <div class="tile">
+      <img src="{% static 'web/img/astronaut.webp' %}" alt="">
+      <p>
+        <strong>لم يصل التأكيد بعد</strong>
+        قد يتأخّر التأكيد دقيقة أو دقيقتين. حدّث الصفحة بعد قليل، وإن لم يصل
+        الرمز فاحتفظ برقم العملية وتواصل معنا — لن يُخصم منك مرّتين.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // The browser usually arrives here before Chargily's server-to-server call
+    // does, so the page polls rather than assuming. The redirect is never taken
+    // as proof of payment: only the signed webhook moves a transaction to paid
+    // (Art. 7.3), because a query string is something anybody can type.
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('checkout_id') || '{{ checkout_id|escapejs }}';
+      if (!id) { show('pending'); return; }
+
+      let tries = 0;
+      const timer = setInterval(check, 2000);
+      check();
+
+      function check() {
+        if (++tries > 30) { clearInterval(timer); show('pending'); return; }
+        fetch('{% url "web:code-status" %}?checkout_id=' + encodeURIComponent(id))
+          .then(r => r.json())
+          .then(data => {
+            if (data.state === 'ready') {
+              clearInterval(timer);
+              document.getElementById('code').textContent = data.code;
+              show('ready');
+            }
+          })
+          .catch(() => {});
+      }
+
+      function show(which) {
+        ['waiting', 'ready', 'pending'].forEach(function (id) {
+          document.getElementById(id).hidden = (id !== which);
+        });
+      }
+    })();
+  </script>
+{% endblock %}

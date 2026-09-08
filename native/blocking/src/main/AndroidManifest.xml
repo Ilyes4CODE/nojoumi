@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The blocking module declares its own components and its own permissions, and
+    they are merged into the app at build time.
+
+    AD-7: enforcement is a Kotlin library the app depends on, never the other way
+    round. Keeping the manifest here too means the app module never grows a line
+    about blocking that could survive the module being removed - which matters,
+    because Article 15.2 requires the app to be fully usable with blocking off and
+    that claim is easiest to keep true when the seam is real.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The block card, drawn over another app. Notes V2: this permission is on the
+         documented background-activity-launch exemption list, which is precisely why
+         the card is an overlay and not an activity. Granted by the parent through a
+         Settings screen, never by a runtime dialog. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- The watchdog that keeps the process alive so tier 1 keeps receiving events. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <!-- Article 12 scenario 11 - blocking returns after a restart with no parent
+         action. Whether the broadcast actually arrives is an OEM decision, not a
+         documentation one; see BootReceiver. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Without this declaration `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+         does nothing at all — no dialog, no error — and the parent is left with
+         a button that appears broken.
+
+         **It is a Play-restricted permission and needs a declaration in the Play
+         Console.** The justification is not a stretch: while a child is inside a
+         game Lunio is a background process, and ColorOS, One UI and MIUI all
+         freeze background processes. A frozen process runs no timer, so the play
+         countdown stops and the game is never closed when the balance ends —
+         which is the core function of the app failing, not a convenience.
+
+         Reported from an Oppo A15 on 2026-08-29 as «المؤقت يحبس». `PlayDeadline`
+         is the backstop for parents who refuse; this is the fix for the cause. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Android 13+ only. The foreground service runs regardless, but its
+         notification is hidden without this, and a hidden foreground-service
+         notification is a service the user cannot see - which is both a policy
+         problem and a support problem. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+
+        <!-- Tier 1 of AD-8. `exported` must be true and the permission must be
+             BIND_ACCESSIBILITY_SERVICE: that pair is what stops any app other than
+             the system from binding it. -->
+        <service
+            android:name=".LunioAccessibilityService"
+            android:exported="true"
+            android:label="@string/lunio_a11y_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/lunio_accessibility_service" />
+        </service>
+
+        <!-- Notes V4. `specialUse` is the honest type for parental control, and the
+             one type not barred from being started by a BOOT_COMPLETED receiver on
+             Android 15+. The free-form subtype below is read by a human at Google
+             Play review, so it says what the service does in plain words. -->
+        <service
+            android:name=".BlockingWatchdogService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Parental control: keeps the app-blocking engine alive so that games remain blocked when the child has no play time left, including while the app UI is not running." />
+        </service>
+
+        <!-- The play-time backstop. Not exported: only our own alarm reaches it,
+             and an eviction anybody could trigger by broadcast would be a way to
+             cut a child's play time from another app. -->
+        <receiver
+            android:name=".PlayDeadline$Receiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

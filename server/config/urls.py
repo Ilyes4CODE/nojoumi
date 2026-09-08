@@ -8,6 +8,12 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
+    # Article 7.2's independent page. The Android app never links here — see
+    # apps/web/views.py for why that separation is what keeps the app shippable.
+    path("pay/", include("apps.web.urls")),
+    # Unauthenticated liveness, checked by the app before sign-in so that
+    # "cannot reach the server" and "wrong credentials" are never confused.
+    path("api/", include("apps.common.urls")),
     path("api/accounts/", include("apps.accounts.urls")),
     path("api/lessons/", include("apps.lessons.urls")),
     path("api/subscriptions/", include("apps.subscriptions.urls")),

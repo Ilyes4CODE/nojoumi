@@ -1,0 +1,30 @@
+{% extends "web/base.html" %}
+{% load static %}
+{% block title %}لم تكتمل العملية{% endblock %}
+
+{% block header %}
+  <h1>لم تكتمل العملية</h1>
+{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="tile" style="margin-bottom:18px">
+      <img src="{% static 'web/img/astronaut.webp' %}" alt="">
+      <p>
+        {% if reason == 'gateway' %}
+          <strong>تعذّر بدء عملية الدفع</strong>
+          لم نتمكّن من الاتصال ببوّابة الدفع. لم يُخصم منك أي مبلغ.
+        {% else %}
+          <strong>أُلغيت العملية</strong>
+          لم يُخصم منك أي مبلغ. يمكنك المحاولة من جديد متى شئت.
+        {% endif %}
+      </p>
+    </div>
+    <a class="btn" href="{% url 'web:plans' %}">العودة إلى الخطط</a>
+  </div>
+
+  <div class="notice calm">
+    اشتراكك الحالي لم يتغيّر. وحتى بعد انتهاء الاشتراك، يبقى الحجب والنجوم
+    والدروس المحفوظة تعمل كما هي.
+  </div>
+{% endblock %}

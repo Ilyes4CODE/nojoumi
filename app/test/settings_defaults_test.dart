@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nojoumi/data/local/database.dart';
-import 'package:nojoumi/data/repositories/settings_repository.dart';
-import 'package:nojoumi_stars/nojoumi_stars.dart';
+import 'package:lunio/data/local/database.dart';
+import 'package:lunio/data/repositories/settings_repository.dart';
+import 'package:lunio_stars/lunio_stars.dart';
 
 import 'support/test_db.dart';
 import 'support/widget_harness.dart';
@@ -11,7 +11,7 @@ import 'support/widget_harness.dart';
 /// in `widget_harness.dart`. Three copies of a contract number is two too many,
 /// and this is the test that keeps them from drifting apart quietly.
 void main() {
-  late NojoumiDatabase db;
+  late LunioDatabase db;
 
   setUp(() async => db = await freshDatabase());
   tearDown(() async => db.close());
@@ -23,7 +23,12 @@ void main() {
     expect(row.dailyCeilingUnits, 60 * starUnit, reason: '60 stars a day');
     expect(row.minimumTimeOnTargetMs, 1500, reason: '1.5 s on a card');
     expect(row.welcomeUnits, 10 * starUnit, reason: '10 welcome stars');
-    expect(row.dailySessionCards, 12);
+    // 0, not the appendix's 12. The client asked on 2026-08-31 for the
+    // memorization cards to be removed and the day to be questions only —
+    // recorded as an amendment in decisions.md D-85. The floor of 5 was what
+    // guaranteed Article 5's first two rows were reachable, so this number
+    // moving is the whole change, and it is asserted here on purpose.
+    expect(row.dailySessionCards, 0);
     expect(row.dailyQuestionCount, 5, reason: 'decisions.md D-15');
     expect(row.expiryWeekday, DateTime.friday, reason: 'decisions.md D-13');
   });
@@ -42,6 +47,16 @@ void main() {
     // `grade` is the only pedagogical field, and a school level is not an
     // identity (D-11). If a name, birth date or photo column ever appears, this
     // list stops matching and the test fails.
+    //
+    // `installId` was added on 2026-08-28 and this test caught it, which is the
+    // whole point of listing the columns by hand. It is admitted deliberately:
+    // it is a random UUID this app generates for itself, it identifies an
+    // *installation* and not a person, and it is the anchor Article 7.1 already
+    // requires for «مرة واحدة لكل جهاز». It is explicitly **not** an advertising
+    // ID (forbidden for Designed for Families, Art. 15.3), not IMEI, serial or
+    // MAC, and not derived from anything about the child. See
+    // `apps/devices/models.py` for the full argument and its accepted
+    // limitation.
     expect(row.toJson().keys.toSet(), {
       'id',
       'pinHash',
@@ -61,6 +76,7 @@ void main() {
       'grade',
       'onboardingStep',
       'utcOffsetMinutes',
+      'installId',
     });
   });
 

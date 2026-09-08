@@ -54,3 +54,6 @@ tools/eval/runs/
 *.swp
 .DS_Store
 Thumbs.db
+
+# A 55 MB tunnel binary for the Chargily webhook (Q19). Downloaded, not authored.
+tools/bin/

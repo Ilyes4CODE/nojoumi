@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Machine-specific build defines: the LAN address of *this* developer's server.
+# Not a secret - the snapshot key in it is the public half, and Article 7.7 keeps
+# every real credential on the server. It is ignored because it is *wrong on
+# every other machine*, and a committed one would silently point somebody else's
+# build at an address that does not exist on their network.
+lunio.local.json

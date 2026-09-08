@@ -1,0 +1,73 @@
+{% extends "web/base.html" %}
+{% load static %}
+{% block title %}اشتراك Lunio{% endblock %}
+
+{% block header %}
+  <h1>اشتراك <span class="brand">Lunio</span></h1>
+  <p class="lede">
+    اختر المدّة التي تناسبك. الدفع يتمّ على صفحة Chargily الآمنة،
+    وتعود بعده برمز تفعيل تُدخله في التطبيق مرّة واحدة.
+  </p>
+{% endblock %}
+
+{% block content %}
+  {% if not configured %}
+    <div class="notice">
+      <strong>الدفع غير مهيّأ على هذا الخادم بعد.</strong>
+      <p style="margin:6px 0 0">مفاتيح Chargily غير مضبوطة، فلا يمكن إنشاء عملية دفع.</p>
+    </div>
+  {% else %}
+    {% if not live %}
+      <div class="notice calm">
+        <strong>وضع الاختبار</strong>
+        <p style="margin:6px 0 0">لن يُخصم أي مبلغ حقيقي. استعمل بطاقة الاختبار التي تعطيها Chargily.</p>
+      </div>
+    {% endif %}
+
+    {% for plan in plans %}
+      <div class="card{% if plan.highlight %} featured{% endif %}">
+        {% if plan.highlight %}<span class="badge">الأوفر</span>{% endif %}
+        <div class="plan-head">
+          <img class="plan-art" src="{% static plan.illustration %}" alt="">
+          <div>
+            <p class="plan-name">{{ plan.name }}</p>
+            <p class="price">{{ plan.price }} <span>دج / {{ plan.days }} يومًا</span></p>
+          </div>
+        </div>
+        <p class="note">{{ plan.note }}</p>
+        <form method="post" action="{% url 'web:checkout' %}">
+          {% csrf_token %}
+          <input type="hidden" name="plan" value="{{ plan.code }}">
+          <button type="submit">ادفع الآن</button>
+        </form>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card">
+    <div class="tile" style="margin-bottom:18px">
+      <img src="{% static 'web/img/secure_lock.webp' %}" alt="">
+      <p>
+        <strong>لا نرى بطاقتك أبدًا</strong>
+        تُدخل بيانات البطاقة على صفحة Chargily وحدها. لا يحفظ خادم Lunio رقمًا
+        ولا تاريخ انتهاء ولا رمز تحقّق، في أي شكل ولأي مدّة.
+      </p>
+    </div>
+    <div class="tile" style="margin-bottom:18px">
+      <img src="{% static 'web/img/rocket.webp' %}" alt="">
+      <p>
+        <strong>لا خصم تلقائي</strong>
+        لا نحتفظ ببطاقتك ولا نجدّد من تلقاء أنفسنا. حين تنتهي المدّة، تجدّد بنفسك
+        إن أردت. والتجديد قبل الانتهاء يُضاف إلى ما تبقّى.
+      </p>
+    </div>
+    <div class="tile">
+      <img src="{% static 'web/img/star_big.webp' %}" alt="">
+      <p>
+        <strong>ماذا يبقى بعد انتهاء الاشتراك؟</strong>
+        الحجب والنجوم والدروس المحفوظة تعمل كلّها كما هي. ما يتوقّف هو توليد
+        دروس جديدة من الصور فقط — لا يُعاقَب الطفل بتأخّر الدفع.
+      </p>
+    </div>
+  </div>
+{% endblock %}

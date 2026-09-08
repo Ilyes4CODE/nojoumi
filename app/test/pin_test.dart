@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nojoumi/core/pin.dart';
+import 'package:lunio/core/pin.dart';
 
 /// D-10 — the PIN is stored as a salted hash and is never recoverable.
 ///

@@ -341,7 +341,7 @@ def write_html(path: pathlib.Path, rows: list[dict], args, processor) -> None:
     parts = [
         '<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width,initial-scale=1">',
-        "<title>نجومي — نتائج معالجة الدروس</title><style>",
+        "<title>Lunio — نتائج معالجة الدروس</title><style>",
         """
         :root{--bg:#f6f7f9;--card:#fff;--ink:#12181f;--muted:#5b6875;
               --line:#e3e7ec;--ok:#0f7b4f;--bad:#b4232b;--accent:#1f4e79;}
@@ -387,7 +387,7 @@ def write_html(path: pathlib.Path, rows: list[dict], args, processor) -> None:
         .fail{color:var(--bad)}
         """,
         "</style></head><body><div class='wrap'>",
-        "<h1>نجومي — نتائج معالجة الدروس</h1>",
+        "<h1>Lunio — نتائج معالجة الدروس</h1>",
         f"<div class='meta'>المزوّد <b>{_esc(processor.name)}</b> · "
         f"الموديل <b>{_esc(getattr(processor, 'model', '-'))}</b> · "
         f"المجموعة <b>{_esc(args.set)}</b> · "

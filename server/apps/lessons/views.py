@@ -25,7 +25,7 @@ from apps.ai.providers import get_processor
 
 from .serializers import LessonRequestSerializer, LessonResultSerializer
 
-log = logging.getLogger("nojoumi.lessons")
+log = logging.getLogger("lunio.lessons")
 
 
 class ProcessLessonView(APIView):

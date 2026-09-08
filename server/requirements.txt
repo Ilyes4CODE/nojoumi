@@ -1,4 +1,4 @@
-# Nojoumi server — Article 3's stack, pinned.
+# Lunio server — Article 3's stack, pinned.
 Django==5.0.6
 djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1

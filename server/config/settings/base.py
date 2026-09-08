@@ -1,4 +1,4 @@
-"""Base settings for the Nojoumi server.
+"""Base settings for the Lunio server.
 
 Contract-driven configuration is marked with its article. Anything so marked is
 not a preference — changing it changes whether we are in breach.
@@ -7,7 +7,25 @@ not a preference — changing it changes whether we are in breach.
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# `server/.env` is loaded here, before the first `os.environ.get` below.
+#
+# It was missing until 2026-08-28, and the failure was invisible in exactly the
+# way that costs the most time: every `os.environ.get` has a default, so the
+# server started, migrated, registered accounts and issued tokens perfectly —
+# on a hardcoded insecure SECRET_KEY, with no Chargily keys and no AI key. The
+# first symptom was a 500 from the lesson endpoint saying "GROQ_API_KEY is not
+# configured" about a key that was sitting in `.env` all along.
+#
+# `override=False` on purpose: a real environment variable always wins. In
+# Docker and on the VPS the configuration arrives through the environment
+# (Art. 3's deployment), and a `.env` left in an image must never quietly
+# outrank it. On the developer's machine nothing sets these, so the file is
+# what is used.
+load_dotenv(BASE_DIR / ".env", override=False)
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
@@ -29,6 +47,11 @@ INSTALLED_APPS = [
     "apps.lessons",
     "apps.payments",
     "apps.subscriptions",
+    # The payment page of Art. 7.2 — the one surface that shows a price.
+    "apps.web",
+    # Serves that page's illustrations in development. Behind Nginx in
+    # production (Art. 3), where `collectstatic` puts them.
+    "django.contrib.staticfiles",
 ]
 
 # The server knows the parent, never the child (Art. 14, AD-6).
@@ -58,7 +81,17 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
-TEMPLATES = []
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {"context_processors": []},
+    }
+]
+
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DATABASES = {
     "default": {
@@ -83,7 +116,17 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "lesson": "30/hour",
         "register": "10/hour",
+        # Sign-in gets its own bucket, deliberately more generous than register.
+        # Sharing the register scope was tried and is wrong twice over: a parent
+        # who mistypes a password three times would be locked out of their own
+        # phone for an hour, and account creation — the expensive, abusable
+        # operation — would have its budget spent by ordinary logins.
+        "signin": "30/hour",
         "subscription": "20/hour",
+        # Creating a checkout costs us a gateway call and creates a row, and the
+        # endpoint is unauthenticated by contract design (Art. 7.3). The limit is
+        # what keeps that from being an amplification vector.
+        "checkout": "20/hour",
     },
 }
 
@@ -92,15 +135,39 @@ REST_FRAMEWORK = {
 #     python manage.py generate_signing_key
 SUBSCRIPTION_SIGNING_KEY_HEX = os.environ.get("SUBSCRIPTION_SIGNING_KEY_HEX", "")
 
-# Art. 7.7 — kept server-side only, never in the app file.
+# --- Chargily Pay v2 -------------------------------------------------------
+# Art. 7.7 — kept server-side only, never in the app file, never in
+# .env.example, never in a commit. The Android app holds no key of any kind.
+#
+# Every constant these feed is documented in apps/payments/chargily.py with the
+# URL it was verified from on 2026-08-18. Re-verify before Phase 7.
 CHARGILY_SECRET_KEY = os.environ.get("CHARGILY_SECRET_KEY", "")
-CHARGILY_WEBHOOK_SECRET = os.environ.get("CHARGILY_WEBHOOK_SECRET", "")
+
+# The publishable key. Not used by the server at all — it belongs to the payment
+# web page — but it is read here so that a deployment which forgot it fails at
+# configuration rather than at the parent's first payment.
+CHARGILY_PUBLIC_KEY = os.environ.get("CHARGILY_PUBLIC_KEY", "")
+
+# Explicit, never inferred from the key prefix. A test key pointed at the live
+# endpoint and a live key pointed at the test one both fail confusingly; making
+# the mode a deliberate setting turns that into a one-line configuration review.
+CHARGILY_LIVE_MODE = os.environ.get("CHARGILY_LIVE_MODE", "0") == "1"
+
+# Overrides the mode-derived base URL. Empty in normal use.
 CHARGILY_BASE_URL = os.environ.get("CHARGILY_BASE_URL", "")
 
+CHARGILY_TIMEOUT_SECONDS = int(os.environ.get("CHARGILY_TIMEOUT_SECONDS", "20"))
+
+# Where Chargily sends the parent back to, and where it posts the webhook.
+# The webhook URL must be publicly reachable HTTPS — open question Q19.
+CHARGILY_SUCCESS_URL = os.environ.get("CHARGILY_SUCCESS_URL", "")
+CHARGILY_FAILURE_URL = os.environ.get("CHARGILY_FAILURE_URL", "")
+CHARGILY_WEBHOOK_URL = os.environ.get("CHARGILY_WEBHOOK_URL", "")
+
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Nojoumi API",
+    "TITLE": "Lunio API",
     "DESCRIPTION": (
-        "Server for the Nojoumi Android app. Holds parent accounts, "
+        "Server for the Lunio Android app. Holds parent accounts, "
         "subscriptions and transactions. Holds no child data and no lesson "
         "images (Art. 14)."
     ),

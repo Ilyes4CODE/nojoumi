@@ -3,7 +3,7 @@
 Held as code, not as database rows, on purpose. They are contract-fixed: Art. 7.1
 names three plans with exact durations and prices, and Art. 7.6 names exactly
 five states. A table would let them drift out of step with the Dart enums in
-`packages/nojoumi_subscription`, and a drift between server and app in *this*
+`packages/lunio_subscription`, and a drift between server and app in *this*
 particular area is a billing dispute.
 
 Art. 7.2 also means the prices are never shown by the Android app — they exist

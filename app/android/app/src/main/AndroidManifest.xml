@@ -1,6 +1,25 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The app talks to our own Django server and to nothing else: the parent's
+         account, the subscription snapshot, and the lesson endpoint. No AI
+         provider and no payment gateway is ever reached from the device
+         (Art. 7.7), so this is the whole of the app's network surface.
+
+         It lives here, in `main`, and that placement is the point. Flutter's
+         template declares INTERNET only in `src/debug/`, for hot reload — which
+         means a Flutter app that genuinely uses the network and never adds it to
+         `main` **builds a release AAB that cannot reach any server at all**.
+         Every API call fails with a permission error that looks exactly like a
+         server outage, and the first place it would have been noticed is a
+         tester's phone after a Play upload.
+
+         Found on 2026-08-28, from the opposite direction: the debug manifest was
+         rewritten to point at a network security config and Flutter's own
+         INTERNET line went with it, so even debug builds lost it. The banner on
+         the setup screen said "cannot reach the server" about a server that was
+         answering `nc` from the same phone one second earlier. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="nojoumi"
+        android:label="Lunio"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -40,6 +59,17 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+
+        <!-- The apps the parent picks from when choosing what counts as a game.
+             This is deliberately a <queries> declaration and NOT QUERY_ALL_PACKAGES:
+             the permission is one of the most rejection-prone on Play, and we would
+             be asking for it to build a list of the icons already on the user's own
+             home screen. Everything the picker needs is launchable, so a MAIN /
+             LAUNCHER filter is both sufficient and defensible at review. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.LAUNCHER"/>
         </intent>
     </queries>
 </manifest>

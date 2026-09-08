@@ -16,7 +16,7 @@ subject. Fail freely, iterate, re-shoot.
 - Include at least one **deliberately bad** image — crooked, dim, glare — to
   exercise the `readable: false` path, so the app says "أعد التصوير" instead of
   inventing a lesson.
-- Tell the assistant the grade and subject; the manifest is generated from that.
+- Record the grade and subject for each; the manifest is generated from that.
 
 ## `acceptance/` — the client's ten images (Art. 19)
 

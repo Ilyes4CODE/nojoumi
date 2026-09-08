@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The narrowest configuration that still answers "which app just opened?".
+
+    Every line here is a promise made on the disclosure screen the parent consents
+    to before this permission is ever requested, and Google Play reads this file
+    when it reviews an AccessibilityService. A capability declared here and not used
+    is a rejection waiting to happen; a capability used and not declared simply does
+    not work. So the two are kept identical on purpose.
+
+      * accessibilityEventTypes = typeWindowStateChanged only. Not typeViewClicked,
+        not typeViewTextChanged, not typeWindowContentChanged - none of which we
+        need and all of which would carry what the child is doing inside an app.
+
+      * canRetrieveWindowContent = false. This is the line that makes "Lunio does
+        not read the screen" true in code rather than only in the privacy policy
+        (Art. 14). It also means the service cannot see text fields, so a password
+        typed while it is running is not something we could read even by mistake.
+
+      * no android:packageNames. The filter is the parent's list, evaluated in
+        BlockPolicy, not a static list compiled into the app - the parent chooses
+        which apps are blocked, and that choice changes after install.
+
+      * notificationTimeout = 0. This attribute throttles delivery of same-type
+        events; Article 11.2 allows two seconds from the game appearing to the block
+        landing, and spending any of it on deliberate throttling would be a choice
+        we could not defend at acceptance.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/lunio_a11y_description"
+    android:summary="@string/lunio_a11y_summary"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault"
+    android:canRetrieveWindowContent="false"
+    android:notificationTimeout="0" />

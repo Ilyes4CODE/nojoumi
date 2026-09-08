@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appName": "Nojoumi",
+  "appName": "Lunio",
   "@appName": {
     "description": "The app name, shown in the launcher and headers."
   },
@@ -91,9 +91,9 @@
   "save": "Save",
   "retry": "Retry",
   "offlineNotice": "No internet connection",
-  "setupTitle": "Set up Nojoumi",
-  "setupWelcomeTitle": "Welcome to Nojoumi",
-  "setupWelcomeBody": "Nojoumi turns play time into something your child earns by studying, rather than something you take away. Setup is three steps, and everything can be changed later.",
+  "setupTitle": "Set up Lunio",
+  "setupWelcomeTitle": "Welcome to Lunio",
+  "setupWelcomeBody": "Lunio turns play time into something your child earns by studying, rather than something you take away. Setup is three steps, and everything can be changed later.",
   "setupStepOf": "Step {current} of {total}",
   "@setupStepOf": {
     "placeholders": {
@@ -117,10 +117,10 @@
   "setupProtectionTitle": "Blocking and home-screen mode",
   "setupProtectionBody": "Both are entirely optional, and the app is fully usable without them: lessons, cards, stars, the weekly test and the parent dashboard all work.",
   "setupEnableBlocking": "Turn on game blocking",
-  "setupEnableLauncher": "Make Nojoumi the home screen",
+  "setupEnableLauncher": "Make Lunio the home screen",
   "setupSkipProtection": "Continue without them for now",
   "setupDisclosureTitle": "Important disclosure before granting permission",
-  "setupDisclosureBody": "To enable blocking, Nojoumi needs the Accessibility service. The app uses it for one purpose only: to know which app has just appeared on screen, so that it can close blocked games when play time runs out.\n\nNojoumi does not read screen content, passwords or messages, does not log what you type, and sends none of this to any server. You can turn the service off at any time in your phone's settings.",
+  "setupDisclosureBody": "To enable blocking, Lunio needs the Accessibility service. The app uses it for one purpose only: to know which app has just appeared on screen, so that it can close blocked games when play time runs out.\n\nLunio does not read screen content, passwords or messages, does not log what you type, and sends none of this to any server. You can turn the service off at any time in your phone's settings.",
   "setupDisclosureConsent": "I have read this disclosure and consent as a parent",
   "setupDisclosureDecline": "No, continue without blocking",
   "setupFinish": "Start",
@@ -159,5 +159,345 @@
   "next": "Next",
   "back": "Back",
   "skip": "Skip",
-  "notNow": "Not now"
+  "notNow": "Not now",
+  "pinLockedFor": "Too many attempts. Try again in {seconds} seconds.",
+  "@pinLockedFor": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "parentOverview": "Overview",
+  "parentStarsToday": "Stars today",
+  "parentEarnedToday": "Earned by the child",
+  "parentGrantedToday": "Granted by you",
+  "parentCeilingUsed": "of the daily ceiling",
+  "parentPlayUsed": "Play time used",
+  "parentStreak": "Streak",
+  "parentAdjustTitle": "Grant or deduct",
+  "parentAdjustBody": "Your authority is above the system: grants and deductions ignore the daily ceiling, and work even when the phone's clock cannot be trusted.",
+  "parentAdjustAmount": "Number of stars",
+  "parentAdjustNote": "Reason (optional)",
+  "parentGrantDone": "{stars} stars granted",
+  "@parentGrantDone": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      }
+    }
+  },
+  "parentDeductDone": "{stars} stars deducted",
+  "@parentDeductDone": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      }
+    }
+  },
+  "parentDeductTooMuch": "Cannot deduct more than the current balance",
+  "parentSettingsTitle": "The numbers you control",
+  "parentSettingsBody": "Every value here has a range fixed by the contract appendix. Out-of-range values are rejected, never rounded.",
+  "parentRangeHint": "from {min} to {max}",
+  "@parentRangeHint": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "parentDailyPlayMinutes": "Daily play minutes",
+  "parentDailyPlayHint": "daily ceiling × star value",
+  "parentQuestionsPerDay": "Review questions per day",
+  "parentWelcomeBalance": "Welcome balance",
+  "parentExpiryWeekday": "Weekly test day",
+  "parentPlayPausedOn": "Play is paused",
+  "parentPlayPausedOff": "Play is allowed",
+  "parentBlockingSection": "Blocking and home screen",
+  "parentLedgerTitle": "Star ledger",
+  "parentLedgerEmpty": "No movements yet",
+  "parentWhyNoStar": "Why was no star granted?",
+  "parentSaved": "Saved",
+  "parentInvalidValue": "Unacceptable value: {reason}",
+  "@parentInvalidValue": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "ledgerCardFirstTime": "Card correct first time",
+  "ledgerCardReview": "Card in a later review",
+  "ledgerReviewQuestion": "Correct review question",
+  "ledgerSessionBonus": "Session completion bonus",
+  "ledgerStreakBonus": "Attendance bonus",
+  "ledgerWeeklyTest": "Weekly test",
+  "ledgerWelcomeGrant": "Welcome balance",
+  "ledgerParentGrant": "Parent grant",
+  "ledgerParentDeduct": "Parent deduction",
+  "ledgerExpiry": "Balance expired",
+  "weekdayMonday": "Monday",
+  "weekdayTuesday": "Tuesday",
+  "weekdayWednesday": "Wednesday",
+  "weekdayThursday": "Thursday",
+  "weekdayFriday": "Friday",
+  "weekdaySaturday": "Saturday",
+  "weekdaySunday": "Sunday",
+  "rejectUntrustedClock": "The phone's clock cannot be trusted (Art. 6.8)",
+  "rejectWrongAnswer": "Wrong answer (Art. 6.1)",
+  "rejectSolutionRevealed": "The solution was revealed before answering (Art. 6.1)",
+  "rejectNotFirstAttempt": "Not the first attempt (Art. 6.1)",
+  "rejectAlreadyCountedToday": "Already counted the same day (Art. 6.2)",
+  "rejectBelowMinimumTime": "Less than the minimum time on the card (Art. 6.3)",
+  "rejectDailyCeilingReached": "The daily ceiling is exhausted (Art. 6.4)",
+  "rejectAlreadyAwardedToday": "This bonus was already granted today",
+  "rejectSessionIncomplete": "The daily session is not complete (Art. 6.5)",
+  "rejectStreakTooShort": "Fewer than two consecutive days (Art. 5)",
+  "accountTitle": "Parent account",
+  "accountWhy": "The account is only needed to generate new lessons. Blocking, stars and saved lessons work without it.",
+  "signIn": "Sign in",
+  "signUp": "Create an account",
+  "signOut": "Sign out",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "phoneOptional": "Phone number (optional)",
+  "noAccountYet": "No account yet? Create one",
+  "haveAccountAlready": "Already have an account? Sign in",
+  "signedInAs": "Signed in as {email}",
+  "@signedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "signInRequired": "Sign in to generate a new lesson",
+  "serverNotConfigured": "No server address is configured in this build.",
+  "captureFromCamera": "Take a photo",
+  "captureFromGallery": "Choose from the gallery",
+  "captureIntro": "Photograph one page of your child's book. The image is sent for processing, dropped by the server immediately, and kept only on this phone.",
+  "processingHint": "This takes a few seconds",
+  "reviewLesson": "Review the lesson",
+  "summaryHeading": "Summary",
+  "cardsHeading": "Memorization cards",
+  "questionsHeading": "Review questions",
+  "lessonTitleLabel": "Lesson title",
+  "lessonTitleHint": "For example: the Arabic letters",
+  "subjectOptional": "Subject (optional)",
+  "saveLesson": "Save the lesson",
+  "discardLesson": "Discard",
+  "lessonSaved": "Saved: {cards} cards and {questions} questions",
+  "@lessonSaved": {
+    "placeholders": {
+      "cards": {
+        "type": "String"
+      },
+      "questions": {
+        "type": "String"
+      }
+    }
+  },
+  "retakePhoto": "Take another photo",
+  "lessonsTitle": "Lessons",
+  "lessonsEmpty": "No lesson captured yet",
+  "lessonCardsCount": "{count} cards",
+  "@lessonCardsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "imagesDeleted": "Images deleted",
+  "untitledLesson": "Untitled lesson",
+  "purgeDoneTitle": "This week's images have been deleted",
+  "purgeDoneBody": "The photographs and the exercises were deleted from the phone. The summaries, the cards and your results are kept.",
+  "weeklyTestDue": "The weekly test is due",
+  "weeklyTestStart": "Start the test",
+  "subscriptionPlan": "Plan",
+  "subscriptionDaysLeft": "Days remaining",
+  "startTrial": "Start the trial",
+  "trialOncePerDevice": "Seven days, once per device",
+  "activationHelp": "You receive the code after paying on the website.",
+  "renewNotice": "To renew, use the payment page linked to your account.",
+  "activationDone": "Activated",
+  "planMonthly": "Monthly",
+  "planAnnual": "Annual",
+  "planTrial": "Trial",
+  "aiPausedTitle": "New lesson generation is paused",
+  "blockingTitle": "Blocking and games",
+  "blockingIntro": "Lunio stops the games you choose from opening once play time runs out. The rest of the phone stays open as usual.",
+  "blockingUnavailable": "Blocking is Android-only. The rest of the app works fully here.",
+  "blockingEnableSwitch": "Turn on game blocking",
+  "blockingReady": "Blocking is working",
+  "blockingIncomplete": "At least one permission is missing",
+  "blockingOff": "Blocking is off",
+  "permAccessibility": "Accessibility service",
+  "permAccessibilityBody": "Without it Lunio cannot tell which app opened, and nothing is blocked.",
+  "permOverlay": "Draw over other apps",
+  "permOverlayBody": "Without it the phone goes home without telling the child why.",
+  "permNotifications": "Notifications",
+  "permNotificationsBody": "A silent ongoing notification keeps the blocking engine alive.",
+  "permAutostart": "Auto-start",
+  "permAutostartBody": "On {brand} devices the system may stop blocking coming back after a restart unless you allow it by hand.",
+  "@permAutostartBody": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      }
+    }
+  },
+  "permGranted": "Granted",
+  "permMissing": "Required",
+  "permOpen": "Open",
+  "blockingApps": "Blocked games",
+  "blockingAppsCount": "{count} apps blocked",
+  "@blockingAppsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "blockingAppsEmpty": "No games chosen yet",
+  "blockingAppsHint": "Pick the apps that should cost stars. Everything else stays open.",
+  "blockingAppsSearch": "Search apps",
+  "blockingAppsLoading": "Reading installed apps",
+  "blockingProtectedNote": "Settings, the phone, messages, the keyboard and Lunio itself can never be blocked.",
+  "blockingDeviceLine": "{brand} · Android API {sdk}",
+  "@blockingDeviceLine": {
+    "placeholders": {
+      "brand": {
+        "type": "String"
+      },
+      "sdk": {
+        "type": "String"
+      }
+    }
+  },
+  "setupWelcomeHeadline": "Welcome to",
+  "setupWelcomeLine1": "Turn play time into time well spent.",
+  "setupWelcomeLine2": "With Lunio your child learns step by step, through simple interactive activities suited to their age.",
+  "setupWelcomePillarSafe": "Safe and suitable",
+  "setupWelcomePillarProgress": "Steady progress",
+  "setupWelcomePillarGoals": "Clear goals",
+  "setupAccountTitle": "Parent account",
+  "setupAccountBody": "The account belongs to the parent alone and is used for two things only: generating new lessons from photos, and the subscription. No account is created for the child, and none of their data ever reaches the server.",
+  "setupAccountRequired": "An account is required to finish setup.",
+  "setupTrialStarted": "Your free trial has started: 7 days, all features.",
+  "setupTrialAlready": "The free trial has already been used on this device.",
+  "serverUnreachable": "Cannot reach the server",
+  "serverRetry": "Try again",
+  "serverAddress": "Address: {url}",
+  "@serverAddress": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "serverDegraded": "The server is up but its database is not responding",
+  "oneAccountPerDevice": "One account per phone. To change it, clear the app's data.",
+  "dialogWelcomeTitle": "Welcome to Lunio",
+  "dialogWelcomeBackTitle": "Welcome back",
+  "dialogSetupRemains": "Two steps remain on this phone: the school level and the parent PIN. Neither is ever stored on the server, so both are set on each device.",
+  "dialogContinue": "Continue",
+  "dialogStartNow": "Start now",
+  "cardRemembered": "Well done — you remembered it",
+  "cardNotYet": "That's fine — it will come back to you",
+  "cardRevealedNote": "Take a good look; you will see it again",
+  "questionRight": "Correct",
+  "questionShowsAnswer": "The correct answer is marked in green",
+  "buyActivationCode": "Get an activation code",
+  "buyOpensBrowser": "Opens the payment page in your browser. Payment happens outside the app on Chargily's secure page, and returns a code you enter here.",
+  "permBattery": "Unrestricted background",
+  "permBatteryBody": "Without it the system freezes the app while the child plays, so the timer stops and the game is not closed on time.",
+  "signedInSubscription": "Your subscription: {state}",
+  "@signedInSubscription": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "signedInNothingNew": "Nothing about your account changed — you are simply signed in.",
+  "blockingNotRunningTitle": "Blocking is on but not running",
+  "blockingNotRunningBody": "The accessibility service is off, so nothing is blocked and play time is not counted. This happens after every app update.",
+  "blockingNotRunningAction": "Turn it back on",
+  "lessonIntroHeading": "Before we start",
+  "lessonIntroRead": "Read the lesson summary carefully, then move on to the cards",
+  "lessonIntroWait": "You can continue in {seconds}s",
+  "@lessonIntroWait": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "lessonIntroStart": "Start the cards",
+  "cardPickAnswer": "Choose the right answer",
+  "myLessons": "My lessons",
+  "activatedTitle": "Your subscription is active",
+  "activatedUntil": "Valid until {date}",
+  "@activatedUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "activatedBody": "You can now photograph and generate new lessons. Blocking, stars and saved lessons keep working either way.",
+  "questionAgain": "One more time",
+  "parentFreePlayTitle": "Free play time",
+  "parentFreePlayBody": "Give your child play time directly. It is added to their balance, grants no stars, and ends with the day.",
+  "parentFreePlayGranted": "Given today: {duration}",
+  "@parentFreePlayGranted": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "parentFreePlayAdded": "Added {duration} of free play",
+  "@parentFreePlayAdded": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "parentPlayRemaining": "Play time left",
+  "sectionComplete": "Well done! This part is finished",
+  "lessonProgress": "{done} of {total}",
+  "@lessonProgress": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lessonAllDone": "Finished",
+  "lessonQuestionsCount": "{count} questions",
+  "@lessonQuestionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionLocked": "Finish the memory cards first",
+  "cardStayWith": "Look at it for {seconds}s",
+  "@cardStayWith": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  }
 }

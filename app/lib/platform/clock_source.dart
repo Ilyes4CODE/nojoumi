@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:nojoumi_time/nojoumi_time.dart';
+import 'package:lunio_time/lunio_time.dart';
 
 /// Where a [ClockReading] comes from.
 ///
-/// `nojoumi_time` deliberately reads no clock (AD-2): it folds readings that
+/// `lunio_time` deliberately reads no clock (AD-2): it folds readings that
 /// somebody else supplies. This is that somebody. Everything about *trust* stays
 /// in the pure package; everything about *the platform* stays here.
 abstract class ClockSource {
@@ -43,7 +43,7 @@ abstract class ClockSource {
 class PlatformClockSource implements ClockSource {
   const PlatformClockSource();
 
-  static const MethodChannel channel = MethodChannel('dz.nojoumi/clock');
+  static const MethodChannel channel = MethodChannel('dz.lunio/clock');
 
   @override
   Future<ClockReading> read() async {
@@ -76,8 +76,8 @@ class PlatformClockSource implements ClockSource {
 /// It is never selected on Android. If it ever is, that is a bug, not a fallback.
 class DevClockSource implements ClockSource {
   DevClockSource({DateTime Function()? wallClock})
-      : _wallClock = wallClock ?? DateTime.now,
-        _bootId = 'dev-${DateTime.now().microsecondsSinceEpoch}' {
+    : _wallClock = wallClock ?? DateTime.now,
+      _bootId = 'dev-${DateTime.now().microsecondsSinceEpoch}' {
     _sinceStart.start();
   }
 

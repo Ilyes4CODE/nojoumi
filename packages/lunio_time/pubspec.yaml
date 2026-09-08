@@ -1,0 +1,14 @@
+name: lunio_time
+description: >-
+  Trusted clock for Lunio. Pure Dart, no Flutter, no platform access, no wall-clock reads.
+  Implements the protected time reference required by Article 6.8 and Article 7.6 of the contract:
+  changing the device date or time must never grant stars or extend a subscription.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.0
