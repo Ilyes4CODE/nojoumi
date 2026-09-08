@@ -2275,3 +2275,34 @@ behind it shows cannot disagree.
 
 Artwork: `subscription_done.webp`, prompt in `docs/illustration-prompts.md` §5. It degrades to a mint
 placeholder, so none of this waits on the drawing.
+
+## D-88 — MySQL instead of PostgreSQL, because the host has nothing else
+
+**Established 2026-08-31 by looking at the cPanel account**, not by assuming: the Databases section offers
+phpMyAdmin, *Manage My Databases* and a wizard. There is no PostgreSQL on the plan. The database
+`zebqkuzf_db` and the user `zebqkuzf_Ilyes` already exist.
+
+Article 3 names **PostgreSQL**, so this is an amendment and **needs one written line from the client**. It is
+recorded here rather than absorbed quietly, because "the database engine changed" is exactly the kind of fact
+that is obvious during a dispute and invisible before one.
+
+**The cost is small, and that is checkable rather than a hope.** Django's ORM covers the difference, no raw SQL
+exists outside migrations, and the longest indexed column in the schema is 160 characters — 640 bytes at four
+bytes per character, comfortably inside MySQL's legacy 767-byte index limit. Nothing had to be redesigned.
+
+Two changes were required:
+
+* **PyMySQL, not `mysqlclient`.** Django speaks to MySQL through `MySQLdb`, which `mysqlclient` provides as a
+  C extension needing a compiler and MySQL headers — shared hosting rarely has either. PyMySQL is pure Python
+  and registers itself under that name. The call sits in `config/__init__.py` because it must run before
+  Django resolves a backend, which happens before any settings module is imported. It is wrapped in a
+  `try/except ImportError`, so a PostgreSQL deployment skips it and the agreed stack stays the default rather
+  than becoming a special case.
+* **utf8mb4 and `STRICT_TRANS_TABLES`.** MySQL's "utf8" is three bytes wide and silently truncates a row at
+  the first character outside the basic plane. Strict mode turns a value that does not fit into an error
+  instead of a quiet coercion — a star ledger that rounds a number because a column was too small is worse
+  than one that refuses the insert (AD-4).
+
+The other half of Article 3's stack — Docker, Nginx, Gunicorn — is equally absent on shared cPanel; Passenger
+replaces it. Same amendment, same need for the client's agreement, recorded in the header of
+`config/settings/prod.py`.

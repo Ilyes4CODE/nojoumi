@@ -4,6 +4,13 @@ djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1
 drf-spectacular==0.27.2
 psycopg2-binary==2.9.12
+
+# MySQL, because the client's cPanel plan offers no PostgreSQL (2026-08-31).
+# **PyMySQL rather than mysqlclient**: mysqlclient is a C extension and needs a
+# compiler and MySQL headers, which shared hosting usually does not provide.
+# PyMySQL is pure Python and installs anywhere pip runs. It masquerades as
+# MySQLdb through `install_as_MySQLdb()` in config/__init__.py.
+PyMySQL==1.1.1
 requests==2.32.3
 python-dotenv==1.0.1
 gunicorn==22.0.0

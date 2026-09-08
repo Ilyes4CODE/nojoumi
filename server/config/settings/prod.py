@@ -57,10 +57,11 @@ def _database_from_url(url: str) -> dict:
     scheme = parsed.scheme.split("+")[0]
     if scheme not in engines:
         raise RuntimeError(
-            f"DATABASE_URL scheme {scheme!r} is not supported. The agreed stack "
-            "is PostgreSQL; MySQL works but is a change the client must accept."
+            f"DATABASE_URL scheme {scheme!r} is not supported. Article 3 names "
+            "PostgreSQL; MySQL is supported because the client's host offers "
+            "nothing else, and that is a recorded amendment (decisions.md D-88)."
         )
-    return {
+    config = {
         "ENGINE": engines[scheme],
         "NAME": parsed.path.lstrip("/"),
         "USER": unquote(parsed.username or ""),
@@ -69,6 +70,24 @@ def _database_from_url(url: str) -> dict:
         "PORT": str(parsed.port or ""),
         "CONN_MAX_AGE": 60,
     }
+
+    if scheme == "mysql":
+        # **utf8mb4, not utf8.** MySQL's "utf8" is three bytes and cannot store
+        # anything outside the basic plane — which in this app means every emoji
+        # a parent might type into a lesson title, and, on some collations,
+        # trouble with Arabic presentation forms. Storing them silently
+        # truncates the row at the first offending character.
+        #
+        # STRICT_TRANS_TABLES because the alternative is MySQL quietly coercing
+        # a value that does not fit rather than refusing it. A star ledger that
+        # rounds a number because the column was too small is worse than one that
+        # fails the insert (AD-4).
+        config["OPTIONS"] = {
+            "charset": "utf8mb4",
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+        }
+
+    return config
 
 
 DATABASES = {"default": _database_from_url(_required("DATABASE_URL"))}

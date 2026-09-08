@@ -28,24 +28,30 @@ Check these in cPanel before starting, because two of them decide the shape of e
 | Need | Where to look | If it is missing |
 |---|---|---|
 | **Python 3.10+** | Software → *Setup Python App* | No Passenger, no Django. Ask the host. |
-| **PostgreSQL** | Databases → *PostgreSQL Databases* | See §2 — this is a stack decision, not a workaround |
+| **A database** | Databases → *Manage My Databases* | Answered: MySQL only. See §2 |
 | **SSH access** | Advanced → *Terminal*, or SSH Access | Everything below is still possible through the file manager, slower |
 | **SSL on the domain** | Already **Actif** on `bafisslunio.com` | The webhook must be `https://`, never `http://` |
 
-## 2. The database question, honestly
+## 2. The database: MySQL, and that is an amendment
 
-The fixed stack names **PostgreSQL**. Most shared cPanel plans offer **MySQL/MariaDB only**.
+**Settled on 2026-08-31 by looking at the account.** The Databases section offers phpMyAdmin, Manage My
+Databases and a wizard — MySQL/MariaDB. There is no PostgreSQL on this plan.
 
-If PostgreSQL is not in the Databases section, there are two honest options and no third:
+Article 3 names PostgreSQL, so this is a **change to the agreed stack and needs the client's written
+agreement** (decisions.md D-88). The code cost is genuinely small: Django's ORM covers it, no raw SQL exists
+outside migrations, and the longest indexed column is 160 characters — comfortably under MySQL's legacy
+767-byte index limit even at four bytes per character.
 
-* **Ask the host to enable PostgreSQL.** Some plans have it and simply do not show it.
-* **Move to MySQL**, which is a change to the agreed stack and needs the client's written agreement. The code
-  cost is small — Django abstracts it and no raw SQL is used outside two migrations — but it is not a decision
-  to take quietly.
+Two things had to change and are already in the repository:
+
+* **PyMySQL** instead of `mysqlclient`. The latter is a C extension needing a compiler and MySQL headers,
+  which shared hosting rarely provides. PyMySQL is pure Python; `config/__init__.py` registers it under the
+  name Django expects.
+* **utf8mb4 and STRICT_TRANS_TABLES.** MySQL's "utf8" is three bytes and silently truncates anything outside
+  the basic plane. Strict mode makes a value that does not fit an error rather than a silent coercion — a
+  ledger that rounds because a column was small is worse than an insert that fails (AD-4).
 
 Do not run the acceptance on one engine and deliver on the other.
-
----
 
 ## 3. Create the Python application
 
@@ -95,7 +101,7 @@ DJANGO_SECRET_KEY=<a fresh 50-character random string, not the development one>
 DJANGO_DEBUG=0
 DJANGO_ALLOWED_HOSTS=bafisslunio.com,www.bafisslunio.com
 
-DATABASE_URL=postgres://<user>:<password>@localhost:5432/<database>
+DATABASE_URL=mysql://zebqkuzf_Ilyes:<password>@localhost:3306/zebqkuzf_db
 
 LESSON_PROCESSOR=groq
 GROQ_API_KEY=<key>
