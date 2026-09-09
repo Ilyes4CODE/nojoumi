@@ -12,6 +12,16 @@ psycopg2-binary==2.9.12
 # MySQLdb through `install_as_MySQLdb()` in config/__init__.py.
 PyMySQL==1.1.1
 requests==2.32.3
+
+# **Required, and invisible.** `serializers.ImageField` delegates to Django's
+# `forms.ImageField`, which does `from PIL import Image` at validation time. No
+# line of our own source imports PIL, so nothing — not a linter, not an unused
+# import check, not the test suite — reveals the dependency. It was missing here
+# until 2026-09-09, when every lesson upload on the production host returned 500
+# with `ModuleNotFoundError: No module named 'PIL'` while the same request
+# succeeded locally, on a machine that happened to have Pillow installed for
+# unrelated reasons.
+Pillow==12.2.0
 python-dotenv==1.0.1
 gunicorn==22.0.0
 
