@@ -2307,26 +2307,30 @@ The other half of Article 3's stack — Docker, Nginx, Gunicorn — is equally a
 replaces it. Same amendment, same need for the client's agreement, recorded in the header of
 `config/settings/prod.py`.
 
-## D-89 — MariaDB silently dropped Article 7.3s idempotency guard
+## D-89 — MariaDB silently dropped Article 7.3's idempotency guard
 
-**Found on the production deployment, 2026-09-09**, in a line of  output that reads like housekeeping:
+**Found on the production deployment, 2026-09-09**, in a line of `migrate` output that reads like
+housekeeping:
 
+```
+payments.WebhookEvent: (models.W036) MariaDB does not support unique constraints with conditions.
+        HINT: A constraint won't be created.
+```
 
+D-42's fix is a **partial** unique index — `event_id` unique only where `signature_valid` is true, so a forged
+delivery can be recorded for the audit trail without reserving the id a genuine one will need. PostgreSQL has
+partial indexes. **MariaDB does not**, and Django skips the constraint with a warning rather than an error.
 
-D-42s fix is a **partial** unique index —  unique only where , so a forged delivery
-can be recorded for the audit trail without reserving the id a genuine one will need. PostgreSQL has partial
-indexes. **MariaDB does not**, and Django skips the constraint with a warning rather than an error.
-
-**Nothing failed.** The migration reported OK, the table was created, and the webhook views
- sat waiting for a violation that could no longer occur. A gateway retry of an already
+**Nothing failed.** The migration reported OK, the table was created, and the webhook view's
+`except IntegrityError` sat waiting for a violation that could no longer occur. A gateway retry of an already
 processed payment would have been processed a second time and **issued a second activation code for one
 payment** — on a live-mode deployment, with real money.
 
-The fix is a plain unique nullable column, , set to  when the signature verified
+The fix is a plain unique nullable column, `verified_event_id`, set to `event_id` when the signature verified
 and NULL otherwise. MySQL, MariaDB and PostgreSQL all allow many NULLs in a unique index, so refused
 deliveries do not participate — the same guarantee, expressed in something every engine implements. It is
-maintained in  rather than at the three call sites, because the fourth call site is the one that would
-forget. The partial constraint is **kept** for PostgreSQL, where it is the more direct statement of the rule.
+maintained in `save()` rather than at the three call sites, because the fourth call site is the one that would
+forget. The partial constraint is **kept** for PostgreSQL, where it states the rule more directly.
 
 **The tests are written against the column, not the constraint.** On SQLite the partial index works, so a test
 that merely tried a duplicate insert would have passed for the wrong reason and said nothing about the engine
@@ -2334,7 +2338,8 @@ actually deployed to — which is exactly how this survived a green suite in the
 
 Two lessons worth keeping:
 
-* **A warning during a deploy is a finding until proved otherwise.** This one was one line among nineteen s.
-* **The database engine is part of the test matrix, not a detail underneath it.** D-88 changed the engine, and
-  this is the second defect that change surfaced — the first being a latin1 database that would have refused
-  every Arabic lesson.
+* **A warning during a deploy is a finding until proved otherwise.** This one was a single line among nineteen
+  `OK`s, and it was the only sign.
+* **The database engine belongs in the test matrix, not underneath it.** D-88 changed the engine, and this is
+  the second defect that change surfaced — the first being a latin1 database that would have refused every
+  Arabic lesson the app ever tried to save.
