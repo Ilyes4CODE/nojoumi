@@ -2350,33 +2350,39 @@ Two lessons worth keeping:
 
 Adding WhiteNoise wrote the static-files backend like this:
 
-    STORAGES = {**globals().get("STORAGES", {}), "staticfiles": {...}}
+```python
+STORAGES = {**globals().get("STORAGES", {}), "staticfiles": {...}}
+```
 
-on the assumption it was merging into Django defaults.  never defines STORAGES, so the merge began
-from an empty dict and the result had **no  entry**. A settings module that assigns STORAGES replaces
- wholesale — there is no partial override, and nothing warns.
+on the assumption that it was merging into Django's defaults. `base.py` never defines `STORAGES`, so the merge
+began from an empty dict and the result had **no `default` entry**. A settings module that assigns `STORAGES`
+replaces `global_settings` wholesale — there is no partial override, and nothing warns.
 
-Every request that touched an uploaded file then raised  and returned 500. **Everything else kept working perfectly**: registration, login, tokens, the
+Every request that touched an uploaded file then raised `InvalidStorageError: Could not find config for
+'default'` and returned 500. **Everything else kept working perfectly**: registration, login, tokens, the
 subscription endpoints, the payment page, every static asset. Only the one endpoint that receives a photograph
-was affected, which is why it read as an AI failure.
+was affected, which is exactly why it read as an AI failure.
 
 ### What let it through
 
-Every check the deployment ran passed: , , ,  on
-,  on the webhook,  on . The test suite passed too — it runs on
-, which never touches STORAGES.
+Every check the deployment ran passed — `migrate`, `check --database default`, `collectstatic`, `200` on
+`/api/health/`, `405` on the webhook, `200` on `/pay/`. The test suite passed too: it runs on
+`config.settings.dev`, which never touches `STORAGES`.
 
-**The production settings module was the one file nothing imported.** 
-now imports it directly and asserts both storage keys, DEBUG off, no wildcard host, and that WhiteNoise sits
-where it is documented to sit. It lives beside the lessons app because the lesson upload is the request that
-broke.
+**The production settings module was the one file nothing imported.**
+`apps/lessons/tests/test_production_settings.py` now imports it directly and asserts both storage keys, `DEBUG`
+off, no wildcard host, and that WhiteNoise sits where it is documented to sit. It lives beside the lessons app
+because the lesson upload is the request that broke.
 
-### The  entry is deliberately unusable
+### The `default` entry is deliberately unusable
 
- is None (Article 14 — nothing a child photographs is ever stored on the server), so the backend
-resolves and then fails on any write. That is the correct shape: Django can serve a request, and an accidental
-write fails loudly instead of quietly persisting a page from a schoolbook.
+`MEDIA_ROOT` is None (base.py, Article 14 — nothing a child photographs is ever stored on the server), so the
+backend resolves and then fails on any write. That is the correct shape: Django can serve a request, and an
+accidental write fails loudly instead of quietly persisting a page from a schoolbook.
 
-**Isolated by measurement, not by reading.** The same request was 500 against production and 200 in 3.2 seconds
-against a local server with the same key and the same model — which ruled out Groq, the key, the image and the
-network in one step, and left only the environment.
+### How it was found
+
+**By measurement, not by reading.** The same request was 500 against production and **200 in 3.2 seconds**
+against a local server using the same key, the same model and the same image. That ruled out Groq, the API key,
+the model name, the photograph and the network in a single step, and left only the environment — which is a
+much smaller place to look.
