@@ -15,6 +15,16 @@ requests==2.32.3
 python-dotenv==1.0.1
 gunicorn==22.0.0
 
+# Static files, served by Django itself in production.
+#
+# With DEBUG=0 Django serves nothing under STATIC_URL, and on cPanel/Passenger
+# there is no Nginx location block to write instead — only a `public/` directory
+# whose mapping depends on the host's Passenger configuration. WhiteNoise makes
+# the app self-contained: the payment page and the admin keep their CSS whatever
+# the host does. A parent looking at an unstyled payment page has no way to tell
+# it from a broken one.
+whitenoise==6.7.0
+
 # Ed25519 signing of the subscription snapshot (Art. 7.6 — the local copy is a
 # *signed* cache, and the app holds only the public key).
 cryptography==42.0.8

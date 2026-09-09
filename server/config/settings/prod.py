@@ -93,6 +93,27 @@ def _database_from_url(url: str) -> dict:
 DATABASES = {"default": _database_from_url(_required("DATABASE_URL"))}
 
 
+# ----------------------------------------------------------------- static files
+#
+# Immediately after SecurityMiddleware, which is where WhiteNoise documents it:
+# early enough to answer a static request before anything else does work for it,
+# late enough that the security headers are still applied.
+MIDDLEWARE = [
+    *MIDDLEWARE[:1],
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    *MIDDLEWARE[1:],
+]
+
+# Compressed and hashed. The hash in the filename is what lets these be cached
+# for a year without a stale stylesheet surviving a deploy.
+STORAGES = {
+    **globals().get("STORAGES", {}),
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+
 # --------------------------------------------------------------------- security
 #
 # Passenger terminates TLS in front of the application, so Django sees plain HTTP
