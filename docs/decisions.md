@@ -2306,3 +2306,35 @@ Two changes were required:
 The other half of Article 3's stack — Docker, Nginx, Gunicorn — is equally absent on shared cPanel; Passenger
 replaces it. Same amendment, same need for the client's agreement, recorded in the header of
 `config/settings/prod.py`.
+
+## D-89 — MariaDB silently dropped Article 7.3s idempotency guard
+
+**Found on the production deployment, 2026-09-09**, in a line of  output that reads like housekeeping:
+
+
+
+D-42s fix is a **partial** unique index —  unique only where , so a forged delivery
+can be recorded for the audit trail without reserving the id a genuine one will need. PostgreSQL has partial
+indexes. **MariaDB does not**, and Django skips the constraint with a warning rather than an error.
+
+**Nothing failed.** The migration reported OK, the table was created, and the webhook views
+ sat waiting for a violation that could no longer occur. A gateway retry of an already
+processed payment would have been processed a second time and **issued a second activation code for one
+payment** — on a live-mode deployment, with real money.
+
+The fix is a plain unique nullable column, , set to  when the signature verified
+and NULL otherwise. MySQL, MariaDB and PostgreSQL all allow many NULLs in a unique index, so refused
+deliveries do not participate — the same guarantee, expressed in something every engine implements. It is
+maintained in  rather than at the three call sites, because the fourth call site is the one that would
+forget. The partial constraint is **kept** for PostgreSQL, where it is the more direct statement of the rule.
+
+**The tests are written against the column, not the constraint.** On SQLite the partial index works, so a test
+that merely tried a duplicate insert would have passed for the wrong reason and said nothing about the engine
+actually deployed to — which is exactly how this survived a green suite in the first place.
+
+Two lessons worth keeping:
+
+* **A warning during a deploy is a finding until proved otherwise.** This one was one line among nineteen s.
+* **The database engine is part of the test matrix, not a detail underneath it.** D-88 changed the engine, and
+  this is the second defect that change surfaced — the first being a latin1 database that would have refused
+  every Arabic lesson.

@@ -119,6 +119,33 @@ class WebhookEvent(models.Model):
     # for the audit trail, and can no longer reserve anything.
     event_id = models.CharField(max_length=160, db_index=True)
 
+    # The same id again, but **only for verified rows**, and NULL otherwise.
+    #
+    # ### Why a second column instead of the conditional constraint below
+    #
+    # The `UniqueConstraint(condition=...)` in `Meta` is a partial index, and
+    # **MariaDB does not have those**. Django says so and carries on:
+    #
+    #     models.W036 MariaDB does not support unique constraints with
+    #     conditions. HINT: A constraint won't be created.
+    #
+    # Seen on the production deployment, 2026-09-09. The migration reported OK,
+    # the table was created, and Article 7.3's idempotency had no enforcement at
+    # all — while the view's `except IntegrityError` sat there waiting for a
+    # violation that could no longer happen. A gateway retry of an already
+    # processed payment would have been processed a second time and issued a
+    # second activation code.
+    #
+    # A plain unique index on a nullable column does the same work on every
+    # engine we might run on: MySQL, MariaDB and PostgreSQL all allow many NULLs
+    # in a unique index, so refused deliveries — which are audit rows and must
+    # never reserve anything — simply do not participate.
+    #
+    # Kept in step in `save`, so no caller has to remember it.
+    verified_event_id = models.CharField(
+        max_length=160, null=True, blank=True, unique=True, editable=False
+    )
+
     signature_valid = models.BooleanField(default=False)
     outcome = models.CharField(max_length=16, choices=Outcome.choices)
 
@@ -143,12 +170,27 @@ class WebhookEvent(models.Model):
         constraints = [
             # Article 7.3's idempotency, scoped to events we actually
             # authenticated. Refused deliveries are audit rows and nothing more.
+            #
+            # **This one only exists on PostgreSQL.** MariaDB and MySQL have no
+            # partial indexes and skip it with a warning, which is precisely why
+            # `verified_event_id` carries the same guarantee as a plain unique
+            # column. Kept rather than deleted: on PostgreSQL it is the more
+            # direct statement of the rule, and having both costs one index.
             models.UniqueConstraint(
                 fields=["event_id"],
                 condition=models.Q(signature_valid=True),
                 name="unique_verified_webhook_event",
             )
         ]
+
+    def save(self, *args, **kwargs):
+        """Keep `verified_event_id` in step with `signature_valid`.
+
+        Here rather than at the call sites: there are three of them today, and
+        the fourth is the one that would forget.
+        """
+        self.verified_event_id = self.event_id if self.signature_valid else None
+        return super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.event_id} -> {self.outcome}"
