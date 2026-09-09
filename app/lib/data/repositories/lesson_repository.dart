@@ -105,7 +105,10 @@ class LessonRepository {
     required int questionCount,
     String subject = '',
   }) async {
-    final form = FormData.fromMap({
+    // Built on demand rather than once, because the client re-sends this
+    // request after renewing an expired token and a multipart body can only be
+    // streamed a single time. See `ApiClient.post`.
+    Future<FormData> body() async => FormData.fromMap({
       'image': await MultipartFile.fromFile(
         image.path,
         filename: p.basename(image.path),
@@ -118,7 +121,7 @@ class LessonRepository {
 
     final response = await _api.post(
       '/api/lessons/process/',
-      form: form,
+      form: body,
       timeout: AppConfig.lessonTimeout,
     );
 

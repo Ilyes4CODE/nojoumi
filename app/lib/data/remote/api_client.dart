@@ -1,3 +1,5 @@
+import 'dart:io' show HandshakeException, SocketException;
+
 import 'package:dio/dio.dart';
 
 import '../../core/config.dart';
@@ -205,16 +207,26 @@ class ApiClient {
     (headers) => dio.get<dynamic>(path, options: Options(headers: headers)),
   );
 
+  /// Post a JSON `body`, or a multipart `form`.
+  ///
+  /// `form` is a **builder**, not a `FormData`, and that is not a stylistic
+  /// choice. Dio finalizes a `FormData` into a stream as it sends it and throws
+  /// if the same one is finalized twice, so a request that has to be sent again
+  /// — which is exactly what [_send] does when the access token has expired —
+  /// needs a fresh body each attempt. A builder makes that impossible to get
+  /// wrong: there is no already-built form for a caller to hand over.
+  ///
+  /// It is asynchronous because building one means reading a file off disk.
   Future<Response<dynamic>> post(
     String path, {
     Object? body,
-    FormData? form,
+    Future<FormData> Function()? form,
     Duration? timeout,
   }) {
     return _send(
-      (headers) => dio.post<dynamic>(
+      (headers) async => dio.post<dynamic>(
         path,
-        data: form ?? body,
+        data: form == null ? body : await form(),
         options: Options(
           headers: headers,
           receiveTimeout: timeout ?? AppConfig.apiTimeout,
@@ -320,6 +332,15 @@ class ApiClient {
         'لا يوجد اتصال بالإنترنت',
         retryable: true,
       ),
+      // `unknown` is Dio's bucket for anything thrown while it was working, and
+      // it is not all transport: a bug of ours on the way into the socket lands
+      // here too. A multipart body that could not be rebuilt for a retry spent a
+      // day looking like an unreachable server for exactly this reason. Sockets
+      // and TLS keep the connection wording; everything else says less rather
+      // than something false.
+      DioExceptionType.unknown when error.error is! SocketException &&
+              error.error is! HandshakeException =>
+        const ApiFailure('تعذّرت العملية. حاول مرة أخرى.', retryable: true),
       _ => const ApiFailure('تعذّر الوصول إلى الخادم.', retryable: true),
     };
   }

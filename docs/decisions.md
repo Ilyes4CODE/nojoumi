@@ -2386,3 +2386,47 @@ accidental write fails loudly instead of quietly persisting a page from a school
 against a local server using the same key, the same model and the same image. That ruled out Groq, the API key,
 the model name, the photograph and the network in a single step, and left only the environment — which is a
 much smaller place to look.
+
+## D-91 — the token-expiry retry could not re-send a photograph
+
+**Found on the device on 2026-09-09, immediately after D-90 was fixed.** The same lesson upload that returned
+**200 in 5.6 seconds** through `curl` failed inside the app with «تعذّر الوصول الى الخادم» — *the server could
+not be reached*. It had been reached. It had answered.
+
+`ApiClient._send` renews an expired access token and then calls the request closure a second time. The lesson
+upload's closure captured one already-built `FormData`. Dio finalizes a `FormData` into a stream as it sends it
+and throws on a second finalize, so the retry raised a `StateError` from inside Dio, Dio reported it as
+`DioExceptionType.unknown`, and `_networkFailure` had no branch for that except the transport fallback.
+
+### Why it was the normal case, not an edge case
+
+SimpleJWT's default access-token lifetime is **five minutes**, and we never overrode it. The path from signing
+up to photographing a page — grade, PIN, the accessibility disclosure, the dashboard, finding the schoolbook —
+takes longer than five minutes for anyone doing it for the first time. So the 401 was not bad luck: it was the
+ordinary state of the token by the time the parent pressed the shutter, and the one request in the app that had
+to survive a retry was the only one that could not.
+
+Every other call retried perfectly, because every other call sends JSON, and JSON can be sent twice.
+
+### The fix
+
+`ApiClient.post` now takes a **builder** — `Future<FormData> Function()` — rather than a `FormData`. There is no
+pre-built body for a caller to hand over, so the retry gets a fresh one and the mistake cannot be made again by
+someone who has not read this entry. `LessonRepository.process` passes `body`, which reopens the file.
+
+`_networkFailure` also stopped calling this a transport problem. `unknown` is Dio's bucket for anything thrown
+while it was working, and a bug of ours on the way into the socket lands there beside a genuine socket failure.
+Sockets and TLS keep the connection wording; everything else now says less rather than something false.
+
+### What let it through
+
+`app/test/lesson_repository_test.dart` stages responses through a fake adapter and never staged a 401 followed
+by a 200 — the only sequence that exercises the retry. `api_client_retry_test.dart` now does, for a multipart
+body and a JSON one, and checks that the second attempt carries the renewed token **and** the photograph.
+
+### The pattern behind D-89, D-90 and D-91
+
+Three faults in one day, all invisible to a green suite, all found only by running the real thing against the
+real server. The suite tested our code; none of it tested the seam between our code and everything underneath —
+the database's charset, the production settings module, the HTTP client's own stream semantics. That seam is
+where all three lived.
