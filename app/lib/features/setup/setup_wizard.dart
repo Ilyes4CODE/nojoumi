@@ -746,13 +746,18 @@ class _ServerBanner extends ConsumerWidget {
                 ),
               ],
             ),
+            // **The server address is not shown to the parent.**
+            //
+            // It was here for the workshop, where the build's address was the
+            // first thing worth knowing and it changed with the router's mood.
+            // A parent has no use for it: they cannot check it, cannot change
+            // it, and a URL inside an error box reads as the app having leaked
+            // something technical at the exact moment they most need calm.
+            //
+            // It stays in the string table, and `serverHealthProvider` still
+            // carries `baseUrl`, so a support conversation can still ask for it
+            // through the parent settings screen.
             const SizedBox(height: LunioSpacing.xs),
-            Text(
-              l10n.serverAddress(state.baseUrl),
-              style: theme.textTheme.bodySmall,
-              textDirection: TextDirection.ltr,
-              textAlign: TextAlign.start,
-            ),
             if (state.detail.isNotEmpty)
               Text(state.detail, style: theme.textTheme.bodySmall),
             Align(

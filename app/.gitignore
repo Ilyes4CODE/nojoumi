@@ -50,3 +50,8 @@ app.*.map.json
 # every other machine*, and a committed one would silently point somebody else's
 # build at an address that does not exist on their network.
 lunio.local.json
+
+# The production build defines are NOT ignored: the domain is public and the
+# snapshot key is the public half by design. Committing them is what makes a
+# release build one command instead of a remembered pair of --dart-defines.
+!lunio.production.json

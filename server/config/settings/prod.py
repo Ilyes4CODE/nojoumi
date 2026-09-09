@@ -104,10 +104,33 @@ MIDDLEWARE = [
     *MIDDLEWARE[1:],
 ]
 
-# Compressed and hashed. The hash in the filename is what lets these be cached
-# for a year without a stale stylesheet surviving a deploy.
+# **Both entries, spelled out.**
+#
+# This was written as `{**globals().get("STORAGES", {}), "staticfiles": ...}`,
+# on the assumption that it was merging into Django's defaults. `base.py` never
+# defines STORAGES, so the merge started from `{}` and the result had no
+# `default` — which **deleted the file-storage backend** for the whole
+# production deployment.
+#
+# Every request that touched an uploaded file then raised
+# `InvalidStorageError: Could not find config for 'default'`, so the lesson
+# endpoint returned 500 for every photograph while registration, login and the
+# payment page all worked perfectly. Reported by the client on 2026-09-09 as
+# "the AI is not working"; the AI was never reached.
+#
+# Django's `global_settings` does provide defaults, but a settings module that
+# assigns STORAGES replaces them wholesale. There is no partial override, so
+# both keys are written here explicitly and neither can go missing again.
 STORAGES = {
-    **globals().get("STORAGES", {}),
+    # Present so Django can resolve it, and **deliberately unusable**:
+    # `MEDIA_ROOT` is None (base.py, Article 14 — nothing a child photographs is
+    # ever stored on the server). An accidental write therefore fails loudly
+    # instead of quietly persisting a page from a schoolbook.
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    # Compressed and hashed. The hash in the filename is what lets these be
+    # cached for a year without a stale stylesheet surviving a deploy.
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },

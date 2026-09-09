@@ -185,8 +185,19 @@ class ApiClient {
     DioExceptionType.connectionTimeout ||
     DioExceptionType.receiveTimeout ||
     DioExceptionType.sendTimeout => 'انتهت مهلة الاتصال بالخادم.',
+    // **Written for the parent, not for the developer.**
+    //
+    // This used to say "check that the phone and the computer are on the same
+    // network" — true while the server was a laptop on the workshop LAN, and
+    // meaningless once it moved to bafisslunio.com. A parent reading it has no
+    // computer in the story and no idea what to do, so an accurate diagnosis
+    // became an instruction they cannot follow.
+    //
+    // Measured on the device 2026-09-09: this is the branch a phone with no
+    // network reaches, and "check your internet connection" is exactly right
+    // for it.
     DioExceptionType.connectionError =>
-      'لا يمكن الوصول إلى الخادم. تحقّق من أنّ الهاتف والحاسوب على نفس الشبكة.',
+      'تحقّق من اتصالك بالإنترنت ثمّ أعد المحاولة.',
     _ => 'تعذّر الاتصال بالخادم.',
   };
 
