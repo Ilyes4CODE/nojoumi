@@ -124,6 +124,27 @@ enum Illustration {
   /// The review half of a lesson.
   sectionQuestions('section_questions.webp'),
 
+  /// A friendly key, for the parent who cannot get back in.
+  ///
+  /// **A key, not a padlock.** [lockFriendly] is the child's drawing and it
+  /// means *not yet*; reusing it here would put the app's symbol for "you are
+  /// being refused" on the screen of somebody who is being let back in. A key
+  /// is the opposite gesture with the same warmth.
+  ///
+  /// The email sends the same drawing as a PNG — see
+  /// `server/apps/accounts/email_art/`. A parent who asks for a code in the app
+  /// and then opens their inbox should see that the two screens are one errand,
+  /// which is also the cheapest thing we can do about a message that arrives
+  /// looking like phishing.
+  keyFriendly('key_friendly.webp'),
+
+  /// An envelope with a star — the code is on its way.
+  ///
+  /// It carries the one instruction that actually rescues this flow: look in the
+  /// spam folder. A transactional email from a new domain lands there often
+  /// enough that a screen which does not mention it is a support call.
+  mailSent('mail_sent.webp'),
+
   /// The moment the parent's activation code is accepted.
   ///
   /// **A receipt, not a celebration.** The parent has just paid money outside

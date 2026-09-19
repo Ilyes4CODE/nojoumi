@@ -181,3 +181,38 @@ LOGGING = {
         "django.request": {"handlers": ["console"], "level": "WARNING", "propagate": False},
     },
 }
+
+
+# ------------------------------------------------------------------------ email
+#
+# The password-reset code is the only thing this server sends, and a reset that
+# goes nowhere is indistinguishable, to the parent, from one that worked — they
+# refresh an inbox until they give up and call the client. So the settings are
+# **required** here for the same reason `DATABASE_URL` is: a server that cannot
+# do its job should refuse to start, where whoever deployed it finds out in ten
+# seconds, rather than run and be discovered by a customer.
+#
+# cPanel mailboxes speak SMTP on 465 with implicit TLS. Port 587 with STARTTLS
+# works on most hosts too; set EMAIL_USE_TLS=1 and EMAIL_USE_SSL=0 for that.
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = _required("EMAIL_HOST")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "465"))
+EMAIL_HOST_USER = _required("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = _required("EMAIL_HOST_PASSWORD")
+
+EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "1") == "1"
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "0") == "1"
+
+# Django refuses to start with both set, which is the right behaviour and a
+# confusing error message. Caught here where the fix is one line away.
+if EMAIL_USE_SSL and EMAIL_USE_TLS:
+    raise RuntimeError(
+        "EMAIL_USE_SSL and EMAIL_USE_TLS cannot both be on. "
+        "Implicit TLS (port 465) is SSL; STARTTLS (port 587) is TLS."
+    )
+
+# The From address must be a real mailbox on the sending domain. A mismatch is
+# the single most common reason a transactional email lands in spam — SPF and
+# DMARC are checked against this domain, not against EMAIL_HOST_USER.
+DEFAULT_FROM_EMAIL = _required("DEFAULT_FROM_EMAIL")
+SERVER_EMAIL = DEFAULT_FROM_EMAIL

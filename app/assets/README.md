@@ -17,6 +17,8 @@ The set is `docs/design-v4.md` §6, from the client's second design pass.
 | `astronaut.webp` | small round astronaut | the home greeting, empty states |
 | `shield.webp` | violet shield with a check mark | the disclosure step, the parent gate |
 | `starfield.webp` | sparse low-contrast star pattern | behind the blocked card and the balance card |
+| `key_friendly.webp` | violet key with a small smile and sparkles | the forgot-password screen, and the reset email |
+| `mail_sent.webp` | envelope with a star leaving it | the code-entry step of the reset |
 
 `lock_friendly.webp` is the one to get right. It is what a child sees at the moment
 they are refused something they wanted, and it repeats on every locked tile. It has
@@ -91,3 +93,11 @@ The script is `scratchpad/convert_art.py`; re-run it if any asset is redrawn.
 | `star_big` | the session-complete screen |
 | `lock_friendly` | the blocked card and locked game tiles — **not built yet**, both wait on the Kotlin blocking layer |
 | `starfield` | behind the blocked card — same, not built yet |
+
+## The reset email keeps its own copies
+
+`key_friendly` also appears in the password-reset message, and email needs
+different files: **PNG**, because Outlook renders through Word and has no WebP
+decoder, and at twice the drawn size, because phone mail clients are 2x displays.
+They live in `server/apps/accounts/email_art/` and are never in the APK, so the
+budget above does not apply to them. See that folder's README.

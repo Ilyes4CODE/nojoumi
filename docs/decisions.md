@@ -2430,3 +2430,80 @@ Three faults in one day, all invisible to a green suite, all found only by runni
 real server. The suite tested our code; none of it tested the seam between our code and everything underneath —
 the database's charset, the production settings module, the HTTP client's own stream semantics. That seam is
 where all three lived.
+
+## D-92 — the password reset is a code in an email, not a link
+
+**Client request, 2026-09-19.** A parent who forgets the account password currently has no way back in
+except asking the client to edit the database.
+
+### A six-digit code rather than a reset link
+
+A link has to be opened by *the app*, and the app has no deep links — no intent filter, no
+`assetlinks.json`, no App Links verification. A link would therefore open a browser, which would need its own
+reset page, its own session handling and its own place to put a password. The parent would end up carrying a
+credential between two programs.
+
+A code goes the other way: the browser is never involved, the new password is typed inside the app over the
+same TLS as everything else, and **the parent has already done this exact errand once** — Article 7.3 step 5
+has them read an activation code on a web page and type it into the app.
+
+Six digits is a million possibilities. What makes that safe is not the number, it is the budget: **five wrong
+attempts and the code dies**, whichever endpoint spent them, so the chance of guessing is one in two hundred
+thousand and the parent simply asks for another. Fifteen-minute lifetime, one live code per account, and a
+sixty-second cooldown so nobody can bury an inbox by tapping a button.
+
+The code is stored through Django's password hasher. Six digits under an unsalted digest is a rainbow table
+somebody builds in an afternoon, and anyone who read the table would otherwise hold a live reset for every
+account with a code outstanding.
+
+### Three endpoints, because the middle one is a kindness
+
+`verify/` exists only so the app can say "that code is wrong" **before** asking the parent to invent a
+password. Being made to type a new password twice and only then told the code expired is the kind of small
+cruelty that gets an app deleted. It costs nothing: it draws on the same five attempts as `confirm/`, so it
+buys the parent patience and an attacker nothing.
+
+### The same answer for an address that exists and one that does not
+
+Requesting a code is always 200 — whether an account was found, whether a message was sent, and **whether the
+mail server accepted it**. A wrong code, an expired code, a burnt-out code and an unknown address all return
+one 400 with one sentence.
+
+This matters more here than on an ordinary service. The account list is parents of school children in one
+country, and the phone is regularly in a child's hands. "No account with that email" is a working lookup tool
+for whoever is holding it.
+
+The *timing* still leaks — an unknown address skips the mail send and answers faster. Closing that would mean
+sleeping a request thread on a shared host, which costs more than the leak is worth. Written down rather than
+pretended away.
+
+### `CHECK_REVOKE_TOKEN`, and the one-time sign-out it causes
+
+A reset that changes the password and leaves the intruder signed in has done nothing. SimpleJWT can bind a hash
+of the password into every token and check it on each request, which ends every other session the moment the
+password changes — one settings line instead of a blacklist app and two tables.
+
+**It signs every currently-issued token out once.** A token minted before the setting carries no hash claim and
+is refused; refreshing it yields another token with no claim, so the parent signs in again. That is why it went
+in now, while the app is in nobody's hands but the client's.
+
+### The email
+
+Tables, inline CSS, fixed 600px, and **it has to be good with every image gone**, because that is what an
+image-blocking client shows. The illustrations travel inside the message as `related` parts referenced by
+`cid:` — a remote `<img>` is blocked by default in Outlook and proxied by Gmail, so artwork at a URL arrives
+broken for a large share of readers, and this is the one message where looking broken matters: a parent who has
+just asked for a reset is already wondering whether the mail is a phishing attempt. PNG, not the app's WebP,
+because Outlook renders through Word and has no WebP decoder.
+
+### Found while testing: the dev console backend cannot print this message
+
+On Windows, Python opens stdout in the console code page (cp1252 here) and the subject line is Arabic, so
+`console.EmailBackend` raises `UnicodeEncodeError` and prints nothing. The endpoint then answers 200 anyway —
+**correctly**, since a visible send failure is the enumeration oracle above — so a developer asks for a code, is
+told cheerfully that one was sent, and there is no code anywhere.
+
+Development now writes each message to `server/sent_emails/` as a file, which is the better tool regardless:
+the message is HTML with inline illustrations, and a `.eml` opened in a mail client shows what a parent will
+actually see. Production is unaffected; it has always been SMTP, and `prod.py` refuses to start without the
+credentials for the same reason it refuses to start without a database.

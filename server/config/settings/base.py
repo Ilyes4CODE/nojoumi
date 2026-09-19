@@ -100,6 +100,35 @@ DATABASES = {
     }
 }
 
+# --- Email ------------------------------------------------------------------
+# Used by exactly one thing: the password-reset code (apps/accounts/mailer.py).
+# There is no newsletter, no receipt and no notification — Article 14 keeps the
+# server's knowledge of a family down to an address and a subscription.
+#
+# Development prints the message to the console. **Production overrides all of
+# this and refuses to start without it** (config/settings/prod.py): a reset that
+# silently goes nowhere looks identical to one that worked, and the parent is
+# left refreshing an inbox.
+# Development writes each message to a file rather than to the console, for two
+# reasons found the hard way on 2026-09-19.
+#
+# **The console backend cannot print this message on Windows.** Python opens
+# stdout in the console's own code page — cp1252 here — and the subject line is
+# Arabic, so `write_message` raises `UnicodeEncodeError` and nothing is printed.
+# The reset endpoint then answers 200 anyway, exactly as it is designed to (a
+# visible send failure is an account-enumeration oracle), so a developer asks for
+# a code, is told cheerfully that one was sent, and there is no code anywhere.
+#
+# **A .eml file is the better tool regardless.** This message is HTML with
+# inline illustrations; opening the file in a mail client shows what a parent
+# will actually see, which a wall of base64 in a terminal does not.
+EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+EMAIL_FILE_PATH = BASE_DIR / "sent_emails"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Lunio <no-reply@localhost>")
+
+# A dead SMTP host must not hold a worker open on a shared plan.
+EMAIL_TIMEOUT = 10
+
 LANGUAGE_CODE = "ar"
 TIME_ZONE = "Africa/Algiers"
 USE_I18N = True
@@ -127,7 +156,29 @@ REST_FRAMEWORK = {
         # endpoint is unauthenticated by contract design (Art. 7.3). The limit is
         # what keeps that from being an amplification vector.
         "checkout": "20/hour",
+        # Password reset shares one bucket across all three of its endpoints, so
+        # the budget cannot be widened by bouncing between them. Generous enough
+        # for a parent who mistypes a code twice and then asks for a fresh one;
+        # far too small to walk a million six-digit codes.
+        "password_reset": "15/hour",
     },
+}
+
+# Art. 3 leaves the token lifetimes to us. Written down rather than defaulted,
+# because both numbers are decisions.
+#
+# `CHECK_REVOKE_TOKEN` binds a hash of the parent's password into every token and
+# checks it on each request. It is here for the password reset: without it, a
+# parent who resets because somebody else got into their account changes the
+# password and leaves that person signed in for as long as their refresh token
+# lasts, which is the one outcome a reset exists to prevent.
+#
+# **It signs every currently-issued token out, once.** A token minted before this
+# setting carries no hash claim and is refused, and refreshing it produces
+# another token with no claim, so the parent signs in again. That is the correct
+# moment for this change: before the app is in anyone's hands but the client's.
+SIMPLE_JWT = {
+    "CHECK_REVOKE_TOKEN": True,
 }
 
 # Art. 7.6 — Ed25519 private key for signing the subscription snapshot. The app

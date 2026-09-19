@@ -499,5 +499,46 @@
         "type": "String"
       }
     }
-  }
+  },
+  "forgotPasswordLink": "نسيت كلمة المرور؟",
+  "@forgotPasswordLink": {
+    "description": "The link under the sign-in form."
+  },
+  "forgotTitle": "استعادة كلمة المرور",
+  "forgotAskTitle": "لا بأس، يحدث للجميع",
+  "forgotAskBody": "اكتب بريدك الإلكتروني وسنرسل لك رمزاً من ستة أرقام لتختار كلمة مرور جديدة.",
+  "forgotAskAction": "أرسل الرمز",
+  "forgotCodeTitle": "تفقّد بريدك",
+  "forgotCodeBody": "أرسلنا رمزاً من ستة أرقام إلى {email}. إن لم تجده، انظر في مجلّد الرسائل غير المرغوبة.",
+  "@forgotCodeBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "forgotCodeLabel": "الرمز",
+  "forgotCodeAction": "تأكيد الرمز",
+  "forgotCodeResend": "لم يصلك شيء؟ أعد الإرسال",
+  "forgotCodeResendIn": "يمكنك إعادة الإرسال بعد {seconds} ثانية",
+  "@forgotCodeResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "forgotCodeWrongEmail": "غيّر البريد الإلكتروني",
+  "forgotNewTitle": "اختر كلمة مرور جديدة",
+  "forgotNewBody": "ستُنهى جلساتك على الأجهزة الأخرى. لن يتأثّر شيء عند طفلك: النجوم والحجب والدروس المحفوظة كلها على هذا الهاتف.",
+  "@forgotNewBody": {
+    "description": "Art. 7.1 — the parent must be told that nothing the child depends on is server-side."
+  },
+  "forgotNewLabel": "كلمة المرور الجديدة",
+  "forgotNewConfirmLabel": "أعد كتابتها",
+  "forgotNewMismatch": "الكلمتان غير متطابقتين.",
+  "forgotNewAction": "حفظ كلمة المرور",
+  "forgotDoneTitle": "تم تغيير كلمة المرور",
+  "forgotDoneBody": "سجّلنا دخولك بالكلمة الجديدة. احتفظ بها في مكان آمن.",
+  "forgotDoneAction": "متابعة"
 }

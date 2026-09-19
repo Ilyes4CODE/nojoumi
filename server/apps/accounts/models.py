@@ -19,6 +19,13 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.utils import timezone
 
+# Django discovers models by importing `<app>.models` and nothing else, so a
+# model declared in a sibling module is invisible to `makemigrations` until this
+# line exists. It lives in its own file because a reset code is a mechanism with
+# rules — a lifetime, an attempt budget, a cooldown — and those rules belong next
+# to the table they constrain rather than buried under the account.
+from .reset_codes import PasswordResetCode  # noqa: F401  (registers the model)
+
 
 class ParentUserManager(BaseUserManager):
     """Email-based manager. There is no username."""

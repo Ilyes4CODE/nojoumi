@@ -969,4 +969,74 @@ class AppL10nEn extends AppL10n {
   String cardStayWith(String seconds) {
     return 'Look at it for ${seconds}s';
   }
+
+  @override
+  String get forgotPasswordLink => 'Forgot your password?';
+
+  @override
+  String get forgotTitle => 'Reset your password';
+
+  @override
+  String get forgotAskTitle => 'It happens to everyone';
+
+  @override
+  String get forgotAskBody =>
+      'Type your email address and we will send you a six-digit code so you can choose a new password.';
+
+  @override
+  String get forgotAskAction => 'Send the code';
+
+  @override
+  String get forgotCodeTitle => 'Check your inbox';
+
+  @override
+  String forgotCodeBody(String email) {
+    return 'We sent a six-digit code to $email. If it is not there, look in the spam folder.';
+  }
+
+  @override
+  String get forgotCodeLabel => 'Code';
+
+  @override
+  String get forgotCodeAction => 'Confirm the code';
+
+  @override
+  String get forgotCodeResend => 'Nothing arrived? Send it again';
+
+  @override
+  String forgotCodeResendIn(String seconds) {
+    return 'You can send another in $seconds seconds';
+  }
+
+  @override
+  String get forgotCodeWrongEmail => 'Change the email address';
+
+  @override
+  String get forgotNewTitle => 'Choose a new password';
+
+  @override
+  String get forgotNewBody =>
+      'Your sessions on other devices will end. Nothing changes for your child: stars, blocking and saved lessons all live on this phone.';
+
+  @override
+  String get forgotNewLabel => 'New password';
+
+  @override
+  String get forgotNewConfirmLabel => 'Type it again';
+
+  @override
+  String get forgotNewMismatch => 'The two do not match.';
+
+  @override
+  String get forgotNewAction => 'Save the password';
+
+  @override
+  String get forgotDoneTitle => 'Password changed';
+
+  @override
+  String get forgotDoneBody =>
+      'We signed you in with the new one. Keep it somewhere safe.';
+
+  @override
+  String get forgotDoneAction => 'Continue';
 }

@@ -1812,6 +1812,132 @@ abstract class AppL10n {
   /// In ar, this message translates to:
   /// **'تأمّلها {seconds} ثانية'**
   String cardStayWith(String seconds);
+
+  /// The link under the sign-in form.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسيت كلمة المرور؟'**
+  String get forgotPasswordLink;
+
+  /// No description provided for @forgotTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة كلمة المرور'**
+  String get forgotTitle;
+
+  /// No description provided for @forgotAskTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا بأس، يحدث للجميع'**
+  String get forgotAskTitle;
+
+  /// No description provided for @forgotAskBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب بريدك الإلكتروني وسنرسل لك رمزاً من ستة أرقام لتختار كلمة مرور جديدة.'**
+  String get forgotAskBody;
+
+  /// No description provided for @forgotAskAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرسل الرمز'**
+  String get forgotAskAction;
+
+  /// No description provided for @forgotCodeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفقّد بريدك'**
+  String get forgotCodeTitle;
+
+  /// No description provided for @forgotCodeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرسلنا رمزاً من ستة أرقام إلى {email}. إن لم تجده، انظر في مجلّد الرسائل غير المرغوبة.'**
+  String forgotCodeBody(String email);
+
+  /// No description provided for @forgotCodeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرمز'**
+  String get forgotCodeLabel;
+
+  /// No description provided for @forgotCodeAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الرمز'**
+  String get forgotCodeAction;
+
+  /// No description provided for @forgotCodeResend.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يصلك شيء؟ أعد الإرسال'**
+  String get forgotCodeResend;
+
+  /// No description provided for @forgotCodeResendIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكنك إعادة الإرسال بعد {seconds} ثانية'**
+  String forgotCodeResendIn(String seconds);
+
+  /// No description provided for @forgotCodeWrongEmail.
+  ///
+  /// In ar, this message translates to:
+  /// **'غيّر البريد الإلكتروني'**
+  String get forgotCodeWrongEmail;
+
+  /// No description provided for @forgotNewTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر كلمة مرور جديدة'**
+  String get forgotNewTitle;
+
+  /// Art. 7.1 — the parent must be told that nothing the child depends on is server-side.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستُنهى جلساتك على الأجهزة الأخرى. لن يتأثّر شيء عند طفلك: النجوم والحجب والدروس المحفوظة كلها على هذا الهاتف.'**
+  String get forgotNewBody;
+
+  /// No description provided for @forgotNewLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة المرور الجديدة'**
+  String get forgotNewLabel;
+
+  /// No description provided for @forgotNewConfirmLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد كتابتها'**
+  String get forgotNewConfirmLabel;
+
+  /// No description provided for @forgotNewMismatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكلمتان غير متطابقتين.'**
+  String get forgotNewMismatch;
+
+  /// No description provided for @forgotNewAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ كلمة المرور'**
+  String get forgotNewAction;
+
+  /// No description provided for @forgotDoneTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تغيير كلمة المرور'**
+  String get forgotDoneTitle;
+
+  /// No description provided for @forgotDoneBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلنا دخولك بالكلمة الجديدة. احتفظ بها في مكان آمن.'**
+  String get forgotDoneBody;
+
+  /// No description provided for @forgotDoneAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get forgotDoneAction;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

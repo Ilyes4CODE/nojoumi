@@ -128,6 +128,56 @@ Three of those lines are traps worth naming:
   do generate one (`python manage.py generate_signing_key`), the public half must go into the app build as
   `LUNIO_SNAPSHOT_PUBLIC_KEY` and the APK must be reinstalled.
 
+## 6b. The mailbox for password resets
+
+The server sends exactly one kind of message: the six-digit password-reset code (D-92). It needs a real mailbox
+on the site's own domain — not a Gmail address, not a personal one.
+
+1. cPanel → **Email Accounts** → **Create**. Address `no-reply@bafisslunio.com`, a long password.
+2. On the new account, **Connect Devices** → read the **Secure SSL/TLS Settings**. The outgoing server is
+   normally `mail.bafisslunio.com` on port **465**.
+3. Put the four values in `server/.env`:
+
+```
+EMAIL_HOST=mail.bafisslunio.com
+EMAIL_PORT=465
+EMAIL_HOST_USER=no-reply@bafisslunio.com
+EMAIL_HOST_PASSWORD=the-password-you-just-set
+EMAIL_USE_SSL=1
+EMAIL_USE_TLS=0
+DEFAULT_FROM_EMAIL=Lunio <no-reply@bafisslunio.com>
+```
+
+`EMAIL_USE_SSL` and `EMAIL_USE_TLS` are **not** both on. Port 465 is implicit TLS (`SSL=1`); port 587 is
+STARTTLS (`SSL=0`, `TLS=1`). Django refuses to start with both, and `prod.py` says which one to turn off.
+
+`DEFAULT_FROM_EMAIL` must be a mailbox on the same domain the site serves. SPF and DMARC are checked against
+**that** domain, and a mismatch is the commonest reason a code lands in spam.
+
+**The application will not start without these.** That is deliberate: a reset that silently goes nowhere looks
+exactly like one that worked, and the parent is left refreshing an inbox and then calling you.
+
+### Prove it before the client does
+
+```bash
+cd ~/lunio/server
+python manage.py shell -c "
+from django.core.mail import send_mail
+from django.conf import settings
+send_mail('Lunio test', 'test', settings.DEFAULT_FROM_EMAIL, ['your-own-address@gmail.com'])
+print('sent')
+"
+```
+
+Then send yourself a real one through the API and look at it in a phone mail client, not a webmail preview:
+
+```bash
+curl -s -X POST https://bafisslunio.com/api/accounts/password/reset/   -H 'Content-Type: application/json' -d '{"email":"an-account-you-own@example.com"}'
+```
+
+Check three things: it arrives, it is **not** in spam, and the illustrations are visible without pressing
+"show images".
+
 ## 7. Migrate and collect
 
 ```bash
@@ -138,6 +188,13 @@ python manage.py createsuperuser
 
 Then **Restart** the application from the Setup Python App page. Passenger caches aggressively; a code change
 without a restart is a code change that did not happen.
+
+### One thing this release does to signed-in parents
+
+`accounts.0002` adds the reset-code table, and `SIMPLE_JWT["CHECK_REVOKE_TOKEN"]` starts binding a hash of the
+password into every token. Tokens issued before this deploy carry no such hash and are refused, so **every
+parent already signed in signs in once more**. Nothing is lost: stars, blocking and saved lessons are all on
+the phone (Art. 7.1). Tell the client to expect it rather than let them report it.
 
 ## 8. Check it from outside, not from the server
 

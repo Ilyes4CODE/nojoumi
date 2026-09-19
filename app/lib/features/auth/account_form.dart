@@ -5,6 +5,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../data/remote/api_client.dart';
 import '../../l10n/app_localizations.dart';
+import 'forgot_password_screen.dart';
 
 /// Sign in, or create the parent account. One implementation, two callers.
 ///
@@ -112,8 +113,34 @@ class _AccountFormState extends ConsumerState<AccountForm> {
             _registering ? l10n.haveAccountAlready : l10n.noAccountYet,
           ),
         ),
+        // Only when signing in. On the registration side there is no password
+        // to have forgotten yet, and the link would read as a suggestion that
+        // something has already gone wrong.
+        if (!_registering)
+          TextButton(
+            onPressed: _busy ? null : _forgot,
+            child: Text(l10n.forgotPasswordLink),
+          ),
       ],
     );
+  }
+
+  /// Open the reset flow, carrying whatever address is already typed.
+  ///
+  /// It returns true when the parent finished and was signed in, which is the
+  /// same outcome as submitting this form — so the caller is told in the same
+  /// way, as a sign-in rather than a registration.
+  Future<void> _forgot() async {
+    final done = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ForgotPasswordScreen(email: _email.text),
+      ),
+    );
+
+    if (done == true && mounted) {
+      _password.clear();
+      widget.onSignedIn?.call(false);
+    }
   }
 
   Future<void> _submit() async {

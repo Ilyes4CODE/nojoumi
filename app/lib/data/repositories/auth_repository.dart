@@ -118,6 +118,98 @@ class AuthRepository {
     );
   }
 
+  // --- Forgotten password ---------------------------------------------------
+  //
+  // A six-digit code by email, not a link. The app has no deep links — no
+  // intent filter, no App Links verification — so a link would open a browser,
+  // which would need its own reset page and its own session handling, and the
+  // parent would end up carrying a password between two places. The code stays
+  // here, and it is the same errand as the activation code of Article 7.3: read
+  // a short string on one screen, type it on another.
+  //
+  // **The three calls answer alike for an address that has an account and one
+  // that does not.** That is the server's rule and the app must not undo it by
+  // saying something more helpful — "no account with that email" on a parental
+  // control app tells whoever is holding the phone which addresses exist.
+
+  /// Ask the server to mail a code.
+  ///
+  /// Succeeds whether or not the address is registered, and whether or not a
+  /// message was actually sent. The screen says "if this address is registered"
+  /// for that reason rather than out of politeness.
+  Future<String> requestPasswordReset({required String email}) async {
+    const fallback = 'تحقّق من بريدك الإلكتروني.';
+    final response = await _api.post(
+      '/api/accounts/password/reset/',
+      body: {'email': email.trim()},
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiFailure(
+        ApiClient.messageFrom(response, 'تعذّر إرسال الرمز.'),
+        statusCode: response.statusCode,
+        retryable: (response.statusCode ?? 500) >= 500,
+      );
+    }
+    return ApiClient.messageFrom(response, fallback);
+  }
+
+  /// Check a code before asking the parent to invent a password.
+  ///
+  /// Exists so nobody types a new password twice and is only then told the code
+  /// expired. It spends one of the five attempts, the same budget the confirm
+  /// call draws on, so it buys the parent kindness and an attacker nothing.
+  Future<void> verifyResetCode({
+    required String email,
+    required String code,
+  }) async {
+    final response = await _api.post(
+      '/api/accounts/password/reset/verify/',
+      body: {'email': email.trim(), 'code': code.trim()},
+    );
+    if (response.statusCode != 200) {
+      throw ApiFailure(
+        ApiClient.messageFrom(response, 'الرمز غير صحيح أو انتهت صلاحيته.'),
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  /// Set the new password, then sign in with it.
+  ///
+  /// Signing in here rather than sending the parent back to a login form: they
+  /// have just proved they own the address and chosen a password, and asking
+  /// them to type it again immediately is a form with no question in it.
+  ///
+  /// The sign-in is also what replaces the tokens. The reset ends every session
+  /// this account had, including this device's — the server binds a hash of the
+  /// password into each token — so without this call the app would be holding
+  /// credentials the server has already stopped honouring.
+  Future<void> confirmPasswordReset({
+    required String email,
+    required String code,
+    required String password,
+    required TrustedInstant now,
+  }) async {
+    final response = await _api.post(
+      '/api/accounts/password/reset/confirm/',
+      body: {
+        'email': email.trim(),
+        'code': code.trim(),
+        'password': password,
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiFailure(
+        ApiClient.messageFrom(response, 'تعذّر تغيير كلمة المرور.'),
+        statusCode: response.statusCode,
+      );
+    }
+
+    await signIn(email: email, password: password, now: now);
+  }
+
   /// Forget the tokens.
   ///
   /// Signing out takes nothing away from the child: Article 7.1 keeps blocking,

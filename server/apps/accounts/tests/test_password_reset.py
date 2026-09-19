@@ -1,0 +1,330 @@
+"""Password reset, from the mail that arrives to the session that ends.
+
+Grouped by the thing that would go wrong rather than by endpoint, because the
+interesting failures here cross endpoints: an attempt budget that can be widened
+by switching views, a code that survives a second request, a reset that changes
+the password and leaves the intruder signed in.
+"""
+
+from __future__ import annotations
+
+import pathlib
+import tempfile
+from datetime import timedelta
+from unittest import mock
+
+from django.contrib.auth import get_user_model
+from django.core import mail
+from django.core.cache import cache
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
+from rest_framework.test import APIClient
+
+from apps.accounts import mailer, reset_codes
+from apps.accounts.reset_codes import PasswordResetCode
+
+ParentUser = get_user_model()
+
+REQUEST = reverse("accounts:password-reset")
+VERIFY = reverse("accounts:password-reset-verify")
+CONFIRM = reverse("accounts:password-reset-confirm")
+ME = reverse("accounts:me")
+TOKEN = reverse("accounts:token")
+
+GOOD = "n7-Sabah-Khayr-2026"
+NEW = "K8-Masaa-Noor-2026"
+
+#: Stands in for a checkout where the artwork has not been added yet.
+NO_ART = pathlib.Path(tempfile.mkdtemp())
+
+
+def code_from_outbox() -> str:
+    """The six digits, read out of the message that was actually sent."""
+    body = mail.outbox[-1].body
+    digits = [word for word in body.split() if word.isdigit() and len(word) == 6]
+    assert digits, f"no six-digit code in the message body:\n{body}"
+    return digits[0]
+
+
+class ResetBase(TestCase):
+    def setUp(self):
+        # Throttle counters live in the cache, which is a process-wide
+        # dictionary here and survives between tests. Left alone, the first few
+        # tests spend the hour's budget and everything after them sees 429.
+        cache.clear()
+
+        self.api = APIClient()
+        self.parent = ParentUser.objects.create_user(email="wali@bayt.dz", password=GOOD)
+        mail.outbox.clear()
+
+    def ask(self, email: str | None = None):
+        return self.api.post(
+            REQUEST, {"email": email or self.parent.email}, format="json"
+        )
+
+    def verify(self, code: str, email: str | None = None):
+        return self.api.post(
+            VERIFY, {"email": email or self.parent.email, "code": code}, format="json"
+        )
+
+
+class RequestingACode(ResetBase):
+    def test_a_code_is_mailed_and_stored_only_as_a_hash(self):
+        self.assertEqual(self.ask().status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+
+        code = code_from_outbox()
+        row = PasswordResetCode.objects.get()
+
+        # Six digits is a million possibilities, which is nothing to a laptop.
+        # Anyone who reads this table must not come away holding live resets.
+        self.assertNotIn(code, row.code_hash)
+        self.assertTrue(row.code_hash.startswith("pbkdf2_"))
+
+    def test_an_unknown_address_answers_exactly_like_a_known_one(self):
+        known = self.ask()
+        mail.outbox.clear()
+        unknown = self.api.post(REQUEST, {"email": "nobody@bayt.dz"}, format="json")
+
+        self.assertEqual(unknown.status_code, known.status_code)
+        self.assertEqual(unknown.json(), known.json())
+        self.assertEqual(mail.outbox, [])
+
+    def test_asking_twice_in_a_minute_sends_one_message(self):
+        # Otherwise anyone who knows an address can bury its owner's inbox, and
+        # the owner cannot tell which of forty codes is the live one.
+        self.ask()
+        second = self.ask()
+
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_a_second_code_retires_the_first(self):
+        self.ask()
+        first = code_from_outbox()
+
+        PasswordResetCode.objects.update(
+            created_at=timezone.now() - timedelta(minutes=5)
+        )
+        self.ask()
+        second = code_from_outbox()
+        self.assertNotEqual(first, second)
+
+        self.assertEqual(self.verify(first).status_code, 400)
+        self.assertEqual(self.verify(second).status_code, 200)
+
+    def test_a_mail_server_failure_is_not_visible_to_the_caller(self):
+        # A 500 for real addresses and a 200 for invented ones answers the one
+        # question this endpoint exists to refuse.
+        with self.assertLogs("apps.accounts.reset_views", level="ERROR") as logged:
+            with mock.patch.object(
+                mailer.EmailMultiAlternatives, "send", side_effect=OSError("smtp down")
+            ):
+                response = self.ask()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), self.ask().json())
+        self.assertIn("could not send", "\n".join(logged.output))
+
+
+class GuessingACode(ResetBase):
+    def setUp(self):
+        super().setUp()
+        self.ask()
+        self.code = code_from_outbox()
+        # One in a million, and it would flake exactly once in someone's CI.
+        self.miss = "000000" if self.code != "000000" else "111111"
+
+    def test_five_wrong_guesses_kill_the_code(self):
+        for _ in range(reset_codes.ATTEMPTS):
+            self.assertEqual(self.verify(self.miss).status_code, 400)
+
+        self.assertEqual(self.verify(self.code).status_code, 400)
+
+    def test_the_budget_cannot_be_widened_by_switching_endpoints(self):
+        # The reason verify and confirm spend from one row rather than each
+        # holding a counter: three guesses here and three there would be six.
+        for _ in range(3):
+            self.verify(self.miss)
+        for _ in range(2):
+            self.api.post(
+                CONFIRM,
+                {"email": self.parent.email, "code": self.miss, "password": NEW},
+                format="json",
+            )
+
+        right = self.api.post(
+            CONFIRM,
+            {"email": self.parent.email, "code": self.code, "password": NEW},
+            format="json",
+        )
+        self.assertEqual(right.status_code, 400)
+        self.parent.refresh_from_db()
+        self.assertTrue(self.parent.check_password(GOOD))
+
+    def test_an_expired_code_is_refused(self):
+        PasswordResetCode.objects.update(
+            expires_at=timezone.now() - timedelta(seconds=1)
+        )
+        self.assertEqual(self.verify(self.code).status_code, 400)
+
+    def test_wrong_expired_and_unknown_all_say_the_same_sentence(self):
+        wrong = self.verify(self.miss).json()["detail"]
+
+        PasswordResetCode.objects.update(
+            expires_at=timezone.now() - timedelta(seconds=1)
+        )
+        expired = self.verify(self.code).json()["detail"]
+        unknown = self.verify(self.code, email="nobody@bayt.dz").json()["detail"]
+
+        self.assertEqual(wrong, expired)
+        self.assertEqual(expired, unknown)
+
+
+class SettingTheNewPassword(ResetBase):
+    def setUp(self):
+        super().setUp()
+        self.ask()
+        self.code = code_from_outbox()
+
+    def confirm(self, password=NEW, code=None):
+        return self.api.post(
+            CONFIRM,
+            {
+                "email": self.parent.email,
+                "code": code or self.code,
+                "password": password,
+            },
+            format="json",
+        )
+
+    def test_the_password_changes_and_the_old_one_stops_working(self):
+        self.assertEqual(self.confirm().status_code, 200)
+
+        self.parent.refresh_from_db()
+        self.assertTrue(self.parent.check_password(NEW))
+        self.assertFalse(self.parent.check_password(GOOD))
+
+    def test_a_code_cannot_be_used_twice(self):
+        self.confirm()
+        again = self.confirm(password="Third-Passphrase-2026")
+
+        self.assertEqual(again.status_code, 400)
+        self.parent.refresh_from_db()
+        self.assertTrue(self.parent.check_password(NEW))
+
+    def test_a_weak_password_is_refused_without_spending_an_attempt(self):
+        response = self.confirm(password="123456")
+        self.assertEqual(response.status_code, 400)
+
+        self.assertEqual(PasswordResetCode.objects.get().attempts, 0)
+        self.assertEqual(self.confirm().status_code, 200)
+
+    def test_the_new_password_signs_in(self):
+        self.confirm()
+        response = self.api.post(
+            TOKEN, {"email": self.parent.email, "password": NEW}, format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access", response.json())
+
+
+class EndingTheOtherSessions(ResetBase):
+    """A reset that leaves the intruder signed in has done nothing.
+
+    This is what `SIMPLE_JWT["CHECK_REVOKE_TOKEN"]` is in the settings for, and
+    that setting is one line nothing else would notice going missing.
+    """
+
+    def signed_in(self) -> dict:
+        return self.api.post(
+            TOKEN, {"email": self.parent.email, "password": GOOD}, format="json"
+        ).json()
+
+    def reset_from_another_device(self):
+        other = APIClient()
+        other.post(REQUEST, {"email": self.parent.email}, format="json")
+        other.post(
+            CONFIRM,
+            {"email": self.parent.email, "code": code_from_outbox(), "password": NEW},
+            format="json",
+        )
+
+    def test_a_token_issued_before_the_reset_stops_working(self):
+        tokens = self.signed_in()
+        self.api.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
+        self.assertEqual(self.api.get(ME).status_code, 200)
+
+        self.reset_from_another_device()
+
+        self.assertEqual(self.api.get(ME).status_code, 401)
+
+    def test_refreshing_an_old_token_does_not_get_around_it(self):
+        tokens = self.signed_in()
+        self.reset_from_another_device()
+
+        renewed = self.api.post(
+            reverse("accounts:token-refresh"),
+            {"refresh": tokens["refresh"]},
+            format="json",
+        )
+
+        # The refresh endpoint never looks the parent up, so it may well answer
+        # 200 — with a token carrying the *old* password hash, copied from the
+        # refresh token. The refusal happens where the token is used, which is
+        # the place that decides anything.
+        if renewed.status_code == 200:
+            self.api.credentials(
+                HTTP_AUTHORIZATION=f"Bearer {renewed.json()['access']}"
+            )
+            self.assertEqual(self.api.get(ME).status_code, 401)
+
+
+class TheMessageItself(ResetBase):
+    def test_it_carries_a_text_part_and_an_html_part(self):
+        self.ask()
+        message = mail.outbox[0]
+
+        self.assertTrue(
+            message.body.strip(),
+            "a message with no text part scores badly with spam filters",
+        )
+        html = [body for body, kind in message.alternatives if kind == "text/html"]
+        self.assertEqual(len(html), 1)
+        self.assertIn(code_from_outbox(), html[0])
+
+    def test_the_code_is_in_the_subject_so_the_inbox_list_shows_it(self):
+        self.ask()
+        self.assertIn(code_from_outbox(), mail.outbox[0].subject)
+
+    def test_the_illustrations_are_attached_inline_rather_than_linked(self):
+        self.ask()
+        message = mail.outbox[0]
+        html = message.alternatives[0][0]
+
+        # A remote <img> is blocked by default in Outlook and proxied by Gmail,
+        # so it arrives as a broken box on the one message a parent is already
+        # unsure about. Everything visual must travel inside the message.
+        self.assertNotIn("http://", html)
+        self.assertNotIn("https://", html)
+        self.assertEqual(message.mixed_subtype, "related")
+
+        ids, files = mailer._art()
+        self.assertEqual(len(message.attachments), len(files))
+        for cid in ids.values():
+            self.assertIn(f"cid:{cid}", html)
+
+    def test_it_reads_correctly_with_every_illustration_missing(self):
+        # Which is also what an image-blocking client shows, so the degraded
+        # case is the common one rather than a rare one worth tolerating.
+        with mock.patch.object(mailer, "ART_DIR", NO_ART):
+            self.ask()
+
+        message = mail.outbox[0]
+        html = message.alternatives[0][0]
+
+        self.assertEqual(message.attachments, [])
+        self.assertNotIn("cid:", html)
+        self.assertIn(code_from_outbox(), html)
+        self.assertIn("نسيت كلمة المرور", html)

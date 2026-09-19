@@ -1,0 +1,6 @@
+
+
+# Development writes each outgoing message here as a .eml file so it can be
+# opened in a mail client. They contain real reset codes for real local
+# accounts, and none of them belong in the repository.
+sent_emails/

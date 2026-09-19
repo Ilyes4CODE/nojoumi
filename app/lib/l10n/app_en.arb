@@ -499,5 +499,46 @@
         "type": "String"
       }
     }
-  }
+  },
+  "forgotPasswordLink": "Forgot your password?",
+  "@forgotPasswordLink": {
+    "description": "The link under the sign-in form."
+  },
+  "forgotTitle": "Reset your password",
+  "forgotAskTitle": "It happens to everyone",
+  "forgotAskBody": "Type your email address and we will send you a six-digit code so you can choose a new password.",
+  "forgotAskAction": "Send the code",
+  "forgotCodeTitle": "Check your inbox",
+  "forgotCodeBody": "We sent a six-digit code to {email}. If it is not there, look in the spam folder.",
+  "@forgotCodeBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "forgotCodeLabel": "Code",
+  "forgotCodeAction": "Confirm the code",
+  "forgotCodeResend": "Nothing arrived? Send it again",
+  "forgotCodeResendIn": "You can send another in {seconds} seconds",
+  "@forgotCodeResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "forgotCodeWrongEmail": "Change the email address",
+  "forgotNewTitle": "Choose a new password",
+  "forgotNewBody": "Your sessions on other devices will end. Nothing changes for your child: stars, blocking and saved lessons all live on this phone.",
+  "@forgotNewBody": {
+    "description": "Art. 7.1 — the parent must be told that nothing the child depends on is server-side."
+  },
+  "forgotNewLabel": "New password",
+  "forgotNewConfirmLabel": "Type it again",
+  "forgotNewMismatch": "The two do not match.",
+  "forgotNewAction": "Save the password",
+  "forgotDoneTitle": "Password changed",
+  "forgotDoneBody": "We signed you in with the new one. Keep it somewhere safe.",
+  "forgotDoneAction": "Continue"
 }

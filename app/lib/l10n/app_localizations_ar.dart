@@ -953,4 +953,74 @@ class AppL10nAr extends AppL10n {
   String cardStayWith(String seconds) {
     return 'تأمّلها $seconds ثانية';
   }
+
+  @override
+  String get forgotPasswordLink => 'نسيت كلمة المرور؟';
+
+  @override
+  String get forgotTitle => 'استعادة كلمة المرور';
+
+  @override
+  String get forgotAskTitle => 'لا بأس، يحدث للجميع';
+
+  @override
+  String get forgotAskBody =>
+      'اكتب بريدك الإلكتروني وسنرسل لك رمزاً من ستة أرقام لتختار كلمة مرور جديدة.';
+
+  @override
+  String get forgotAskAction => 'أرسل الرمز';
+
+  @override
+  String get forgotCodeTitle => 'تفقّد بريدك';
+
+  @override
+  String forgotCodeBody(String email) {
+    return 'أرسلنا رمزاً من ستة أرقام إلى $email. إن لم تجده، انظر في مجلّد الرسائل غير المرغوبة.';
+  }
+
+  @override
+  String get forgotCodeLabel => 'الرمز';
+
+  @override
+  String get forgotCodeAction => 'تأكيد الرمز';
+
+  @override
+  String get forgotCodeResend => 'لم يصلك شيء؟ أعد الإرسال';
+
+  @override
+  String forgotCodeResendIn(String seconds) {
+    return 'يمكنك إعادة الإرسال بعد $seconds ثانية';
+  }
+
+  @override
+  String get forgotCodeWrongEmail => 'غيّر البريد الإلكتروني';
+
+  @override
+  String get forgotNewTitle => 'اختر كلمة مرور جديدة';
+
+  @override
+  String get forgotNewBody =>
+      'ستُنهى جلساتك على الأجهزة الأخرى. لن يتأثّر شيء عند طفلك: النجوم والحجب والدروس المحفوظة كلها على هذا الهاتف.';
+
+  @override
+  String get forgotNewLabel => 'كلمة المرور الجديدة';
+
+  @override
+  String get forgotNewConfirmLabel => 'أعد كتابتها';
+
+  @override
+  String get forgotNewMismatch => 'الكلمتان غير متطابقتين.';
+
+  @override
+  String get forgotNewAction => 'حفظ كلمة المرور';
+
+  @override
+  String get forgotDoneTitle => 'تم تغيير كلمة المرور';
+
+  @override
+  String get forgotDoneBody =>
+      'سجّلنا دخولك بالكلمة الجديدة. احتفظ بها في مكان آمن.';
+
+  @override
+  String get forgotDoneAction => 'متابعة';
 }

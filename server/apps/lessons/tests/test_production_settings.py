@@ -47,6 +47,13 @@ class ProductionSettingsAreComplete(unittest.TestCase):
         os.environ["DJANGO_SECRET_KEY"] = "test-only-not-a-real-key"
         os.environ["DJANGO_ALLOWED_HOSTS"] = "example.test"
         os.environ["DATABASE_URL"] = "mysql://u:p@localhost:3306/d"
+        # The password-reset mail settings, required for the same reason the
+        # database is: a reset that silently goes nowhere is indistinguishable,
+        # to the parent, from one that worked.
+        os.environ["EMAIL_HOST"] = "mail.example.test"
+        os.environ["EMAIL_HOST_USER"] = "no-reply@example.test"
+        os.environ["EMAIL_HOST_PASSWORD"] = "not-a-real-password"
+        os.environ["DEFAULT_FROM_EMAIL"] = "Lunio <no-reply@example.test>"
         cls.prod = importlib.import_module("config.settings.prod")
 
     def test_storages_keeps_the_default_backend(self):
@@ -80,3 +87,19 @@ class ProductionSettingsAreComplete(unittest.TestCase):
         # it, ten seconds later.
         with self.assertRaises(RuntimeError):
             self.prod._required("LUNIO_DEFINITELY_NOT_SET")
+
+    def test_mail_actually_goes_somewhere(self):
+        # The console backend is the development default. Left in place on the
+        # server, every reset code would be printed into a log nobody reads and
+        # the parent would wait for a message that was never sent.
+        self.assertIn("smtp", self.prod.EMAIL_BACKEND)
+        self.assertTrue(self.prod.EMAIL_HOST)
+        self.assertTrue(self.prod.DEFAULT_FROM_EMAIL)
+
+    def test_the_mail_connection_is_encrypted_exactly_one_way(self):
+        # Django refuses to start with both, and its error message does not say
+        # which one to turn off. Implicit TLS is port 465; STARTTLS is port 587.
+        self.assertNotEqual(self.prod.EMAIL_USE_SSL, self.prod.EMAIL_USE_TLS)
+
+    def test_a_dead_mail_host_cannot_hold_a_worker_open(self):
+        self.assertLessEqual(self.prod.EMAIL_TIMEOUT, 15)
