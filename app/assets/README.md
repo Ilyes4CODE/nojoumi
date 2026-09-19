@@ -95,6 +95,28 @@ paragraph described a process nobody could run. It is committed now.
 | `key_friendly` | 1254² PNG, 1220 KB | 384² | 28.6 KB |
 | `mail_sent` | 1254² PNG, 946 KB | 384² | 22.2 KB |
 
+## A new file needs `flutter clean` — it is not optional
+
+`pubspec.yaml` registers the **directory**, so a newly delivered drawing needs no
+pubspec edit. It does need the asset manifest rebuilt.
+
+Adding `key_friendly.webp` and `mail_sent.webp` and running an ordinary
+`flutter build apk` produced a build in three seconds that **did not contain
+either file**. The app ran, the screen laid out correctly, and both heroes were
+the placeholder — which is a calm grey square by design, so nothing looked
+broken. It was only caught by walking the screen on a device.
+
+```
+flutter clean && flutter pub get && flutter build apk --release ...
+```
+
+Always, after adding a file to `assets/illustrations/`. Verify rather than
+trust:
+
+```
+unzip -l build/app/outputs/flutter-apk/app-release.apk | grep illustrations
+```
+
 ## The halo, and why it is left alone
 
 `key_friendly` and `mail_sent` arrived with a soft pale fog reaching well past
