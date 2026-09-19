@@ -27,6 +27,14 @@ on the app does not apply — none of this ships to a phone.
 `<img>`. The message still reads correctly — which it has to anyway, because a
 large share of clients block images regardless of what we attach.
 
-`logo_mark.png` and `shield.png` are the app's own `logo_mark.webp` and
-`shield.webp` re-encoded. `key_friendly.png` is a new drawing, shared with the
-app's forgot-password screen.
+All three are produced by `tools/convert_art.py`, which writes the app's WebP
+and this folder's PNG from the same source drawing in `illustrators and logo/`:
+
+```
+python tools/convert_art.py key_friendly shield logo_mark
+```
+
+`key_friendly` is shared with the app's forgot-password screen, so the parent
+who asks for a code in the app and then opens their inbox sees the same drawing
+twice. That repetition is the cheapest thing we can do about a message which
+otherwise has the shape of a phishing attempt.

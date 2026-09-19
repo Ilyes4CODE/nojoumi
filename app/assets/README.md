@@ -80,7 +80,35 @@ per file, and the first two matter more than they sound:
 | `rocket` | 1448x1086 PNG, 1637 KB | 900x675 | 47.5 KB |
 | `starfield` | 1254² PNG, 340 KB | 600² | 37.6 KB |
 
-The script is `scratchpad/convert_art.py`; re-run it if any asset is redrawn.
+The script is **`tools/convert_art.py`**; re-run it if any asset is redrawn:
+
+```
+python tools/convert_art.py key_friendly mail_sent
+python tools/convert_art.py --all
+```
+
+It lived in a scratchpad until 2026-09-20 and was thrown away with it, so this
+paragraph described a process nobody could run. It is committed now.
+
+| Asset | Delivered | Ships as | Size |
+|---|---|---|---|
+| `key_friendly` | 1254² PNG, 1220 KB | 384² | 28.6 KB |
+| `mail_sent` | 1254² PNG, 946 KB | 384² | 22.2 KB |
+
+## The halo, and why it is left alone
+
+`key_friendly` and `mail_sent` arrived with a soft pale fog reaching well past
+the silhouette — alarming in an image viewer, which shows it against black.
+
+Removing it was tried and **made things visibly worse**: keeping partial alpha
+only within a few pixels of solid pixels cuts through the middle of the soft
+matte and leaves a hard white rim around every shape, obvious at 1:1, where
+before there was a gradient nobody could see.
+
+Nobody could see it because these drawings only ever sit on `#F8F7FC` or
+`#EDE8FC`. A pale fog on a pale background is stationery, not a defect.
+**Judge artwork composited on the colour it will actually sit on**, never on the
+checkerboard.
 
 ## Where they are used
 
