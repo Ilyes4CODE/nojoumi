@@ -160,7 +160,7 @@ exactly like one that worked, and the parent is left refreshing an inbox and the
 ### Prove it before the client does
 
 ```bash
-cd ~/lunio/server
+cd ~/nojoumi/server
 python manage.py shell -c "
 from django.core.mail import send_mail
 from django.conf import settings
@@ -234,3 +234,51 @@ before announcing anything is cheaper than discovering it with a customer.
   client's decision, not a technical one — say so before doing it.
 * **The webhook must stay up.** Chargily retries, but not for ever. A server that is down for a day is a
   payment that has to be reconciled by hand.
+
+---
+
+# Updating an already-deployed server
+
+Everything above is the first deployment. This is the short list for every release after it.
+
+```bash
+# 1. The virtualenv line cPanel prints on the Python App page.
+source /home/<user>/virtualenv/nojoumi/3.10/bin/activate
+cd ~/nojoumi/server
+
+# 2. What is about to change.
+git fetch origin
+git log --oneline HEAD..origin/master
+git diff --stat HEAD origin/master -- requirements.txt
+
+# 3. Take it.
+git pull origin master
+
+# 4. Only if requirements.txt moved in step 2.
+pip install -r requirements.txt
+
+# 5. Only if migrations came with it.
+python manage.py showmigrations --plan | grep "\[ \]"
+python manage.py migrate
+
+# 6. Only if anything under static/ moved.
+python manage.py collectstatic --noinput
+
+# 7. Restart. Passenger watches this file's timestamp.
+touch ~/nojoumi/tmp/restart.txt
+```
+
+Then check from **outside** the server, never from a shell on it:
+
+```bash
+curl -s https://bafisslunio.com/api/health/
+```
+
+## The steps people skip, and what skipping them looks like
+
+* **Not restarting.** `touch tmp/restart.txt` is the whole deployment as far as Passenger is concerned. Without
+  it the old code keeps serving and the change appears not to have happened, which sends you looking in the
+  wrong place for an hour.
+* **`pip install` outside the virtualenv.** The packages land in the system Python, the app keeps using the old
+  ones, and the error is a `ModuleNotFoundError` for something you just watched install successfully.
+* **Editing `.env` and expecting it to take.** It is read at import time. Restart.
