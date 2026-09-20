@@ -2549,6 +2549,9 @@ reason; production overrides all of them and refuses to start without them (D-92
 ## D-94 — the client halved both prices
 
 **Instructed on 2026-09-20:** 500 DZD a month and 5000 DZD a year, against Article 7.1's 1000 and 10000.
+**The client agreed the same day**, which closes the open question below for the price and for nothing else —
+D-85 (memorization cards removed), D-88 (MySQL instead of PostgreSQL) and Article 17 (who carries refunds) are
+still outstanding, and the refund question is the one that gets sharper at a lower price rather than softer.
 
 This is a change to a term of the contract, not a configuration tweak, and it wants the client's **written**
 agreement alongside D-85 (memorization cards removed) and D-88 (MySQL instead of PostgreSQL). Article 17 also
