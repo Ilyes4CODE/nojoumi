@@ -30,6 +30,7 @@ import logging
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.payments import chargily
@@ -170,3 +171,24 @@ def code_status(request):
 @require_GET
 def failed(request):
     return render(request, "web/failed.html", {"reason": "cancelled"})
+
+
+@require_GET
+def privacy(request):
+    """The privacy policy, at a stable public URL.
+
+    **Google Play requires one**, and this app is in the category that gets read
+    rather than skimmed: it binds an AccessibilityService, it draws over other
+    apps, and children use it. A reviewer compares the page against the
+    manifest, so the permission list in the template is the one
+    `aapt2 dump permissions` prints for the release build.
+
+    Deliberately unauthenticated, uncached and free of any identifier: a policy
+    behind a login is not a policy, and a page that logs who read it would be a
+    small joke at its own expense.
+    """
+    return render(
+        request,
+        "web/privacy.html",
+        {"updated": timezone.localdate().strftime("%Y-%m-%d")},
+    )

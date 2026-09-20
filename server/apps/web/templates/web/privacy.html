@@ -1,0 +1,147 @@
+{% extends "web/base.html" %}
+{% comment %}
+  The privacy policy, at a stable public URL.
+
+  **Google Play requires one for every app**, and this app is in the category
+  that gets read rather than skimmed: it asks for an AccessibilityService, it
+  draws over other apps, and it is used by children. A reviewer compares this
+  page against the manifest, so **every permission below is one the shipped APK
+  actually declares** — the list was taken from `aapt2 dump permissions` on the
+  release build, not from memory or from intent.
+
+  It is written to be read by a parent, not by a lawyer. The unusual thing about
+  Lunio is how little leaves the phone, and a policy full of hedging would hide
+  the one fact most worth saying plainly: **the server holds nothing about the
+  child at all.**
+
+  Kept in Arabic with an English translation underneath, because it has two
+  audiences who do not overlap — the parents who use the app, and the reviewer
+  deciding whether it ships.
+{% endcomment %}
+
+{% block title %}سياسة الخصوصية — Lunio{% endblock %}
+
+{% block header %}
+  <h1>سياسة <span class="brand">الخصوصية</span></h1>
+  <p class="lede">ما نعرفه عنك، وما لا نعرفه عن طفلك.</p>
+{% endblock %}
+
+{% block content %}
+
+<div class="notice good">
+  <strong>الخلاصة في سطر:</strong>
+  لا يُنشأ لطفلك أي حساب، ولا تُرسل أي من بياناته إلى خوادمنا. النجوم ووقت اللعب
+  والدروس المحفوظة كلها تبقى على الهاتف وحده.
+</div>
+
+<div class="card">
+  <h2>١. ما نحتفظ به على الخادم</h2>
+  <p>ثلاثة أشياء فقط، وكلها تخصّ ولي الأمر:</p>
+  <ul>
+    <li><strong>البريد الإلكتروني</strong> — لإنشاء الحساب واستعادة كلمة المرور.</li>
+    <li><strong>رقم الهاتف</strong> — اختياري تمامًا، ولا يُستعمل للدخول.</li>
+    <li><strong>سجلّ الاشتراك والمعاملات</strong> — رقم المعاملة، المبلغ، الحالة، والتاريخ.</li>
+  </ul>
+  <p>
+    ويُحفظ كذلك <strong>معرّف تثبيت</strong> عشوائي للهاتف (رقم لا يُشتقّ من جهازك ولا يدلّ عليه)،
+    لسببين اثنين: أن الفترة التجريبية تُمنح مرّة واحدة لكل هاتف، وأن الحساب الواحد لهاتف واحد.
+  </p>
+</div>
+
+<div class="card">
+  <h2>٢. ما لا نحتفظ به — ولا نستطيع</h2>
+  <ul>
+    <li><strong>لا شيء عن الطفل.</strong> لا اسم، ولا عمر، ولا صورة، ولا مستوى، ولا نتائج، ولا نجوم، ولا وقت لعب. لا يوجد في قاعدة بياناتنا حقل واحد لأيٍّ من هذا.</li>
+    <li><strong>لا صور الدروس.</strong> عندما تصوّر صفحة من كتاب، تُرسل الصورة للمعالجة ثم <strong>تُحذف من الخادم فورًا</strong>. لا تُخزَّن، ولا تُنسخ، ولا تُستعمل لتدريب أي نموذج. النصّ الناتج يُحفظ على هاتفك وحده.</li>
+    <li><strong>لا بيانات بطاقتك.</strong> لا يمرّ رقم بطاقة ولا رمز تحقّق على خوادمنا إطلاقًا. الدفع يتمّ كاملًا على صفحة Chargily المستضافة.</li>
+    <li><strong>لا قائمة بما يفعله طفلك.</strong> التطبيقات التي يفتحها، والوقت الذي يقضيه، وما يظهر على شاشته — كل ذلك يبقى على الهاتف ولا يُرسل.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>٣. الأذونات، واحدًا واحدًا</h2>
+  <p>هذه قائمة كاملة بما يطلبه التطبيق، ولماذا:</p>
+  <ul>
+    <li><strong>خدمة إمكانية الوصول (Accessibility Service)</strong> — لمعرفة أيّ تطبيق في المقدّمة الآن، حتى يمكن إيقافه عند انتهاء وقت اللعب. <strong>لا تقرأ محتوى الشاشة، ولا النصوص، ولا كلمات المرور، ولا ترسل شيئًا إلى أي خادم.</strong> تقرأ اسم حزمة التطبيق الظاهر ولا شيء غيره.</li>
+    <li><strong>الرسم فوق التطبيقات (SYSTEM_ALERT_WINDOW)</strong> — لعرض بطاقة الحجب فوق التطبيق المحجوب.</li>
+    <li><strong>خدمة تعمل في المقدّمة (FOREGROUND_SERVICE)</strong> — حتى لا يوقف النظام عدّاد وقت اللعب والحجب.</li>
+    <li><strong>التشغيل عند الإقلاع (RECEIVE_BOOT_COMPLETED)</strong> — حتى لا تُلغى الضوابط بإعادة تشغيل الهاتف.</li>
+    <li><strong>استثناء من تحسين البطارية</strong> — لنفس السبب: نظام يوقف التطبيق يوقف الحجب معه.</li>
+    <li><strong>الإشعارات والاهتزاز</strong> — لتنبيه الطفل قبل انتهاء وقت اللعب.</li>
+    <li><strong>الإنترنت</strong> — لتوليد الدروس من الصور، وللاشتراك. التطبيق يعمل بدونه: الحجب والنجوم والدروس المحفوظة لا تحتاج اتصالًا.</li>
+    <li><strong>الكاميرا ومعرض الصور</strong> — لتصوير صفحة الدرس، بطلب منك وفي كل مرّة.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>٤. من نشارك معه</h2>
+  <ul>
+    <li><strong>مزوّد الذكاء الاصطناعي</strong> — تُرسَل صورة صفحة الكتاب لحظة المعالجة فقط، لدى مزوّد لا يستعمل المُدخلات في التدريب. لا يُرسل معها أي معرّف لك أو لطفلك.</li>
+    <li><strong>Chargily</strong> — بوّابة الدفع. تستلم بيانات بطاقتك على صفحتها، ونستلم نحن منها رقم معاملة وحالة.</li>
+  </ul>
+  <p>ولا أحد غيرهما. لا نبيع أي بيانات، ولا نشاركها لأغراض إعلانية، ولا يوجد في التطبيق أي إعلان ولا أي أداة تتبّع.</p>
+</div>
+
+<div class="card">
+  <h2>٥. حقوقك</h2>
+  <p>
+    اكتب إلينا على <strong>no-reply@bafisslunio.com</strong> لطلب نسخة من بياناتك أو حذف حسابك.
+    حذف الحساب يزيل بريدك وهاتفك وسجلّ اشتراكك من الخادم.
+  </p>
+  <p>
+    وما على هاتفك لا يحتاج إذننا: حذف بيانات التطبيق من إعدادات الهاتف يمحو النجوم والدروس
+    والإعدادات كلها فورًا، لأنها لم تكن في مكان آخر أصلًا.
+  </p>
+</div>
+
+<div class="card">
+  <h2>٦. الأطفال</h2>
+  <p>
+    Lunio أداة بيد ولي الأمر. الحساب له وحده، والطفل لا يسجّل دخولًا ولا يُنشأ له حساب،
+    ولا يستطيع التطبيق جمع شيء عنه لأنه لا يرسل شيئًا عنه.
+  </p>
+</div>
+
+<hr style="border:0;border-top:1px solid #E6E2F5;margin:36px 0;">
+
+<div dir="ltr" style="text-align:left;">
+  <div class="card">
+    <h2 style="text-align:left;">Privacy Policy (English)</h2>
+    <p style="text-align:left;">
+      <strong>In one line:</strong> no account is created for the child, and no data about the
+      child ever reaches our servers. Stars, play time and saved lessons live on the phone alone.
+    </p>
+    <p style="text-align:left;"><strong>What we store, all of it about the parent:</strong>
+      email address, an optional phone number, and subscription and transaction records
+      (transaction id, amount, status, timestamps). Also a random install identifier, not derived
+      from the device, so the free trial is granted once per phone and one account maps to one phone.</p>
+    <p style="text-align:left;"><strong>What we never store:</strong> anything about the child —
+      no name, age, photo, school level, results, stars or play time; no lesson photographs, which are
+      processed and then deleted from the server immediately and are never used to train any model;
+      no card data, which is entered only on Chargily's hosted checkout; and no record of which apps
+      the child opens or for how long.</p>
+    <p style="text-align:left;"><strong>Accessibility Service.</strong> Used solely to read which
+      application is currently in the foreground, so that it can be stopped when play time ends.
+      It does not read screen content, text or passwords, and transmits nothing to any server.</p>
+    <p style="text-align:left;"><strong>Other permissions:</strong> draw over other apps (the
+      blocking card), foreground service, run at boot and battery-optimisation exemption (so the
+      controls survive a restart and are not killed by the system), notifications and vibration
+      (warning the child before time runs out), internet (lesson generation and subscription only —
+      blocking, stars and saved lessons work offline), and camera/photo access, used when you ask,
+      each time.</p>
+    <p style="text-align:left;"><strong>Sharing:</strong> the lesson photograph goes to an AI
+      provider at the moment of processing, carrying no identifier for you or your child, and
+      Chargily handles payment. Nobody else. We sell no data, share none for advertising, and the
+      app contains no advertising and no analytics or tracking of any kind.</p>
+    <p style="text-align:left;"><strong>Your rights:</strong> write to
+      <strong>no-reply@bafisslunio.com</strong> to request a copy of your data or deletion of your
+      account. Clearing the app's data on the phone erases everything local immediately, because it
+      was never anywhere else.</p>
+  </div>
+</div>
+
+<p style="text-align:center;color:var(--ink-soft);font-size:.9rem;">
+  آخر تحديث: {{ updated }}
+</p>
+
+{% endblock %}

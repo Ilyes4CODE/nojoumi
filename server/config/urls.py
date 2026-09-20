@@ -7,10 +7,17 @@ No admin route yet, and no media route ever — there is no MEDIA_ROOT to serve
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from apps.web import views as web_views
+
 urlpatterns = [
     # Article 7.2's independent page. The Android app never links here — see
     # apps/web/views.py for why that separation is what keeps the app shippable.
     path("pay/", include("apps.web.urls")),
+    # Google Play requires a privacy policy at a public URL, and it must be
+    # reachable without the app, without an account and without /pay/ — a
+    # reviewer opens it cold, and so does a parent who has not installed
+    # anything yet.
+    path("privacy/", web_views.privacy, name="privacy"),
     # Unauthenticated liveness, checked by the app before sign-in so that
     # "cannot reach the server" and "wrong credentials" are never confused.
     path("api/", include("apps.common.urls")),
