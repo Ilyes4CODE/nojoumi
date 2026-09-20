@@ -65,12 +65,25 @@ android {
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
 
-                // **All three schemes.** v2 alone is enough for our minSdk of 29
-                // and is what the build produced before — and a build signed
-                // that way was refused by an Android 14 phone with nothing but
-                // "App not installed" (2026-09-09). v1 costs a few kilobytes and
-                // removes a whole class of installer disagreement; v3 is what
-                // allows the key to be rotated later without breaking updates.
+                // **Asked for, and only v3 is produced.** Verified with
+                // `apksigner verify --print-certs -v` on 2026-09-20: v1 false,
+                // v2 false, v3 true, and no META-INF/*.SF in the archive at all.
+                // At `minSdk = 29` every device that can install this app
+                // verifies v3, so AGP does not bother emitting the older two and
+                // these flags do not override it.
+                //
+                // That is correct, and it also corrects the record. When an
+                // Android 14 phone refused `version 1.apk` with nothing but
+                // "App not installed" (2026-09-09), the schemes were blamed.
+                // They were not the cause: that build is signed
+                // `CN=Android Debug`, because this whole block did not exist
+                // yet. Samsung's Auto Blocker and Play Protect refuse a
+                // debug-signed APK from outside the store, and **the keystore
+                // below is what fixed it** — the flags changed nothing.
+                //
+                // Left in place rather than deleted, so that lowering minSdk one
+                // day brings the older schemes back without anyone rediscovering
+                // this.
                 enableV1Signing = true
                 enableV2Signing = true
                 enableV3Signing = true
