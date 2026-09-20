@@ -31,7 +31,7 @@ from rest_framework.test import APIClient
 from apps.payments import chargily
 from apps.payments.models import Transaction, TransactionStatus, WebhookEvent
 from apps.subscriptions.models import ActivationCode
-from apps.subscriptions.plans import PlanCode
+from apps.subscriptions.plans import PLAN_PRICE_DZD, PlanCode
 
 URL = "/api/payments/webhook/chargily/"
 
@@ -47,7 +47,7 @@ def envelope(
     plan: str = PlanCode.MONTHLY,
     status: str = "paid",
     event_type: str | None = None,
-    amount: int = 1000,
+    amount: int = PLAN_PRICE_DZD[PlanCode.MONTHLY],
 ) -> bytes:
     """One webhook body in the documented shape."""
     return json.dumps(
@@ -116,7 +116,7 @@ class SignatureTests(TestCase):
 
     def test_tampering_with_the_body_invalidates_the_signature(self):
         """The point of signing the body rather than an id."""
-        original = envelope(amount=1000)
+        original = envelope(amount=PLAN_PRICE_DZD[PlanCode.MONTHLY])
         signature = sign(original)
         tampered = envelope(amount=1)
 
@@ -174,7 +174,7 @@ class VerifiedWebhookTests(TestCase):
         self.assertEqual(response.status_code, 200)
         txn = Transaction.objects.get()
         self.assertEqual(txn.status, TransactionStatus.PAID)
-        self.assertEqual(txn.amount_dzd, 1000)
+        self.assertEqual(txn.amount_dzd, PLAN_PRICE_DZD[PlanCode.MONTHLY])
         self.assertEqual(txn.plan, PlanCode.MONTHLY)
         self.assertIsNotNone(txn.paid_at)
         self.assertEqual(txn.activation_codes.count(), 1)
@@ -281,7 +281,7 @@ class VerifiedWebhookTests(TestCase):
             {
                 "id": "evt_no_plan",
                 "type": "checkout.paid",
-                "data": {"id": "chk_1", "amount": 1000, "status": "paid"},
+                "data": {"id": "chk_1", "amount": PLAN_PRICE_DZD[PlanCode.MONTHLY], "status": "paid"},
             }
         ).encode("utf-8")
         response = self.client.post(
@@ -299,7 +299,7 @@ class VerifiedWebhookTests(TestCase):
                 "type": "checkout.paid",
                 "data": {
                     "id": "chk_list",
-                    "amount": 1000,
+                    "amount": PLAN_PRICE_DZD[PlanCode.MONTHLY],
                     "status": "paid",
                     "metadata": [{"plan": PlanCode.ANNUAL}],
                 },

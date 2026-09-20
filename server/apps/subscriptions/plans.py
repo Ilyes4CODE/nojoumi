@@ -31,17 +31,27 @@ class SubscriptionState(models.TextChoices):
     REFUNDED = "refunded", "مسترجع"
 
 
-# Duration in days and price in DZD, exactly as Art. 7.1 states them.
+# Duration in days, exactly as Art. 7.1 states them.
 PLAN_DAYS: dict[str, int] = {
     PlanCode.TRIAL: 7,
     PlanCode.MONTHLY: 30,
     PlanCode.ANNUAL: 365,
 }
 
+# Price in DZD.
+#
+# **These are not the contract's numbers.** Article 7.1 sets 1000 and 10000; the
+# client halved both on 2026-09-20 (D-94). Recorded here rather than only in the
+# decision log, because the next person to read this file will otherwise check it
+# against the contract and think it is a bug.
+#
+# One constant, read by the checkout endpoint, the payment page and the
+# transaction record alike. The amount is never taken from a request — an amount
+# that arrives over the wire is an amount somebody can edit.
 PLAN_PRICE_DZD: dict[str, int] = {
     PlanCode.TRIAL: 0,
-    PlanCode.MONTHLY: 1000,
-    PlanCode.ANNUAL: 10000,
+    PlanCode.MONTHLY: 500,
+    PlanCode.ANNUAL: 5000,
 }
 
 # Art. 7.4 — "مهلة سماح ثلاثة أيام".

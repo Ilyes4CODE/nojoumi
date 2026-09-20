@@ -34,7 +34,7 @@ def gateway_response(checkout_id="chk_1", url="https://pay.chargily.net/x"):
         "id": checkout_id,
         "entity": "checkout",
         "status": "pending",
-        "amount": 1000,
+        "amount": PLAN_PRICE_DZD[PlanCode.MONTHLY],
         "currency": "dzd",
         "checkout_url": url,
     }
@@ -59,8 +59,12 @@ class CreateCheckoutTests(TestCase):
         response = self.post(plan=PlanCode.MONTHLY)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(create.call_args.kwargs["amount_dzd"], 1000)
-        self.assertEqual(response.json()["amount_dzd"], 1000)
+        self.assertEqual(
+            create.call_args.kwargs["amount_dzd"], PLAN_PRICE_DZD[PlanCode.MONTHLY]
+        )
+        self.assertEqual(
+            response.json()["amount_dzd"], PLAN_PRICE_DZD[PlanCode.MONTHLY]
+        )
 
     @mock.patch("apps.payments.chargily.create_checkout")
     def test_an_annual_checkout_uses_the_contract_price(self, create):
@@ -68,7 +72,9 @@ class CreateCheckoutTests(TestCase):
         response = self.post(plan=PlanCode.ANNUAL)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(create.call_args.kwargs["amount_dzd"], 10000)
+        self.assertEqual(
+            create.call_args.kwargs["amount_dzd"], PLAN_PRICE_DZD[PlanCode.ANNUAL]
+        )
 
     @mock.patch("apps.payments.chargily.create_checkout")
     def test_an_amount_supplied_by_the_caller_is_ignored(self, create):
@@ -167,7 +173,7 @@ class CheckoutRequestShapeTests(TestCase):
         )
 
         chargily.create_checkout(
-            amount_dzd=1000,
+            amount_dzd=PLAN_PRICE_DZD[PlanCode.MONTHLY],
             plan=PlanCode.MONTHLY,
             success_url="https://example.test/ok",
             failure_url="https://example.test/no",
@@ -182,7 +188,7 @@ class CheckoutRequestShapeTests(TestCase):
         self.assertEqual(url, f"{chargily.TEST_BASE_URL}/checkouts")
         self.assertEqual(headers["Authorization"], "Bearer test_sk_unit_tests_only")
         self.assertEqual(body["currency"], "dzd")
-        self.assertEqual(body["amount"], 1000)
+        self.assertEqual(body["amount"], PLAN_PRICE_DZD[PlanCode.MONTHLY])
         self.assertEqual(body["metadata"], {"plan": PlanCode.MONTHLY})
         self.assertEqual(body["success_url"], "https://example.test/ok")
 
@@ -197,12 +203,12 @@ class CheckoutRequestShapeTests(TestCase):
 
         with self.assertRaises(chargily.ChargilyError):
             chargily.create_checkout(
-                amount_dzd=1000, plan=PlanCode.MONTHLY, success_url="https://x.test/ok"
+                amount_dzd=PLAN_PRICE_DZD[PlanCode.MONTHLY], plan=PlanCode.MONTHLY, success_url="https://x.test/ok"
             )
 
     @override_settings(CHARGILY_SECRET_KEY="", CHARGILY_TIMEOUT_SECONDS=20)
     def test_no_secret_key_refuses_before_any_network_call(self):
         with self.assertRaises(chargily.ChargilyNotConfigured):
             chargily.create_checkout(
-                amount_dzd=1000, plan=PlanCode.MONTHLY, success_url="https://x.test/ok"
+                amount_dzd=PLAN_PRICE_DZD[PlanCode.MONTHLY], plan=PlanCode.MONTHLY, success_url="https://x.test/ok"
             )

@@ -2545,3 +2545,35 @@ The Gmail credentials remain usable for **development**, where the question bein
 does it look right, are the illustrations visible without pressing *show images*" — and for that, any working
 SMTP server will do. `config/settings/base.py` reads the mail settings from the environment for exactly this
 reason; production overrides all of them and refuses to start without them (D-92).
+
+## D-94 — the client halved both prices
+
+**Instructed on 2026-09-20:** 500 DZD a month and 5000 DZD a year, against Article 7.1's 1000 and 10000.
+
+This is a change to a term of the contract, not a configuration tweak, and it wants the client's **written**
+agreement alongside D-85 (memorization cards removed) and D-88 (MySQL instead of PostgreSQL). Article 17 also
+leaves refunds out of scope, which matters more at a lower price point because the volume of small
+transactions is higher.
+
+### What it touched, and what it deliberately did not
+
+The price lives in exactly one constant, `PLAN_PRICE_DZD`, read by the checkout endpoint, the payment page and
+the transaction record alike. Changing it is a **server deploy with no new APK**, because Article 7.2 keeps
+every number out of the app — the app has no price, no buy button and no payment link, and a grep for either
+amount across `app/lib` finds nothing but a doc comment explaining why.
+
+That is worth stating plainly: a pricing change that required shipping an APK would mean the price was in the
+app, which is the thing Article 7.2 forbids.
+
+### The tests were pinning the wrong thing
+
+Eleven assertions across three files hard-coded `1000` and `10000`, so halving one constant produced five
+failures that all looked like defects. But their real claim is *"the amount comes from the constant and never
+from the request"* — the number itself is incidental to every one of them. They read `PLAN_PRICE_DZD` now, and
+a future price change is one edit rather than twelve.
+
+Which left the constant itself unguarded: with everything reading it, a stray edit to `plans.py` would pass the
+entire suite and quietly start charging a different amount, discovered by a customer or by the client's
+accountant. `apps/subscriptions/tests/test_prices.py` pins both literals in **one** place, where changing them
+is obviously a decision rather than a typo — plus the invariant that a year must cost less than twelve months,
+so the page can never advertise a discount that is not one.

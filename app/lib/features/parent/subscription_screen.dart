@@ -31,7 +31,8 @@ import '../../l10n/app_localizations.dart';
 ///
 ///  * **still no price anywhere in the app.** Both amounts live on the web page,
 ///    read from `plans.py`. A screen with no number on it is a weaker case
-///    against us than one advertising 1.000 دج;
+///    against us than one advertising a monthly fee — and it is also why a
+///    price change is a server deploy and never a new APK;
 ///  * the button opens the **system browser**, never a WebView. A payment page
 ///    rendered inside the app is unambiguously an in-app purchase flow; handing
 ///    the URL to the browser keeps the transaction visibly outside Lunio, with

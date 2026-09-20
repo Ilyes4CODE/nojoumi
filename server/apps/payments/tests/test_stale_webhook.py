@@ -39,6 +39,7 @@ from unittest import mock
 from django.test import TestCase, override_settings
 
 from apps.payments import chargily
+from apps.subscriptions.plans import PLAN_PRICE_DZD, PlanCode
 
 
 class _Response:
@@ -62,7 +63,7 @@ WEBHOOK_422 = (
 class AnUnreachableWebhookStopsTheCheckout(TestCase):
     def _create(self, webhook):
         return chargily.create_checkout(
-            amount_dzd=1000,
+            amount_dzd=PLAN_PRICE_DZD[PlanCode.MONTHLY],
             plan="monthly",
             success_url="https://example.dz/pay/done/",
             webhook_endpoint=webhook,
