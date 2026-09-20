@@ -328,3 +328,45 @@ class TheMessageItself(ResetBase):
         self.assertNotIn("cid:", html)
         self.assertIn(code_from_outbox(), html)
         self.assertIn("نسيت كلمة المرور", html)
+
+class ItSurvivesAMailClient(ResetBase):
+    """Three things Gmail broke, each invisible to every other test here.
+
+    A template renders perfectly in a browser and still arrives wrong, because a
+    mail client is not a browser. These pin the specific repairs made on
+    2026-09-20 after looking at the message in Gmail.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.ask()
+        self.html = mail.outbox[0].alternatives[0][0]
+
+    def test_the_direction_is_declared_where_gmail_can_see_it(self):
+        # Gmail keeps the contents of <body> and throws the rest of the document
+        # away, so `dir` on <html> never reaches the text. Counted rather than
+        # merely found: one occurrence would mean only the <html> tag has it.
+        self.assertGreater(
+            self.html.count('dir="rtl"'),
+            6,
+            "Arabic needs its direction on the tables and cells themselves, not "
+            "only on <html>, which Gmail discards",
+        )
+
+    def test_backgrounds_are_written_as_attributes_too(self):
+        # `background:` is stripped where `bgcolor` is honoured. Without this the
+        # page tint and the band behind the illustration both vanish and the
+        # message is white on white.
+        for colour in ("#F8F7FC", "#FFFFFF", "#EDE8FC"):
+            self.assertIn(
+                f'bgcolor="{colour}"',
+                self.html,
+                f"{colour} will not survive Gmail as CSS alone",
+            )
+
+    def test_the_font_stack_names_fonts_that_exist_on_a_reader_machine(self):
+        # Tajawal is bundled in the APK. A mail client cannot reach it, and a
+        # webfont cannot be loaded because Gmail drops <link> and @import, so
+        # naming it here only means "pick something, I do not mind".
+        self.assertNotIn("Tajawal", self.html)
+        self.assertIn("Tahoma", self.html)
