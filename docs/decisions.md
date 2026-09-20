@@ -2507,3 +2507,41 @@ Development now writes each message to `server/sent_emails/` as a file, which is
 the message is HTML with inline illustrations, and a `.eml` opened in a mail client shows what a parent will
 actually see. Production is unaffected; it has always been SMTP, and `prod.py` refuses to start without the
 credentials for the same reason it refuses to start without a database.
+
+## D-93 — the reset email sends from the domain, not from a personal Gmail
+
+A personal Gmail account with an app password was offered on 2026-09-20 as the sending mailbox, with two
+requirements: **the owner's address must not be visible to parents, and neither must their profile photo.**
+
+Neither is possible through a personal Gmail account, for two separate reasons.
+
+### The address
+
+Gmail's SMTP rewrites `From` to the authenticated account unless the address is a verified *Send mail as*
+alias. Setting it to `Lunio <no-reply@bafisslunio.com>` and sending was **accepted at the SMTP layer** — which
+proves nothing, because acceptance and header preservation are different things, and Google does the rewrite
+silently after the transaction closes.
+
+Worse, if the header *were* preserved, it would be actively harmful: SPF and DKIM would align with
+`gmail.com` while the From claimed `bafisslunio.com`, so the message fails DMARC for the domain it claims to
+come from. That is the exact signature of a spoofed email, and it is scored accordingly.
+
+### The photo
+
+Gmail shows the **sending account's** Google profile picture to every Gmail recipient. There is no per-message
+control and no header that suppresses it. The only way to remove it is to remove the photo from the Google
+account, which also removes it from the owner's personal correspondence.
+
+### What is used instead
+
+`no-reply@bafisslunio.com`, a cPanel mailbox on the site's own domain.
+
+* It is not a Google account, so there is no avatar to leak.
+* The address **is** the brand, so there is nothing to hide.
+* SPF, DKIM and DMARC all align with the domain the message claims, which is the single biggest factor in
+  whether a transactional email reaches an inbox rather than a spam folder.
+
+The Gmail credentials remain usable for **development**, where the question being answered is "does it arrive,
+does it look right, are the illustrations visible without pressing *show images*" — and for that, any working
+SMTP server will do. `config/settings/base.py` reads the mail settings from the environment for exactly this
+reason; production overrides all of them and refuses to start without them (D-92).
