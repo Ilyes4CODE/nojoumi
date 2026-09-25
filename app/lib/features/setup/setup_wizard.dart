@@ -6,7 +6,9 @@ import '../../core/illustrations.dart';
 import '../../core/pin.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../data/local/tables.dart';
 import '../../data/remote/api_client.dart';
+import '../parent/app_picker_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/account_form.dart';
 import 'post_auth_route.dart';
@@ -33,6 +35,15 @@ class SetupWizard extends ConsumerStatefulWidget {
   /// import `features`.
   static const int completedStep = onboardingCompletedStep;
 
+  /// How many steps the wizard has: welcome, account, grade, PIN, protection,
+  /// games.
+  ///
+  /// Six since 2026-09-25, when the client asked for the game list to be chosen
+  /// during setup rather than found later in the dashboard. Public and pinned by
+  /// a test, because the way this regresses is somebody renumbering the switch
+  /// and leaving the default case to swallow a step that then never shows.
+  static const int totalSteps = 6;
+
   @override
   ConsumerState<SetupWizard> createState() => _SetupWizardState();
 }
@@ -50,7 +61,6 @@ class _SetupWizardState extends ConsumerState<SetupWizard> {
   ProtectionChoice _protection = ProtectionChoice.none;
   bool _busy = false;
 
-  static const int _totalSteps = 5;
 
   @override
   void dispose() {
@@ -75,7 +85,7 @@ class _SetupWizardState extends ConsumerState<SetupWizard> {
               ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
-          child: LinearProgressIndicator(value: (_step + 1) / _totalSteps),
+          child: LinearProgressIndicator(value: (_step + 1) / SetupWizard.totalSteps),
         ),
       ),
       body: SafeArea(
@@ -101,7 +111,7 @@ class _SetupWizardState extends ConsumerState<SetupWizard> {
               busy: _busy,
               onNext: _savePinAndContinue,
             ),
-            _ => ProtectionStep(
+            4 => ProtectionStep(
               consented: _protection.consented,
               wantsBlocking: _protection.blocking,
               wantsLauncher: _protection.launcher,
@@ -112,9 +122,10 @@ class _SetupWizardState extends ConsumerState<SetupWizard> {
                   setState(() => _protection = _protection.withBlocking(v)),
               onLauncherChanged: (v) =>
                   setState(() => _protection = _protection.withLauncher(v)),
-              onFinish: _finish,
+              onFinish: _afterProtection,
               onSkip: _finishWithoutProtection,
             ),
+            _ => _GamesStep(busy: _busy, onFinish: _finish),
           },
         ),
       ),
@@ -193,6 +204,33 @@ class _SetupWizardState extends ConsumerState<SetupWizard> {
   /// `welcomeGrantProvider` on the first day the clock can be defended — see
   /// the comment there for why finishing setup with an unread clock used to
   /// strand ten stars on 1970-01-01.
+  /// Protection is chosen; now say which apps it applies to.
+  ///
+  /// **The list comes after the consent, not before it.** The client asked for
+  /// the games to be picked "right after signing up", and the literal reading
+  /// would put this immediately after the account form — before the parent has
+  /// agreed to blocking at all, and before the accessibility disclosure they
+  /// have to read. Choosing what to block before agreeing that anything will be
+  /// blocked is a question with no context, and the disclosure is the one screen
+  /// in this flow that is not ours to reorder.
+  ///
+  /// A parent who declined blocking skips it: there is nothing for the list to
+  /// mean, and `_finishWithoutProtection` already takes them straight out.
+  Future<void> _afterProtection() async {
+    if (!_protection.blocking) {
+      await _finish();
+      return;
+    }
+    // Settings are written here rather than at the end, because the picker reads
+    // them: opening it with blocking still off would show a list that cannot
+    // explain what it is for.
+    final settings = ref.read(settingsRepositoryProvider);
+    await settings.setBlockingEnabled(true);
+    await settings.setLauncherMode(_protection.launcher);
+
+    if (mounted) setState(() => _step = 5);
+  }
+
   Future<void> _finish() async {
     setState(() => _busy = true);
 
@@ -1001,6 +1039,94 @@ class _StepScaffold extends StatelessWidget {
         const SizedBox(height: LunioSpacing.m),
         action,
       ],
+    );
+  }
+}
+
+
+/// The last setup step: which apps the child earns time to open.
+///
+/// **It pushes the picker rather than embedding it.** `AppPickerScreen` owns a
+/// searchable, scrolling list of every launchable app, and `_StepScaffold` is
+/// itself a scroll view — nesting the two gives an inner list with no bounded
+/// height, which is a genuine layout fault rather than a style preference. A
+/// route also lets the parent search and scroll a hundred apps without the
+/// wizard's chrome fighting them for the screen.
+///
+/// **Skippable, and honest about it.** A parent who cannot decide now is not
+/// blocked from finishing; the note says plainly that nothing is blocked until
+/// they choose, because a setup that ends with silent inaction is one the client
+/// hears about as "the blocking does not work".
+class _GamesStep extends ConsumerWidget {
+  const _GamesStep({required this.busy, required this.onFinish});
+
+  final bool busy;
+  final Future<void> Function() onFinish;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppL10n.of(context)!;
+    final theme = Theme.of(context);
+
+    final managed = ref.watch(managedAppsProvider).value ?? const [];
+    final chosen = managed
+        .where((row) => row.policy == AppPolicy.blockedGame)
+        .length;
+
+    return _StepScaffold(
+      title: l10n.setupAppsTitle,
+      body: l10n.setupAppsBody,
+      fields: [
+        Center(child: Illustration.lockFriendly.show(size: 120)),
+        const SizedBox(height: LunioSpacing.l),
+        Card(
+          child: ListTile(
+            leading: const TintedIcon(Icons.videogame_asset_outlined),
+            title: Text(
+              chosen == 0
+                  ? l10n.setupAppsNoneYet
+                  : l10n.setupAppsChosen('$chosen'),
+              style: theme.textTheme.bodyLarge,
+            ),
+            trailing: const Icon(Icons.chevron_left),
+            onTap: busy
+                ? null
+                : () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AppPickerScreen(),
+                    ),
+                  ),
+          ),
+        ),
+        const SizedBox(height: LunioSpacing.m),
+        OutlinedButton.icon(
+          onPressed: busy
+              ? null
+              : () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AppPickerScreen()),
+                ),
+          icon: const Icon(Icons.apps),
+          label: Text(l10n.setupAppsOpen),
+        ),
+        const SizedBox(height: LunioSpacing.m),
+        if (chosen == 0)
+          Text(
+            l10n.setupAppsWhyLater,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: LunioTheme.ink.withValues(alpha: 0.6),
+            ),
+          ),
+      ],
+      action: FilledButton(
+        onPressed: busy ? null : onFinish,
+        child: busy
+            ? const SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(l10n.setupFinish),
+      ),
     );
   }
 }

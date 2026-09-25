@@ -65,3 +65,51 @@ class Install(models.Model):
     @property
     def trial_available(self) -> bool:
         return self.trial_consumed_at is None
+
+
+class InstallAccount(models.Model):
+    """One parent account signed in on one device.
+
+    **Why a table and not a bigger `Install.parent`.** The client's rule of
+    2026-08-28 was one account per phone; on 2026-09-25 they raised it to three,
+    "but the subscription stays on the device". A single foreign key cannot hold
+    three, and a trio of nullable columns would be a table drawn badly.
+
+    `Install.parent` is kept as the **first** account bound to the device. It is
+    what every existing query reads, it is what the trial and the activation code
+    already record, and widening it to mean something new would have rewritten
+    semantics in code that is working. The first binding writes both; the second
+    and third write only here.
+
+    **What this is not.** Articles 7.1 and the install binding both say plainly
+    that the install id is a rule against casual account-swapping on a shared
+    family phone, not a security boundary — clearing the app's data mints a new
+    UUID and a fresh device. Raising one to three does not change that either
+    way; it changes how many parents in one household can use the phone before
+    they are told to stop.
+    """
+
+    install = models.ForeignKey(
+        Install,
+        on_delete=models.CASCADE,
+        related_name="accounts",
+    )
+    parent = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="install_bindings",
+    )
+    bound_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "install account"
+        verbose_name_plural = "install accounts"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["install", "parent"], name="one_row_per_account_per_install"
+            )
+        ]
+        indexes = [models.Index(fields=["install", "bound_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.parent_id} on {self.install_id}"

@@ -6,6 +6,7 @@ from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
+from django.core.exceptions import ValidationError
 from rest_framework.views import APIView
 
 from apps.devices.models import Install
@@ -44,6 +45,28 @@ SNAPSHOT_DESCRIPTION = (
 )
 
 
+def _install_from(request):
+    """The caller's install, or None if it did not say or the id is unknown.
+
+    Never creates one. A device that has not registered its install through
+    sign-in or the trial has nothing to widen to, and inventing a row here would
+    let any caller mint installs by guessing UUIDs.
+    """
+    from apps.devices.models import Install
+
+    raw = request.query_params.get("install_id")
+    if not raw and isinstance(getattr(request, "data", None), dict):
+        raw = request.data.get("install_id")
+    if not raw:
+        return None
+
+    # A malformed UUID is a caller mistake, not a reason to 500 a status check.
+    try:
+        return Install.objects.filter(pk=raw).first()
+    except (ValueError, ValidationError):
+        return None
+
+
 class StatusView(APIView):
     """GET the signed snapshot. The app calls this every 24 h (Art. 7.6)."""
 
@@ -55,7 +78,17 @@ class StatusView(APIView):
         description=SNAPSHOT_DESCRIPTION,
     )
     def get(self, request):
-        return Response(services.build_snapshot(parent=request.user))
+        # The install is read from the query string rather than required: an
+        # older build does not send it, and a status call that 400s because of a
+        # field added later is a phone that stops knowing its own subscription.
+        # Without it the answer is simply the account-scoped one, which is what
+        # every build before 2026-09-25 got.
+        return Response(
+            services.build_snapshot(
+                parent=request.user,
+                install=_install_from(request),
+            )
+        )
 
 
 class StartTrialView(APIView):

@@ -540,5 +540,18 @@
   "forgotNewAction": "حفظ كلمة المرور",
   "forgotDoneTitle": "تم تغيير كلمة المرور",
   "forgotDoneBody": "سجّلنا دخولك بالكلمة الجديدة. احتفظ بها في مكان آمن.",
-  "forgotDoneAction": "متابعة"
+  "forgotDoneAction": "متابعة",
+  "setupAppsTitle": "اختر ألعاب طفلك",
+  "setupAppsBody": "حدّد التطبيقات التي تريد أن يكسب طفلك الوقت لفتحها. يمكنك تغيير القائمة في أي وقت من لوحة الوالد.",
+  "setupAppsOpen": "اختر التطبيقات",
+  "setupAppsChosen": "{count} تطبيق مُختار",
+  "@setupAppsChosen": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "setupAppsNoneYet": "لم تختر أي تطبيق بعد",
+  "setupAppsWhyLater": "إن تخطّيتها الآن، لن يُحجب أي تطبيق حتى تختار."
 }

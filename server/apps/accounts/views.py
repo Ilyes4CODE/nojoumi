@@ -33,13 +33,22 @@ class RegisterView(CreateAPIView):
         if install_id is not None:
             from apps.devices.models import Install
 
+            from .install_binding import MAX_ACCOUNTS_PER_INSTALL
+
+            # Checked before the account is created, not after: a registration
+            # that makes a ParentUser and then refuses to bind it leaves an
+            # orphan the parent cannot sign in with and cannot create again.
+            #
+            # The limit is the same one `bind()` enforces (three, from
+            # 2026-09-25). Counting the join table rather than `Install.parent`,
+            # which by design names only the first account.
             existing = Install.objects.filter(id=install_id).first()
-            if existing is not None and existing.parent_id is not None:
+            if existing is not None and existing.accounts.count() >= MAX_ACCOUNTS_PER_INSTALL:
                 return Response(
                     {
                         "detail": (
-                            "هذا الهاتف مرتبط بحساب آخر. سجّل الدخول بالحساب نفسه، "
-                            "أو احذف بيانات التطبيق للبدء من جديد."
+                            f"هذا الهاتف مرتبط بـ{MAX_ACCOUNTS_PER_INSTALL} حسابات بالفعل. "
+                            "سجّل الدخول بأحدها، أو احذف بيانات التطبيق للبدء من جديد."
                         )
                     },
                     status=status.HTTP_409_CONFLICT,

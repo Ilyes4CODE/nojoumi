@@ -1938,6 +1938,42 @@ abstract class AppL10n {
   /// In ar, this message translates to:
   /// **'متابعة'**
   String get forgotDoneAction;
+
+  /// No description provided for @setupAppsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر ألعاب طفلك'**
+  String get setupAppsTitle;
+
+  /// No description provided for @setupAppsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّد التطبيقات التي تريد أن يكسب طفلك الوقت لفتحها. يمكنك تغيير القائمة في أي وقت من لوحة الوالد.'**
+  String get setupAppsBody;
+
+  /// No description provided for @setupAppsOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر التطبيقات'**
+  String get setupAppsOpen;
+
+  /// No description provided for @setupAppsChosen.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} تطبيق مُختار'**
+  String setupAppsChosen(String count);
+
+  /// No description provided for @setupAppsNoneYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تختر أي تطبيق بعد'**
+  String get setupAppsNoneYet;
+
+  /// No description provided for @setupAppsWhyLater.
+  ///
+  /// In ar, this message translates to:
+  /// **'إن تخطّيتها الآن، لن يُحجب أي تطبيق حتى تختار.'**
+  String get setupAppsWhyLater;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

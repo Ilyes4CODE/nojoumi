@@ -273,14 +273,21 @@ final todayProgressProvider = StreamProvider<DayProgress>((ref) {
 /// without `core` importing `features` — the dependency only ever points one
 /// way.
 /// Raised from 4 to 5 on 2026-08-28, when the account step was inserted after
-/// the welcome screen. It is the count of wizard steps, so it moves with them.
+/// the welcome screen, and from 5 to 6 on 2026-09-25 for the game-list step.
+/// It is the count of wizard steps, so it moves with them.
 ///
 /// Note what this does to a device that finished setup under the previous build:
-/// its stored step is 4, which is now less than the sentinel, so it is sent
-/// back through the wizard once. That is the right behaviour — the account step
-/// is new and the parent has not seen it — and there are no production installs
-/// for it to disturb.
-const int onboardingCompletedStep = 5;
+/// its stored step is one less than the sentinel, so it is sent back through the
+/// wizard once. That is the right behaviour both times — the new step is one the
+/// parent has not seen, and in the second case it is the one that decides which
+/// apps are blocked at all, so a household that never sees it has blocking
+/// switched on and nothing blocked.
+///
+/// `setup_games_step_test.dart` pins this against `SetupWizard.totalSteps`,
+/// because the two are one fact written in two files and the failure mode of
+/// forgetting is silent: the gate still opens, and the new step is simply never
+/// shown to anyone who set up before it existed.
+const int onboardingCompletedStep = 6;
 
 /// Grants the one-time welcome balance of appendix §5, on the first day we can
 /// actually defend.

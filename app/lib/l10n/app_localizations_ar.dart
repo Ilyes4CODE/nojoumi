@@ -1023,4 +1023,26 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get forgotDoneAction => 'متابعة';
+
+  @override
+  String get setupAppsTitle => 'اختر ألعاب طفلك';
+
+  @override
+  String get setupAppsBody =>
+      'حدّد التطبيقات التي تريد أن يكسب طفلك الوقت لفتحها. يمكنك تغيير القائمة في أي وقت من لوحة الوالد.';
+
+  @override
+  String get setupAppsOpen => 'اختر التطبيقات';
+
+  @override
+  String setupAppsChosen(String count) {
+    return '$count تطبيق مُختار';
+  }
+
+  @override
+  String get setupAppsNoneYet => 'لم تختر أي تطبيق بعد';
+
+  @override
+  String get setupAppsWhyLater =>
+      'إن تخطّيتها الآن، لن يُحجب أي تطبيق حتى تختار.';
 }

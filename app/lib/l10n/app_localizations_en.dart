@@ -1039,4 +1039,26 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get forgotDoneAction => 'Continue';
+
+  @override
+  String get setupAppsTitle => 'Choose your child\'s games';
+
+  @override
+  String get setupAppsBody =>
+      'Pick the apps your child should earn time to open. You can change the list at any time from the parent dashboard.';
+
+  @override
+  String get setupAppsOpen => 'Choose apps';
+
+  @override
+  String setupAppsChosen(String count) {
+    return '$count apps chosen';
+  }
+
+  @override
+  String get setupAppsNoneYet => 'No apps chosen yet';
+
+  @override
+  String get setupAppsWhyLater =>
+      'If you skip this now, nothing will be blocked until you choose.';
 }

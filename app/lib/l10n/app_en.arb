@@ -540,5 +540,18 @@
   "forgotNewAction": "Save the password",
   "forgotDoneTitle": "Password changed",
   "forgotDoneBody": "We signed you in with the new one. Keep it somewhere safe.",
-  "forgotDoneAction": "Continue"
+  "forgotDoneAction": "Continue",
+  "setupAppsTitle": "Choose your child's games",
+  "setupAppsBody": "Pick the apps your child should earn time to open. You can change the list at any time from the parent dashboard.",
+  "setupAppsOpen": "Choose apps",
+  "setupAppsChosen": "{count} apps chosen",
+  "@setupAppsChosen": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "setupAppsNoneYet": "No apps chosen yet",
+  "setupAppsWhyLater": "If you skip this now, nothing will be blocked until you choose."
 }

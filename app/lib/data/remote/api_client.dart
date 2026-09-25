@@ -203,9 +203,14 @@ class ApiClient {
     _ => 'تعذّر الاتصال بالخادم.',
   };
 
-  Future<Response<dynamic>> get(String path) => _send(
-    (headers) => dio.get<dynamic>(path, options: Options(headers: headers)),
-  );
+  Future<Response<dynamic>> get(String path, {Map<String, Object?>? query}) =>
+      _send(
+        (headers) => dio.get<dynamic>(
+          path,
+          queryParameters: query,
+          options: Options(headers: headers),
+        ),
+      );
 
   /// Post a JSON `body`, or a multipart `form`.
   ///

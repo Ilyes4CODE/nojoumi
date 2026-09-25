@@ -49,16 +49,61 @@ def _ms(dt) -> int:
     return int(dt.timestamp() * 1000)
 
 
-def current_subscription(parent) -> Subscription | None:
+def current_subscription(parent, install=None) -> Subscription | None:
     """The subscription that decides this parent's state.
 
     The one with the furthest `ends_at`, because a renewal extends rather than
     replaces (Art. 7.4) and a refund must not be hidden by an older row.
+
+    **With an `install`, the search widens to every account on that phone.**
+    A device may hold three accounts (client request, 2026-09-25) and the
+    subscription belongs to the *device*: the parent who paid may not be the
+    parent holding the phone, and a household that bought a year should not be
+    asked to buy it again because the other adult signed in.
+
+    This is the same anchor Article 7.1 already uses for the trial — «مرة واحدة
+    لكل جهاز» — applied to the thing the trial leads to. Keeping the two on
+    different anchors is what would be strange: a free week that follows the
+    phone and a paid year that does not.
+
+    **It cannot manufacture a subscription.** Every row it can reach was created
+    by a real transaction or a real trial on one of these accounts, and a refund
+    on any of them still wins, because a refunded row short-circuits before the
+    widening happens.
     """
-    refunded = parent.subscriptions.filter(refunded_at__isnull=False).first()
+    holders = [parent]
+    if install is not None:
+        holders = list(_accounts_on(install)) or [parent]
+
+    refunded = (
+        Subscription.objects.filter(parent__in=holders, refunded_at__isnull=False)
+        .order_by("-refunded_at")
+        .first()
+    )
     if refunded:
         return refunded
-    return parent.subscriptions.order_by("-ends_at").first()
+
+    return (
+        Subscription.objects.filter(parent__in=holders).order_by("-ends_at").first()
+    )
+
+
+def _accounts_on(install):
+    """Every parent bound to `install`, newest binding last.
+
+    Reads the join table and falls back to `Install.parent` for rows written
+    before it existed — a device bound under the old one-account rule has no
+    `InstallAccount` row until its owner signs in again, and until then it must
+    still resolve to the account that owns it.
+    """
+    from apps.accounts.models import ParentUser
+
+    ids = set(
+        install.accounts.values_list("parent_id", flat=True)
+    )
+    if install.parent_id is not None:
+        ids.add(install.parent_id)
+    return ParentUser.objects.filter(pk__in=ids)
 
 
 @transaction.atomic
@@ -164,15 +209,20 @@ def due_reminder(subscription: Subscription, now=None) -> int | None:
     return None
 
 
-def build_snapshot(*, parent, now=None) -> dict:
+def build_snapshot(*, parent, install=None, now=None) -> dict:
     """The signed payload the device caches for up to 7 days (Art. 7.6).
 
     `parent_id` is included so a snapshot cannot be lifted from one account's
     device and replayed on another's. The app checks it against the account it is
     logged in as.
+
+    `install` widens which subscription counts to every account on that phone
+    (see [current_subscription]). The snapshot still names **this** parent, so
+    the replay protection is untouched: what the device may show has widened,
+    what the snapshot may be used by has not.
     """
     now = now or timezone.now()
-    subscription = current_subscription(parent)
+    subscription = current_subscription(parent, install)
 
     if subscription is None:
         payload = {

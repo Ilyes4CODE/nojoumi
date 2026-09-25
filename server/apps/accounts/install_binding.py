@@ -32,22 +32,47 @@ class InstallAlreadyClaimed(Exception):
     """This device is already bound to a different parent account."""
 
 
-def bind(*, install_id, parent, android_release="", device_model="", app_version=""):
-    """Claim [install_id] for [parent], or raise if somebody else holds it.
+#: How many parent accounts may sign in on one phone.
+#:
+#: One, by the client's request of 2026-08-28. **Three** from 2026-09-25, at
+#: their request, for a household where more than one adult uses the same phone.
+#: The subscription follows the *device* rather than any of the accounts, so the
+#: second and third parents see what the first one paid for — see
+#: `subscriptions.services.current_subscription`.
+#:
+#: Still not a security boundary, for exactly the reason in this module's
+#: docstring: clearing the app's data mints a new UUID and a fresh device. Three
+#: is a number about households, not about attackers.
+MAX_ACCOUNTS_PER_INSTALL = 3
 
-    Idempotent for the account that already owns the install, because the app
-    sends its install id on every sign-in and a parent signing in again on their
-    own phone is the ordinary case, not a violation.
+
+def bind(*, install_id, parent, android_release="", device_model="", app_version=""):
+    """Record that [parent] uses [install_id], or raise if the phone is full.
+
+    Idempotent for an account already bound, because the app sends its install id
+    on every sign-in and a parent signing in again on their own phone is the
+    ordinary case, not a violation.
     """
+    from apps.devices.models import InstallAccount
+
     install, _ = Install.objects.get_or_create(id=install_id)
 
-    if install.parent_id is not None and install.parent_id != parent.pk:
+    _, created = InstallAccount.objects.get_or_create(install=install, parent=parent)
+    if created and install.accounts.count() > MAX_ACCOUNTS_PER_INSTALL:
+        # Undone rather than guarded by a prior count: two sign-ins racing would
+        # both read "two bound" and both insert. Inserting first and checking
+        # after makes the database the arbiter, which is the only one that can be.
+        InstallAccount.objects.filter(install=install, parent=parent).delete()
         raise InstallAlreadyClaimed(
-            "هذا الهاتف مرتبط بحساب آخر. سجّل الدخول بالحساب نفسه، "
-            "أو احذف بيانات التطبيق للبدء من جديد."
+            f"هذا الهاتف مرتبط بـ{MAX_ACCOUNTS_PER_INSTALL} حسابات بالفعل. "
+            "سجّل الدخول بأحدها، أو احذف بيانات التطبيق للبدء من جديد."
         )
 
-    install.parent = parent
+    # `Install.parent` stays the **first** account bound to the phone: the trial,
+    # the activation code and every existing query already read it, and widening
+    # its meaning would rewrite semantics in code that works.
+    if install.parent_id is None:
+        install.parent = parent
     # Content-free diagnostics (Art. 18): enough to reason about an OEM-specific
     # failure report, and nothing that describes a person.
     install.android_release = android_release or install.android_release

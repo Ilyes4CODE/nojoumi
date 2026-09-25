@@ -98,7 +98,19 @@ class SubscriptionRepository {
   Future<bool> refresh(TrustedInstant now) async {
     if (!AppConfig.hasApi) return false;
 
-    final response = await _api.get('/api/subscriptions/status/');
+    // The install id widens which subscription counts to every account on this
+    // phone (client request, 2026-09-25: three accounts, one subscription, held
+    // by the device). Without it the server answers account-scoped, which is
+    // correct but not what the household paid for.
+    //
+    // Sent as a query parameter rather than required: the server treats it as
+    // optional precisely so an older build keeps working, and a status call that
+    // fails over a field added later is a phone that stops knowing its own
+    // subscription.
+    final response = await _api.get(
+      '/api/subscriptions/status/',
+      query: await _auth.deviceFields(),
+    );
     if (response.statusCode != 200) return false;
 
     final data = response.data;

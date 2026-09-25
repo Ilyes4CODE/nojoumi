@@ -1,8 +1,14 @@
-"""One account per phone — client request, 2026-08-28.
+"""How many accounts fit on one phone — client request, 2026-08-28, amended 2026-09-25.
+
+**One, then three.** The original rule was one account per phone. The client
+raised it to three for households where more than one adult uses the same
+handset, and asked that the subscription stay with the *device* rather than with
+whichever account paid — that half is proven in
+`apps/devices/tests/test_three_accounts.py`.
 
 The rule extends the anchor Article 7.1 already uses for the free trial (the
 app's random install UUID, «مرة واحدة لكل جهاز») from the trial to the account
-itself.
+itself. Raising the number did not change the anchor, only the count.
 
 **What these tests are not claiming.** Clearing the app's data produces a new
 UUID and therefore a new device as far as the server is concerned. Closing that
@@ -61,22 +67,33 @@ class OneAccountPerDevice(TestCase):
         self.assertIsNotNone(install.parent_id)
         self.assertEqual(install.parent.email, "first@lunio.test")
 
-    def test_a_second_account_on_the_same_device_is_refused(self):
-        self.register("first@lunio.test", self.install)
-        response = self.register("second@lunio.test", self.install)
+    def test_three_accounts_may_register_on_the_same_device(self):
+        # Registration and sign-in have to agree. They did not for one commit:
+        # sign-in allowed three while registration still refused the second, so
+        # a household could only add a parent by creating the account on another
+        # phone first.
+        for name in ("first", "second", "third"):
+            response = self.register(f"{name}@lunio.test", self.install)
+            self.assertEqual(response.status_code, 201, response.json())
+
+    def test_the_fourth_registration_is_refused(self):
+        for name in ("first", "second", "third"):
+            self.register(f"{name}@lunio.test", self.install)
+        response = self.register("fourth@lunio.test", self.install)
 
         self.assertEqual(response.status_code, 409)
-        self.assertIn("حساب آخر", response.json()["detail"])
+        self.assertIn("احذف بيانات التطبيق", response.json()["detail"])
 
     def test_the_refused_registration_leaves_no_account_behind(self):
         # The reason the check runs before `serializer.save()`. Creating the
         # account first and refusing to bind afterwards would strand an orphan
         # account on every attempt — and burn an email address that could then
         # never be registered.
-        self.register("first@lunio.test", self.install)
-        self.register("second@lunio.test", self.install)
+        for name in ("first", "second", "third"):
+            self.register(f"{name}@lunio.test", self.install)
+        self.register("fourth@lunio.test", self.install)
 
-        self.assertFalse(ParentUser.objects.filter(email="second@lunio.test").exists())
+        self.assertFalse(ParentUser.objects.filter(email="fourth@lunio.test").exists())
 
     def test_a_different_device_is_free_to_register(self):
         self.register("first@lunio.test", self.install)
@@ -85,16 +102,31 @@ class OneAccountPerDevice(TestCase):
 
     # --- sign-in, which is the path that actually matters --------------------
 
-    def test_signing_in_with_a_second_account_is_refused(self):
-        # Registration is not how a second account arrives on a phone. A parent
-        # creates account B elsewhere and signs in with it here. Checking only at
-        # register would leave the rule guarding the least likely path.
+    def test_a_second_and_third_account_may_sign_in(self):
+        # The amendment of 2026-09-25. Registration is not how a second account
+        # arrives on a phone — a parent creates account B elsewhere and signs in
+        # with it here — so this is the path the limit actually governs.
         self.register("first@lunio.test", self.install)
-        self.register("second@lunio.test", str(uuid.uuid4()))
+        for name in ("second", "third"):
+            self.register(f"{name}@lunio.test", str(uuid.uuid4()))
+            response = self.sign_in(f"{name}@lunio.test", self.install)
+            self.assertEqual(response.status_code, 200, response.json())
 
-        response = self.sign_in("second@lunio.test", self.install)
+    def test_signing_in_with_a_fourth_account_is_refused(self):
+        # The limit still exists; it moved. Without this the amendment reads as
+        # "remove the rule", which is not what was asked for.
+        self.register("first@lunio.test", self.install)
+        for name in ("second", "third", "fourth"):
+            self.register(f"{name}@lunio.test", str(uuid.uuid4()))
+
+        for name in ("second", "third"):
+            self.assertEqual(
+                self.sign_in(f"{name}@lunio.test", self.install).status_code, 200
+            )
+
+        response = self.sign_in("fourth@lunio.test", self.install)
         self.assertEqual(response.status_code, 400)
-        self.assertIn("حساب آخر", str(response.json()))
+        self.assertIn("احذف بيانات التطبيق", str(response.json()))
 
     def test_the_owning_account_can_sign_in_again(self):
         # The ordinary case, and it must stay idempotent: the app sends its
