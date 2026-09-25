@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import CreateAPIView
@@ -54,16 +55,30 @@ class RegisterView(CreateAPIView):
                     status=status.HTTP_409_CONFLICT,
                 )
 
-        user = serializer.save()
+        # **One transaction for the account and the device binding.** Without it
+        # the account is committed first and the binding second, so anything
+        # that fails in between leaves an account that exists, cannot be signed
+        # into from this phone, and burns its email address for good.
+        #
+        # Found on production on 2026-09-25: the code for three accounts per
+        # phone was deployed without its migration, `bind()` raised because the
+        # join table did not exist, and every registration made one orphan and
+        # returned 500. The migration was the cause; this is why the cause left
+        # debris behind it.
+        #
+        # The limit refusal above still runs first and returns 409 without
+        # touching the database. This covers the failures that are not a limit.
+        with transaction.atomic():
+            user = serializer.save()
 
-        if install_id is not None:
-            install_binding.bind(
-                install_id=install_id,
-                parent=user,
-                android_release=serializer.validated_data.get("android_release", ""),
-                device_model=serializer.validated_data.get("device_model", ""),
-                app_version=serializer.validated_data.get("app_version", ""),
-            )
+            if install_id is not None:
+                install_binding.bind(
+                    install_id=install_id,
+                    parent=user,
+                    android_release=serializer.validated_data.get("android_release", ""),
+                    device_model=serializer.validated_data.get("device_model", ""),
+                    app_version=serializer.validated_data.get("app_version", ""),
+                )
 
         return Response(ParentSerializer(user).data, status=status.HTTP_201_CREATED)
 

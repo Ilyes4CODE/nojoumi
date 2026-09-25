@@ -160,3 +160,42 @@ class OneAccountPerDevice(TestCase):
         # a rule that is about phones.
         self.assertEqual(self.register("nobody@lunio.test").status_code, 201)
         self.assertEqual(self.sign_in("nobody@lunio.test").status_code, 200)
+
+
+class RegistrationLeavesNothingBehindWhenBindingFails(TestCase):
+    """Found on production, 2026-09-25.
+
+    The three-account code was deployed without its migration. `bind()` raised
+    because the join table did not exist, and every registration committed an
+    account, failed to bind it, and returned 500 — leaving an account nobody
+    could use and an email address nobody could register again.
+
+    The migration was the cause. This is the reason the cause left debris: the
+    account and the binding were two commits rather than one.
+    """
+
+    def setUp(self):
+        cache.clear()
+
+    def test_a_failed_binding_rolls_the_account_back(self):
+        from unittest import mock
+
+        with mock.patch(
+            "apps.accounts.views.install_binding.bind",
+            side_effect=RuntimeError("relation devices_installaccount does not exist"),
+        ):
+            with self.assertRaises(RuntimeError):
+                self.client.post(
+                    reverse("accounts:register"),
+                    {
+                        "email": "orphan@lunio.test",
+                        "password": PASSWORD,
+                        "install_id": str(uuid.uuid4()),
+                    },
+                    content_type="application/json",
+                )
+
+        self.assertFalse(
+            ParentUser.objects.filter(email="orphan@lunio.test").exists(),
+            "the account was committed even though the device could not be bound",
+        )
