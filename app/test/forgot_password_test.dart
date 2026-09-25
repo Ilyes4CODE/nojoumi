@@ -278,23 +278,88 @@ void main() {
     });
   });
 
-  test('nothing on this screen says whether an address is registered', () {
-    // The server answers identically for an address that has an account and one
-    // that does not, and the app must not undo that by being more helpful. On a
-    // parental-control app the phone is often in a child's hands, and "no
-    // account with that email" is a working lookup tool.
+  testWidgets('an unknown address is told so and stays on the address step', (
+    tester,
+  ) async {
+    // The client reversed the original design on 2026-09-25: a parent who
+    // mistyped their address should learn it now, not wait for a message that
+    // will never come. The test that used to stand here asserted the opposite —
+    // that no string on this screen could reveal whether an address exists.
+    //
+    // The message is the server's own, passed through: the app does not decide
+    // what counts as "no account", so it does not word it either.
+    final adapter = _ResetAdapter()
+      ..stage('/password/reset/', 404, {
+        'detail': 'لا يوجد حساب بهذا البريد الإلكتروني. تحقّق من كتابته.',
+      });
+    final db = openTestDatabase();
+    addTearDown(db.close);
+
+    await pumpScreen(
+      tester,
+      const ForgotPasswordScreen(email: 'mistyped@bayt.dz'),
+      overrides: [
+        authRepositoryProvider.overrideWith(
+          (ref) => AuthRepository(
+            TokenStore(db),
+            ApiClient(
+              dio: Dio()..httpClientAdapter = adapter,
+              baseUrl: 'https://example.test',
+              readToken: () async => null,
+            ),
+            SettingsRepository(db),
+          ),
+        ),
+      ],
+    );
+    await tester.tap(find.text('أرسل الرمز'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('لا يوجد حساب'), findsOneWidget);
+    // Still asking for the address, so the parent can correct it in place.
+    expect(find.text('أرسل الرمز'), findsOneWidget);
+    expect(find.text('تفقّد بريدك'), findsNothing);
+  });
+
+  testWidgets('a mail failure is shown rather than hidden', (tester) async {
+    // Before 2026-09-25 a send failure was swallowed so it could not reveal a
+    // real address. That hid a real outage for a day. Once existence is
+    // answered openly there is nothing left for silence to protect.
+    final adapter = _ResetAdapter()
+      ..stage('/password/reset/', 503, {
+        'detail': 'تعذّر إرسال البريد الآن. حاول مرة أخرى بعد قليل.',
+      });
+    final db = openTestDatabase();
+    addTearDown(db.close);
+
+    await pumpScreen(
+      tester,
+      const ForgotPasswordScreen(email: 'wali@bayt.dz'),
+      overrides: [
+        authRepositoryProvider.overrideWith(
+          (ref) => AuthRepository(
+            TokenStore(db),
+            ApiClient(
+              dio: Dio()..httpClientAdapter = adapter,
+              baseUrl: 'https://example.test',
+              readToken: () async => null,
+            ),
+            SettingsRepository(db),
+          ),
+        ),
+      ],
+    );
+    await tester.tap(find.text('أرسل الرمز'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('تعذّر إرسال البريد'), findsOneWidget);
+    expect(find.text('تفقّد بريدك'), findsNothing);
+  });
+
+  test('the spam-folder instruction is still there', () {
+    // The sentence that carries the parent through the commonest real failure:
+    // the message arriving, in a folder they did not think to open.
     final arb = File('lib/l10n/app_ar.arb').readAsStringSync();
-
-    for (final leak in ['لا يوجد حساب', 'غير مسجّل', 'غير مسجل']) {
-      expect(
-        arb.contains(leak),
-        isFalse,
-        reason: '"$leak" tells the holder of the phone which addresses exist',
-      );
-    }
-
-    // And the sentence that carries the parent through the common failure —
-    // the message landing in spam — is actually there.
     expect(arb.contains('غير المرغوبة'), isTrue);
   });
 }

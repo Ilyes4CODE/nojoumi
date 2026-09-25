@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../data/remote/api_client.dart';
 import '../../l10n/app_localizations.dart';
 import 'forgot_password_screen.dart';
+import 'password_field.dart';
 
 /// Sign in, or create the parent account. One implementation, two callers.
 ///
@@ -69,14 +70,10 @@ class _AccountFormState extends ConsumerState<AccountForm> {
           decoration: InputDecoration(labelText: l10n.emailLabel),
         ),
         const SizedBox(height: LunioSpacing.m),
-        TextField(
+        PasswordField(
           controller: _password,
-          obscureText: true,
-          textDirection: TextDirection.ltr,
-          decoration: InputDecoration(
-            labelText: l10n.passwordLabel,
-            errorText: _error,
-          ),
+          label: l10n.passwordLabel,
+          errorText: _error,
         ),
         if (_registering) ...[
           const SizedBox(height: LunioSpacing.m),

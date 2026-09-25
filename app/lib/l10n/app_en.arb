@@ -553,5 +553,7 @@
     }
   },
   "setupAppsNoneYet": "No apps chosen yet",
-  "setupAppsWhyLater": "If you skip this now, nothing will be blocked until you choose."
+  "setupAppsWhyLater": "If you skip this now, nothing will be blocked until you choose.",
+  "passwordShow": "Show password",
+  "passwordHide": "Hide password"
 }

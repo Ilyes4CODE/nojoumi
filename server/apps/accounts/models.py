@@ -35,7 +35,7 @@ class ParentUserManager(BaseUserManager):
     def _create(self, email: str, password: str | None, **extra):
         if not email:
             raise ValueError("email is required")
-        user = self.model(email=self.normalize_email(email).lower(), **extra)
+        user = self.model(email=normalised_email(email), **extra)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -49,6 +49,32 @@ class ParentUserManager(BaseUserManager):
         extra.setdefault("is_staff", True)
         extra.setdefault("is_superuser", True)
         return self._create(email, password, **extra)
+
+    def get_by_natural_key(self, username: str):
+        """The account for an address, however the parent happened to type it.
+
+        Every address is stored lowercased by `_create`, so lowercasing the input
+        here makes the comparison exact — and an exact comparison on a unique
+        column is a single index lookup (`SEARCH ... USING INDEX (email=?)`),
+        the same cost at ten parents as at a million.
+
+        Django's default compares the input **as typed**. With storage lowercased
+        that meant a parent who typed `Wali@...` could reset their password —
+        the reset path lowercases — and then fail to sign in with the very
+        address they had just used, told the password was wrong a second after
+        setting it.
+        """
+        return self.get(email=normalised_email(username))
+
+
+def normalised_email(value: str) -> str:
+    """How an address is stored, and therefore how it must be looked up.
+
+    One function for both, so the two can never drift: an address normalised
+    one way on the way in and another on the way out is an account nobody can
+    find.
+    """
+    return (value or "").strip().lower()
 
 
 class ParentUser(AbstractBaseUser, PermissionsMixin):

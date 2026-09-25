@@ -2658,3 +2658,49 @@ phone, so an uninstall costs the child every star they have earned — which is 
 and a parent who finds the app missing knows it was removed. Detection, not prevention. That is what Android
 permits an app outside a managed device, and saying so plainly is better than shipping something that gets the
 whole app refused.
+
+## D-97 — the reset endpoint says whether an address has an account
+
+**Client request, 2026-09-25**, reversing D-92's design: check that the address exists before sending, and
+say so when it does not.
+
+### What it trades
+
+D-92 answered identically for an address with an account and one without, because the account list is
+parents of school children in one country and the phone is often in a child's hands. That protection is
+gone for the request step: anyone holding the phone can now ask whether an address has an account.
+
+What keeps it a question rather than a lookup service is the throttle — fifteen requests an hour per
+caller, shared across all three reset endpoints. That was already there; it now carries the weight the
+identical answers used to.
+
+Checking and confirming a code still answer with one sentence for every failure. The parent has already
+been told the address is real by then, so distinguishing there would add nothing but a second probe.
+
+### What it bought, which was the larger thing
+
+**Send failures no longer have to be hidden.** They were swallowed only so that a failure would not reveal
+a real address. Once existence is answered openly, silence protects nothing — and it had a real cost. On
+2026-09-25 `check_email` delivered from the shell while the app's resets delivered nothing: the web process
+was still running with the mail settings it had when Passenger last started. From outside, that looked
+exactly like a mailbox that worked. It is now a 503 with a sentence the parent can act on, and the code
+that was never delivered is retired rather than left live — otherwise the retry a minute later would be
+told "we already sent you one".
+
+### The lookup, and a sign-in bug it exposed
+
+`email__iexact` planned as **`SCAN TABLE`**: every row read on every reset, slower with each parent. Emails
+are stored lowercased, so an exact match on the lowercased input reaches the unique index directly —
+**`SEARCH ... USING INDEX (email=?)`**, the same cost at ten parents as at a million. A test pins the plan.
+
+Sign-in, through Django's `get_by_natural_key`, compared the address **as typed**. With storage lowercased,
+a parent typing `Wali@...` could reset their password and then be told, a second later, that the password
+they had just set was wrong. Storage and lookup now share one normaliser, `normalised_email`, so the two
+cannot drift apart again. The test for it was run against the unfixed manager first and fails there with a
+401.
+
+### The eye
+
+On the three password fields, through one widget so they cannot drift. **Not on the PIN**: that is typed on
+the child's phone, often with the child beside it, and a reveal button there is a way to read four digits
+over a shoulder.

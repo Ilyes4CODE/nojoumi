@@ -9,6 +9,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../data/remote/api_client.dart';
 import '../../l10n/app_localizations.dart';
+import 'password_field.dart';
 
 /// Getting back into the parent account: address, code, new password.
 ///
@@ -25,11 +26,12 @@ import '../../l10n/app_localizations.dart';
 /// string in one place, type it in another — and the parent has already done
 /// that once.
 ///
-/// **What it must not say.** The server answers identically for an address that
-/// has an account and one that does not, and this screen keeps that promise:
-/// «إذا كان هذا البريد مسجَّلاً». A more helpful sentence would tell whoever is
-/// holding the phone which addresses exist, and the phone is often in a child's
-/// hands.
+/// **It says when an address has no account** — the client's choice on
+/// 2026-09-25, reversing the original design, so a parent who mistyped learns it
+/// on the spot instead of waiting for a message that will never come. The words
+/// are the server's, passed through as the field's error; the app does not
+/// decide what counts as "no account", so it does not word it either. D-97
+/// records what that trades.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key, this.email = ''});
 
@@ -234,22 +236,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       // end" on a parental-control app assumes the controls end with them.
       body: l10n.forgotNewBody,
       children: [
-        TextField(
+        PasswordField(
           controller: _password,
+          label: l10n.forgotNewLabel,
           autofocus: true,
-          obscureText: true,
-          textDirection: TextDirection.ltr,
-          decoration: InputDecoration(labelText: l10n.forgotNewLabel),
         ),
         const SizedBox(height: LunioSpacing.m),
-        TextField(
+        PasswordField(
           controller: _confirm,
-          obscureText: true,
-          textDirection: TextDirection.ltr,
-          decoration: InputDecoration(
-            labelText: l10n.forgotNewConfirmLabel,
-            errorText: _error,
-          ),
+          label: l10n.forgotNewConfirmLabel,
+          errorText: _error,
           onSubmitted: (_) => _save(),
         ),
         const SizedBox(height: LunioSpacing.l),

@@ -1974,6 +1974,18 @@ abstract class AppL10n {
   /// In ar, this message translates to:
   /// **'إن تخطّيتها الآن، لن يُحجب أي تطبيق حتى تختار.'**
   String get setupAppsWhyLater;
+
+  /// No description provided for @passwordShow.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار كلمة المرور'**
+  String get passwordShow;
+
+  /// No description provided for @passwordHide.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخفاء كلمة المرور'**
+  String get passwordHide;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

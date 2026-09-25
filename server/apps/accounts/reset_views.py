@@ -6,20 +6,14 @@ being made to type a new password twice and only then told the code expired is
 the kind of small cruelty that gets an app deleted. It costs nothing in safety
 because both endpoints spend from the same five-attempt budget on the same row.
 
-**Every answer here is the same for an address that exists and one that does
-not.** Not as a formality: this server's whole account list is parents of school
-children in one country, and "does this address have an account" is a question
-worth refusing to answer. So:
+**Requesting a code says whether the address has an account** — the client's
+choice on 2026-09-25, reversing the original design; see
+`PasswordResetRequestView` for what that trades and what it buys.
 
-  * requesting a code always returns 200, whether or not an account was found,
-    whether or not a message was actually sent, and whether or not the mail
-    server accepted it;
-  * a wrong code, an expired code, a burnt-out code and an unknown address all
-    return the same 400 and the same sentence;
-  * the *timing* is left alone deliberately — an unknown address skips the mail
-    send and answers faster, which is measurable. Closing that would mean
-    sleeping a request thread on a shared host, which costs more than the leak is
-    worth here. Written down rather than pretended away.
+Checking and confirming a code still answer with one sentence for a wrong code,
+an expired code, a burnt-out code and an unknown address. By that point the
+parent has already been told the address is real, so distinguishing them there
+would add nothing but a second way to probe.
 """
 
 from __future__ import annotations
@@ -38,6 +32,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from . import mailer, reset_codes
+from .models import normalised_email
 
 log = logging.getLogger(__name__)
 ParentUser = get_user_model()
@@ -46,12 +41,33 @@ ParentUser = get_user_model()
 #: an address with no account. One sentence for four states, on purpose.
 BAD_CODE = "الرمز غير صحيح أو انتهت صلاحيته. اطلب رمزاً جديداً."
 
-#: Said whether or not anything was sent.
-SENT = "إذا كان هذا البريد مسجَّلاً لدينا، فقد أرسلنا إليه رمزاً. تحقّق من بريدك، ومن مجلّد الرسائل غير المرغوبة."
+#: A code has just been sent.
+SENT = "أرسلنا رمزاً إلى بريدك. تحقّق من صندوق الوارد، ومن مجلّد الرسائل غير المرغوبة."
+
+#: Within the cooldown: the previous code is still valid.
+RECENTLY_SENT = "أرسلنا إليك رمزاً قبل لحظات، وما زال صالحاً. تحقّق من بريدك، ومن مجلّد الرسائل غير المرغوبة."
+
+#: No account has this address.
+NO_ACCOUNT = "لا يوجد حساب بهذا البريد الإلكتروني. تحقّق من كتابته، أو أنشئ حساباً جديداً."
+
+#: The account exists; the mail server refused the message.
+SEND_FAILED = "تعذّر إرسال البريد الآن. حاول مرة أخرى بعد قليل."
 
 
 def _parent(email: str):
-    return ParentUser.objects.filter(email__iexact=email.strip(), is_active=True).first()
+    """The active account for an address, found with one index lookup.
+
+    `email__iexact` read every row: SQLite's query plan for it is `SCAN TABLE`,
+    because a case-insensitive LIKE cannot use an ordinary index. Addresses are
+    stored lowercased (`normalised_email`), so lowercasing the input turns this
+    into an exact match on a unique column — `SEARCH ... USING INDEX (email=?)`
+    — which costs the same at ten parents as at a million.
+    `test_password_reset.py` asserts that plan, so a return to `iexact` fails a
+    test instead of quietly slowing down as the client grows.
+    """
+    return ParentUser.objects.filter(
+        email=normalised_email(email), is_active=True
+    ).first()
 
 
 class ResetRequestSerializer(serializers.Serializer):
@@ -76,7 +92,26 @@ class ResetConfirmSerializer(ResetVerifySerializer):
 
 
 class PasswordResetRequestView(APIView):
-    """Send a code to the address, if it belongs to an account."""
+    """Send a code to the address — and say plainly when there is no account.
+
+    **Changed on 2026-09-25, at the client's request.** This endpoint used to
+    answer identically for an address with an account and one without, so it
+    could not be used to find out which addresses exist. The client asked for
+    the opposite: tell the parent at once when they have typed an address we do
+    not know, rather than have them wait for a message that will never come.
+
+    That trade was stated and taken. What it gives up is that anyone holding the
+    phone can now ask "does this address have an account?" — and the throttle
+    below is what keeps that a single question rather than a lookup service:
+    fifteen an hour per caller, shared with the other two reset endpoints.
+
+    **What it buys besides the message**, and this turned out to be the larger
+    gain: a send failure no longer has to be hidden. Silence was only ever there
+    so that a failure would not reveal a real address. With existence answered
+    openly there is nothing left for silence to protect, and it had a real cost —
+    a mailbox that the shell could reach and the web process could not looked,
+    from outside, exactly like a mailbox that worked. It now says so.
+    """
 
     permission_classes = [AllowAny]
     authentication_classes: list = []
@@ -85,26 +120,42 @@ class PasswordResetRequestView(APIView):
 
     @extend_schema(
         request=ResetRequestSerializer,
-        responses={200: None},
+        responses={200: None, 404: None, 503: None},
         summary="Request a password-reset code",
-        description="Always 200. The response never reveals whether the address has an account.",
+        description=(
+            "200 when a code was sent (or one was sent in the last minute and is "
+            "still valid). 404 when no account has this address. 503 when the "
+            "account exists but the mail server refused the message."
+        ),
     )
     def post(self, request):
         serializer = ResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         parent = _parent(serializer.validated_data["email"])
-        if parent is not None:
-            code = reset_codes.issue(parent)
-            if code is not None:
-                try:
-                    mailer.send_reset_code(parent, code)
-                except Exception:
-                    # Swallowed on the wire, loud in the log. A 500 here would
-                    # answer the one question this endpoint exists to refuse: an
-                    # unknown address cannot fail to send, so a failure means the
-                    # address is real.
-                    log.exception("could not send a reset code to parent %s", parent.pk)
+        if parent is None:
+            return Response({"detail": NO_ACCOUNT}, status=status.HTTP_404_NOT_FOUND)
+
+        code = reset_codes.issue(parent)
+        if code is None:
+            # Inside the cooldown. The code from a moment ago is still live, so
+            # the honest answer is "check your inbox", not a second message the
+            # parent cannot tell apart from the first.
+            return Response({"detail": RECENTLY_SENT})
+
+        try:
+            mailer.send_reset_code(parent, code)
+        except Exception:
+            log.exception("could not send a reset code to parent %s", parent.pk)
+            # The code is retired rather than left live: the parent never
+            # received it, and a valid code nobody has is only an open door.
+            reset_codes.PasswordResetCode.objects.filter(
+                parent=parent, used_at__isnull=True
+            ).update(used_at=timezone.now())
+            return Response(
+                {"detail": SEND_FAILED},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         return Response({"detail": SENT})
 

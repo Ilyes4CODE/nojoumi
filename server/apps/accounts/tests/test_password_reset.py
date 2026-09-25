@@ -82,14 +82,22 @@ class RequestingACode(ResetBase):
         self.assertNotIn(code, row.code_hash)
         self.assertTrue(row.code_hash.startswith("pbkdf2_"))
 
-    def test_an_unknown_address_answers_exactly_like_a_known_one(self):
-        known = self.ask()
-        mail.outbox.clear()
+    def test_an_unknown_address_is_told_so(self):
+        # The client's choice, 2026-09-25: a parent who mistyped their address
+        # should learn it now, not after waiting for a message that never comes.
+        # This test used to assert the opposite.
         unknown = self.api.post(REQUEST, {"email": "nobody@bayt.dz"}, format="json")
 
-        self.assertEqual(unknown.status_code, known.status_code)
-        self.assertEqual(unknown.json(), known.json())
+        self.assertEqual(unknown.status_code, 404)
+        self.assertIn("لا يوجد حساب", unknown.json()["detail"])
         self.assertEqual(mail.outbox, [])
+
+    def test_the_address_is_matched_however_it_was_typed(self):
+        # Stored lowercased; a phone keyboard happily capitalises the first
+        # letter. Matching as typed would answer "no account" to its owner.
+        response = self.ask(email="  WALI@Bayt.DZ ")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_asking_twice_in_a_minute_sends_one_message(self):
         # Otherwise anyone who knows an address can bury its owner's inbox, and
@@ -99,6 +107,9 @@ class RequestingACode(ResetBase):
 
         self.assertEqual(second.status_code, 200)
         self.assertEqual(len(mail.outbox), 1)
+        # And it says the first code still stands, rather than implying a second
+        # one is on its way.
+        self.assertIn("ما زال صالحاً", second.json()["detail"])
 
     def test_a_second_code_retires_the_first(self):
         self.ask()
@@ -114,19 +125,39 @@ class RequestingACode(ResetBase):
         self.assertEqual(self.verify(first).status_code, 400)
         self.assertEqual(self.verify(second).status_code, 200)
 
-    def test_a_mail_server_failure_is_not_visible_to_the_caller(self):
-        # A 500 for real addresses and a 200 for invented ones answers the one
-        # question this endpoint exists to refuse.
+    def test_a_mail_server_failure_is_told_to_the_parent(self):
+        # This used to be swallowed so that a failure would not reveal a real
+        # address. Once the endpoint says openly whether an address exists,
+        # silence protects nothing — and it cost a day: a mailbox the shell could
+        # reach and the web process could not looked exactly like one that
+        # worked.
         with self.assertLogs("apps.accounts.reset_views", level="ERROR") as logged:
             with mock.patch.object(
                 mailer.EmailMultiAlternatives, "send", side_effect=OSError("smtp down")
             ):
                 response = self.ask()
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), self.ask().json())
-        self.assertIn("could not send", "\n".join(logged.output))
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("تعذّر إرسال البريد", response.json()["detail"])
+        self.assertIn("could not send", " ".join(logged.output))
 
+    def test_a_code_that_was_never_delivered_is_not_left_valid(self):
+        # The parent never received it. A live code nobody has is only an open
+        # door — and leaving it would also trip the cooldown, so their retry a
+        # minute later would be told "we sent you one" when we had not.
+        with mock.patch.object(
+            mailer.EmailMultiAlternatives, "send", side_effect=OSError("smtp down")
+        ):
+            with self.assertLogs("apps.accounts.reset_views", level="ERROR"):
+                self.ask()
+
+        self.assertFalse(
+            PasswordResetCode.objects.filter(used_at__isnull=True).exists()
+        )
+        # So the retry goes out immediately rather than waiting out a cooldown
+        # for a message that never left.
+        self.assertEqual(self.ask().status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
 
 class GuessingACode(ResetBase):
     def setUp(self):
@@ -370,3 +401,54 @@ class ItSurvivesAMailClient(ResetBase):
         # naming it here only means "pick something, I do not mind".
         self.assertNotIn("Tajawal", self.html)
         self.assertIn("Tahoma", self.html)
+
+
+class TheLookupStaysFast(ResetBase):
+    """The address lookup is one index jump, and stays one.
+
+    `email__iexact` planned as `SCAN TABLE` — every row read on every reset,
+    getting slower with each parent the client signs up. Addresses are stored
+    lowercased, so an exact match on the lowercased input reaches the unique
+    index directly. This pins the plan, so a well-meant return to `iexact`
+    fails here rather than degrading quietly as the account list grows.
+    """
+
+    def test_the_reset_lookup_uses_the_email_index(self):
+        from apps.accounts.models import normalised_email
+
+        plan = ParentUser.objects.filter(
+            email=normalised_email("Wali@Bayt.DZ"), is_active=True
+        ).explain()
+
+        self.assertIn("USING INDEX", plan)
+        self.assertNotIn("SCAN TABLE", plan)
+
+    def test_sign_in_uses_the_same_index(self):
+        # Sign-in goes through `get_by_natural_key`, and before 2026-09-25 it
+        # compared the address as typed, which also bypassed the lowercase the
+        # storage relied on.
+        from apps.accounts.models import normalised_email
+
+        plan = ParentUser.objects.filter(email=normalised_email("WALI@bayt.dz")).explain()
+        self.assertIn("USING INDEX", plan)
+
+
+class TheAddressCaseCannotLockAParentOut(ResetBase):
+    def test_a_parent_can_reset_and_then_sign_in_with_the_same_capitalised_address(self):
+        # The bug this pins: the reset path lowercased and sign-in did not, so a
+        # parent typing `Wali@...` reset successfully and was then told their
+        # brand-new password was wrong.
+        typed = "  Wali@Bayt.DZ "
+
+        self.assertEqual(self.ask(email=typed).status_code, 200)
+        confirmed = self.api.post(
+            CONFIRM,
+            {"email": typed, "code": code_from_outbox(), "password": NEW},
+            format="json",
+        )
+        self.assertEqual(confirmed.status_code, 200)
+
+        signed_in = self.api.post(
+            TOKEN, {"email": typed, "password": NEW}, format="json"
+        )
+        self.assertEqual(signed_in.status_code, 200, signed_in.json())

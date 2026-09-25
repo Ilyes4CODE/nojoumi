@@ -1061,4 +1061,10 @@ class AppL10nEn extends AppL10n {
   @override
   String get setupAppsWhyLater =>
       'If you skip this now, nothing will be blocked until you choose.';
+
+  @override
+  String get passwordShow => 'Show password';
+
+  @override
+  String get passwordHide => 'Hide password';
 }

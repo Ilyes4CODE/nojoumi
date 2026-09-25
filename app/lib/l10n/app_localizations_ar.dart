@@ -1045,4 +1045,10 @@ class AppL10nAr extends AppL10n {
   @override
   String get setupAppsWhyLater =>
       'إن تخطّيتها الآن، لن يُحجب أي تطبيق حتى تختار.';
+
+  @override
+  String get passwordShow => 'إظهار كلمة المرور';
+
+  @override
+  String get passwordHide => 'إخفاء كلمة المرور';
 }
