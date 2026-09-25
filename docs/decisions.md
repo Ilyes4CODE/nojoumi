@@ -2599,10 +2599,26 @@ step touched only the server and Dart.
 ### Why Play Protect blocked it, and why it would again
 
 The guard was **off by default** and — see below — could not have fired anyway. So at install time it did
-nothing. The block was therefore **static**: the APK contained an accessibility service whose code names
-`com.android.packageinstaller` and `com.google.android.packageinstaller` and calls `GLOBAL_ACTION_BACK` near
-them. That is the signature of malware that resists its own removal — stalkerware and banking trojans are
-built exactly this way — and Play Protect flags the pattern's *presence*, not its behaviour.
+nothing, and the block was **static**: something in the code, not something it did.
+
+**It was not the package installer's name.** That was the first explanation written here, and it was wrong.
+Checked against the dex of both builds:
+
+| build | installed? | names the package installer | guard code |
+|---|---|---|---|
+| `versionfinal.apk` | yes | 1 | 0 |
+| `buid_version2.apk` | **blocked** | 1 | 1 |
+
+The name was in both. It comes from `BlockDecision.kt`, and it is there for the **opposite** reason: the
+installer sits in the list of packages blocking may never touch — *"or an uninstall dialog becomes
+unreachable"*. That entry guarantees the parent can always remove the app. **It must stay.** Deleting it on the
+strength of the wrong explanation would let blocking obstruct an uninstall, which is both a hazard and exactly
+what Play Protect punishes.
+
+What differed was the guard's behaviour: reading installer windows, pressing Back on them, and pushing an
+activity in front of them. Play Protect tells apart code that keeps the uninstall path **open** from code that
+**interferes** with it, and it blocked the second. That is the signature of malware that resists removal —
+stalkerware and banking trojans are built exactly this way.
 
 **No variant of "notice the uninstall screen and interfere with it" escapes this**, because the detection is
 aimed at the goal, not at a particular implementation. The DeviceAdmin route (D-95's rejected alternative) is
