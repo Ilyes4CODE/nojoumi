@@ -99,13 +99,7 @@ class LunioBlockingBridge(private val context: Context) {
         remainingPlaySeconds: Int,
         playPaused: Boolean,
         priceInStars: String,
-        uninstallGuard: Boolean,
     ) {
-        // The grace deadline is carried over rather than taken from Dart. It is
-        // set by the PIN flow in uptime milliseconds, and Dart pushes state on
-        // every settings change — overwriting it here would re-arm the guard in
-        // the middle of the uninstall the parent just authorised.
-        val carried = BlockingStore.state(context).guardUnlockedUntilMs
         BlockingStore.write(
             context,
             BlockingState(
@@ -114,8 +108,6 @@ class LunioBlockingBridge(private val context: Context) {
                 remainingPlaySeconds = remainingPlaySeconds,
                 playPaused = playPaused,
                 priceInStars = priceInStars,
-                uninstallGuard = uninstallGuard,
-                guardUnlockedUntilMs = carried,
             ),
         )
         Log.i(

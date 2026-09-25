@@ -2581,48 +2581,64 @@ accountant. `apps/subscriptions/tests/test_prices.py` pins both literals in **on
 is obviously a decision rather than a typo — plus the invariant that a year must cost less than twelve months,
 so the page can never advertise a discount that is not one.
 
-## D-95 — the uninstall guard, and what it honestly cannot do
+## D-96 — the uninstall guard was built, blocked by Play Protect, and removed
 
-**Client request, 2026-09-25: "if anyone tries to delete the app, the parent code is required."**
+**Client request, 2026-09-25: "if anyone tries to delete the app, the parent code is required."** Built the
+same day, reverted the next. Recorded in full because the idea will come back, and it must not be rebuilt.
 
-### What Android allows, stated before what was built
+### What happened
 
-An ordinary Android app **cannot prevent its own removal**. There is no permission for it and no API.
-`DeviceAdmin` can hide the uninstall button, but Play restricts it sharply outside enterprise use, and pairing
-it with an accessibility service is a documented cause of rejection — which is the risk Article 7.2's entire
-structure exists to avoid. Offered that trade, the client chose the weaker mechanism.
+The guard watched, from the accessibility service, for the system uninstall dialog and the device-admin list,
+pressed Back, and brought Lunio forward to ask for the PIN. It shipped in `buid_version2.apk`, and the first
+install produced **«Appli bloquée pour protéger votre appareil»** — Google Play Protect refusing the app outright.
+The build before it installed normally.
 
-So this notices the screen and asks for the PIN. **It stops a child who taps *uninstall*. It does not stop one
-who boots into safe mode, where accessibility services do not run.** That sentence is on the settings screen
-itself, not only in this file: a parental control sold as unremovable and then removed is worse than one that
-never claimed it.
+Every Android-side change between the two builds was the guard. The three-accounts work and the setup games
+step touched only the server and Dart.
 
-### It reads a little screen text, and the privacy policy had to change
+### Why Play Protect blocked it, and why it would again
 
-The system's uninstall dialog and the device-admin list are *Settings* windows. Their package name is the same
-whichever app they are about, so the only way to know that this one concerns Lunio is to read the words on it.
+The guard was **off by default** and — see below — could not have fired anyway. So at install time it did
+nothing. The block was therefore **static**: the APK contained an accessibility service whose code names
+`com.android.packageinstaller` and `com.google.android.packageinstaller` and calls `GLOBAL_ACTION_BACK` near
+them. That is the signature of malware that resists its own removal — stalkerware and banking trojans are
+built exactly this way — and Play Protect flags the pattern's *presence*, not its behaviour.
 
-That is the one place this project reads screen content. It is scoped as tightly as the mechanism allows: only
-windows belonging to a handful of installer and settings packages, only compared against the app's own name,
-never stored, never transmitted — and **every other window in the system returns before its text is looked at**,
-which is why `UninstallGuard.handles()` exists separately from `decide()`.
+**No variant of "notice the uninstall screen and interfere with it" escapes this**, because the detection is
+aimed at the goal, not at a particular implementation. The DeviceAdmin route (D-95's rejected alternative) is
+the same goal with a louder signature.
 
-The published policy said «لا تقرأ محتوى الشاشة». That became false the moment this shipped, and the guard test
-in `test_privacy_page.py` failed on exactly that sentence — which is what forced the page to be corrected
-rather than left quietly wrong. A privacy policy is a claim about the code; a test that compares the two is the
-only thing that keeps it one.
+### It could never have worked either
 
-### Shape
+`lunio_accessibility_service.xml` declares **`canRetrieveWindowContent="false"`** — deliberately, and the file's
+own comment says so: it is the line that makes "Lunio does not read the screen" true in code. With it false,
+`rootInActiveWindow` is always null, `readWindowText()` always returned an empty list, and `decide()` always
+answered *ignore*. The feature was inert on every phone.
 
-The decision is a pure function over values, like `BlockPolicy`, so fourteen cases are settled on the JVM with
-no device. Two of them are the ones that matter in opposite directions: **firing too rarely** is the feature not
-working, and **firing too often** is a parent who cannot uninstall anything on their own phone without typing a
-PIN — they will switch it off, and then nothing is protected.
+The fourteen JVM tests passed because they injected the window text directly. They proved the decision was
+right and could not see that the decision would never receive any input. **A pure function tested in isolation
+says nothing about whether the platform will ever call it with real data** — the same gap as a mock that
+cannot fail, one level further out.
 
-The PIN itself is not reimplemented. The service presses Back, launches Lunio with an extra, and Dart shows the
-existing `PinGate`; accepting it opens a two-minute grace window in engine uptime. Uptime rather than wall time
-because Article 6.8 treats the device clock as untrusted, and a grace window keyed to it could be stretched
-indefinitely by moving the date back.
+Making it work would have needed `canRetrieveWindowContent="true"`: more suspicious to Play Protect, a broken
+Article 14 promise, and a privacy policy that had to be rewritten to say the app reads the screen.
 
-**UNVERIFIED-ON-HARDWARE.** The decision logic is tested; that the event arrives, that Back lands, and that the
-activity comes to the front over Settings are three things only a phone can answer.
+### What was said that was wrong
+
+Offering the options, the accessibility route was described as carrying "no extra Play risk". It carried the
+one risk that decided the matter. The honest description was that **no mechanism for resisting uninstall is
+distributable outside an enterprise device-owner setup**, and the client should have been given that before
+choosing between two mechanisms.
+
+### What remains
+
+Reverted as one commit, so the history shows both. The database went back from schema v7 to v6, which is safe
+only because Play Protect stopped `buid_version2` installing anywhere — no phone ever ran v7.
+
+The privacy policy is back to «لا تقرأ محتوى الشاشة», which is true again.
+
+What a parent *can* have, and what the client should be told instead: the app's data and PIN live on the
+phone, so an uninstall costs the child every star they have earned — which is a deterrent the child can see —
+and a parent who finds the app missing knows it was removed. Detection, not prevention. That is what Android
+permits an app outside a managed device, and saying so plainly is better than shipping something that gets the
+whole app refused.

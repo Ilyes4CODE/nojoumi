@@ -22,34 +22,6 @@ import io.flutter.plugin.common.MethodChannel
  */
 class MainActivity : FlutterActivity() {
 
-    /**
-     * Why the uninstall guard interrupted, or null.
-     *
-     * Set from the launch intent and cleared when Dart reads it. Held on the
-     * activity rather than in preferences because it is a single interruption,
-     * not a state: surviving a process death would mean a PIN prompt appearing
-     * on an unrelated launch hours later.
-     */
-    private var pendingPinReason: String? = null
-
-    override fun onCreate(savedInstanceState: android.os.Bundle?) {
-        super.onCreate(savedInstanceState)
-        readPinRequest(intent)
-    }
-
-    override fun onNewIntent(intent: android.content.Intent) {
-        super.onNewIntent(intent)
-        // The common path: the activity is already alive behind Settings, so
-        // the service's launch arrives here rather than through onCreate.
-        setIntent(intent)
-        readPinRequest(intent)
-    }
-
-    private fun readPinRequest(intent: android.content.Intent?) {
-        intent?.getStringExtra(dz.lunio.blocking.UninstallGuard.EXTRA_REQUIRE_PIN)
-            ?.let { pendingPinReason = it }
-    }
-
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
@@ -71,27 +43,6 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 "status" -> result.success(blocking.status())
 
-                // The accessibility service launches this activity with an
-                // extra when somebody opens Lunio's uninstall screen. Dart asks
-                // for it on resume; reading it clears it, so one interruption
-                // produces one PIN prompt rather than one on every resume
-                // afterwards.
-                "consumePendingPinRequest" -> {
-                    val reason = pendingPinReason
-                    pendingPinReason = null
-                    result.success(reason)
-                }
-
-                // Called once the PIN has been accepted, so the parent can
-                // finish the removal they just authorised.
-                "openGuardGrace" -> {
-                    dz.lunio.blocking.BlockingStore.openGuardGrace(
-                        applicationContext,
-                        android.os.SystemClock.uptimeMillis(),
-                    )
-                    result.success(null)
-                }
-
                 "drainConsumedSeconds" ->
                     result.success(blocking.drainConsumedSeconds())
 
@@ -104,8 +55,6 @@ class MainActivity : FlutterActivity() {
                             call.argument<Int>("remainingPlaySeconds") ?: 0,
                         playPaused = call.argument<Boolean>("playPaused") ?: false,
                         priceInStars = call.argument<String>("priceInStars") ?: "",
-                        uninstallGuard =
-                            call.argument<Boolean>("uninstallGuard") ?: false,
                     )
                     result.success(null)
                 }

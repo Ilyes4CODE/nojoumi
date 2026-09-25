@@ -144,7 +144,6 @@ class BlockingRepository {
       remainingPlaySeconds: progress.remainingPlaySeconds(rules),
       playPaused: settings.playPaused,
       priceInStars: priceInStars,
-      uninstallGuard: settings.uninstallGuard,
     );
   }
 }

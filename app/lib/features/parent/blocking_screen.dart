@@ -106,63 +106,6 @@ class _BlockingScreenState extends ConsumerState<BlockingScreen>
                 ),
               ),
 
-              const SizedBox(height: LunioSpacing.m),
-
-              // Outside the `if (enabled)` block on purpose: protecting the app
-              // from deletion and blocking the child's games are two different
-              // wishes, and a parent may want the first without the second.
-              // They share a permission, not a purpose.
-              Card(
-                child: Column(
-                  children: [
-                    SwitchListTile(
-                      value: settings?.uninstallGuard ?? false,
-                      onChanged: (value) => ref
-                          .read(settingsRepositoryProvider)
-                          .setUninstallGuard(value),
-                      title: Text(l10n.guardSwitch),
-                      subtitle: Text(l10n.guardBody),
-                      isThreeLine: true,
-                      secondary: const Icon(Icons.app_blocking_outlined),
-                    ),
-                    if (settings?.uninstallGuard ?? false)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          LunioSpacing.m,
-                          0,
-                          LunioSpacing.m,
-                          LunioSpacing.m,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (!(status?.accessibilityEnabled ?? false))
-                              Text(
-                                l10n.guardNeedsAccessibility,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: LunioTheme.celebrate),
-                              ),
-                            const SizedBox(height: LunioSpacing.s),
-                            // Said plainly, and on the screen rather than only
-                            // in a document: a parental control sold as
-                            // unremovable and then removed is worse than one
-                            // that never claimed it.
-                            Text(
-                              l10n.guardHonestLimit,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: LunioTheme.ink.withValues(
-                                      alpha: 0.6,
-                                    ),
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
               if (enabled) ...[
                 const SizedBox(height: LunioSpacing.m),
 

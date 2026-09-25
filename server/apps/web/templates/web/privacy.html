@@ -62,9 +62,7 @@
   <h2>٣. الأذونات، واحدًا واحدًا</h2>
   <p>هذه قائمة كاملة بما يطلبه التطبيق، ولماذا:</p>
   <ul>
-    <li><strong>خدمة إمكانية الوصول (Accessibility Service)</strong> — لمعرفة أيّ تطبيق في المقدّمة الآن، حتى يمكن إيقافه عند انتهاء وقت اللعب. <strong>لا تقرأ كلمات المرور، ولا الرسائل، ولا ما تكتبه، ولا ترسل شيئًا إلى أي خادم.</strong>
-      <br>
-      وإن فعّلت «اطلب الرمز السري قبل حذف التطبيق»، تقرأ الخدمة نصّ الشاشة في حالة واحدة فقط: حين تكون الشاشة المفتوحة من <em>إعدادات النظام أو مثبّت التطبيقات</em>، ولتعرف وحدها ما إذا كانت تخصّ Lunio. أي شاشة أخرى — متصفّح، محادثة، لعبة، بنك — تُستبعد قبل قراءة أي حرف منها. وما يُقرأ يُقارَن باسم التطبيق ثم يُهمَل فورًا: لا يُحفظ ولا يُرسل.</li>
+    <li><strong>خدمة إمكانية الوصول (Accessibility Service)</strong> — لمعرفة أيّ تطبيق في المقدّمة الآن، حتى يمكن إيقافه عند انتهاء وقت اللعب. <strong>لا تقرأ محتوى الشاشة، ولا النصوص، ولا كلمات المرور، ولا ترسل شيئًا إلى أي خادم.</strong> تقرأ اسم حزمة التطبيق الظاهر ولا شيء غيره.</li>
     <li><strong>الرسم فوق التطبيقات (SYSTEM_ALERT_WINDOW)</strong> — لعرض بطاقة الحجب فوق التطبيق المحجوب.</li>
     <li><strong>خدمة تعمل في المقدّمة (FOREGROUND_SERVICE)</strong> — حتى لا يوقف النظام عدّاد وقت اللعب والحجب.</li>
     <li><strong>التشغيل عند الإقلاع (RECEIVE_BOOT_COMPLETED)</strong> — حتى لا تُلغى الضوابط بإعادة تشغيل الهاتف.</li>
@@ -122,15 +120,9 @@
       processed and then deleted from the server immediately and are never used to train any model;
       no card data, which is entered only on Chargily's hosted checkout; and no record of which apps
       the child opens or for how long.</p>
-    <p style="text-align:left;"><strong>Accessibility Service.</strong> Used to read which
+    <p style="text-align:left;"><strong>Accessibility Service.</strong> Used solely to read which
       application is currently in the foreground, so that it can be stopped when play time ends.
-      It does not read passwords, messages or what you type, and transmits nothing to any server.</p>
-    <p style="text-align:left;">If you enable <em>Ask for the PIN before the app is deleted</em>, the
-      service additionally reads the text of a window in one case only: when that window belongs to
-      the system settings or the package installer, and solely to determine whether it concerns
-      Lunio. Every other window — a browser, a chat, a game, a bank — is excluded before a single
-      character of it is read. What is read is compared against the app's own name and discarded
-      immediately; it is never stored and never transmitted.</p>
+      It does not read screen content, text or passwords, and transmits nothing to any server.</p>
     <p style="text-align:left;"><strong>Other permissions:</strong> draw over other apps (the
       blocking card), foreground service, run at boot and battery-optimisation exemption (so the
       controls survive a restart and are not killed by the system), notifications and vibration

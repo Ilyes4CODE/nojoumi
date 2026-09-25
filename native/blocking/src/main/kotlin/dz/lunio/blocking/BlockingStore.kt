@@ -33,8 +33,6 @@ object BlockingStore {
     private const val KEY_SECONDS = "remaining_play_seconds"
     private const val KEY_PAUSED = "play_paused"
     private const val KEY_PRICE = "price_in_stars"
-    private const val KEY_GUARD = "uninstall_guard"
-    private const val KEY_GUARD_UNTIL = "guard_unlocked_until"
 
     /**
      * Seconds of play actually spent since Dart last drained this.
@@ -84,8 +82,6 @@ object BlockingStore {
             remainingPlaySeconds = p.getInt(KEY_SECONDS, 0),
             playPaused = p.getBoolean(KEY_PAUSED, false),
             priceInStars = p.getString(KEY_PRICE, "") ?: "",
-            uninstallGuard = p.getBoolean(KEY_GUARD, false),
-            guardUnlockedUntilMs = p.getLong(KEY_GUARD_UNTIL, 0),
         )
         cached = loaded
         return loaded
@@ -149,30 +145,7 @@ object BlockingStore {
             .putInt(KEY_SECONDS, state.remainingPlaySeconds)
             .putBoolean(KEY_PAUSED, state.playPaused)
             .putString(KEY_PRICE, state.priceInStars)
-            .putBoolean(KEY_GUARD, state.uninstallGuard)
-            .putLong(KEY_GUARD_UNTIL, state.guardUnlockedUntilMs)
             .apply()
-    }
-
-    /**
-     * Stand the uninstall guard down for [UninstallGuard.GRACE_MS].
-     *
-     * Called once the parent's PIN has been accepted, so they can finish the
-     * removal they just authorised instead of being thrown back to the PIN
-     * screen by the next window of the flow.
-     *
-     * Uptime, not wall time: Article 6.8 treats the device clock as untrusted,
-     * and a grace window keyed to it could be stretched indefinitely by moving
-     * the date back.
-     */
-    @Synchronized
-    fun openGuardGrace(context: Context, nowUptimeMs: Long) {
-        write(
-            context,
-            state(context).copy(
-                guardUnlockedUntilMs = nowUptimeMs + UninstallGuard.GRACE_MS,
-            ),
-        )
     }
 
     fun critical(context: Context): Set<String> {

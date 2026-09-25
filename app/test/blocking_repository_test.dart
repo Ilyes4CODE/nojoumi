@@ -206,7 +206,6 @@ class BlockingPush {
     required this.remainingPlaySeconds,
     required this.playPaused,
     required this.priceInStars,
-    required this.uninstallGuard,
   });
 
   final bool enabled;
@@ -214,7 +213,6 @@ class BlockingPush {
   final int remainingPlaySeconds;
   final bool playPaused;
   final String priceInStars;
-  final bool uninstallGuard;
 }
 
 /// A channel that records instead of crossing to Kotlin.
@@ -226,14 +224,6 @@ class RecordingBlockingChannel implements BlockingChannel {
 
   BlockingPush? get last => pushes.isEmpty ? null : pushes.last;
 
-  /// Nothing interrupts in a test. The guard is exercised on the JVM, in
-  /// `UninstallGuardTest`, where the decision actually lives.
-  @override
-  Future<String?> consumePendingPinRequest() async => null;
-
-  @override
-  Future<void> openGuardGrace() async {}
-
   @override
   Future<void> push({
     required bool enabled,
@@ -241,7 +231,6 @@ class RecordingBlockingChannel implements BlockingChannel {
     required int remainingPlaySeconds,
     required bool playPaused,
     required String priceInStars,
-    required bool uninstallGuard,
   }) async {
     pushes.add(
       BlockingPush(
@@ -250,7 +239,6 @@ class RecordingBlockingChannel implements BlockingChannel {
         remainingPlaySeconds: remainingPlaySeconds,
         playPaused: playPaused,
         priceInStars: priceInStars,
-        uninstallGuard: uninstallGuard,
       ),
     );
   }

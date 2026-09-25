@@ -177,11 +177,6 @@ class LunioAccessibilityService : AccessibilityService() {
         if (pkg.isBlank()) return
 
         val state = BlockingStore.state(this)
-
-        // Before the blocking decision, because this is about Lunio's own
-        // survival rather than about the child's play time, and the two are
-        // independent: a parent may want the guard without blocking anything.
-        if (guardUninstall(pkg, state, at)) return
         val decision = BlockPolicy.decide(
             packageName = pkg,
             state = state,
@@ -300,90 +295,6 @@ class LunioAccessibilityService : AccessibilityService() {
             lastBlockedPackage = null
             enforce(decision, state, SystemClock.uptimeMillis())
         }
-    }
-
-    /**
-     * Ask for the PIN if this window is about removing or wiping Lunio.
-     *
-     * Returns true when it acted, so the caller stops: the blocking decision
-     * below is about the child's play time and has nothing to say about a
-     * Settings screen.
-     *
-     * **The window's text is read only when [UninstallGuard] has already
-     * accepted the package**, which is a handful of system packages. Every
-     * other window in the system returns from `decide` before `windowText` is
-     * consulted — the privacy policy makes that claim in those words, so the
-     * order of these two calls is load-bearing.
-     */
-    private fun guardUninstall(pkg: String, state: BlockingState, at: Long): Boolean {
-        if (!state.uninstallGuard) return false
-        if (at < state.guardUnlockedUntilMs) return false
-        if (!UninstallGuard.handles(pkg)) return false
-
-        val decision = UninstallGuard.decide(
-            packageName = pkg,
-            windowText = readWindowText(),
-            appLabel = appLabel,
-            selfPackage = packageName,
-            enabled = true,
-            unlockedUntilMs = state.guardUnlockedUntilMs,
-            nowMs = at,
-        )
-        if (decision !is UninstallGuard.Decision.AskForPin) return false
-
-        Log.i(TAG, "uninstall guard: asking for the PIN (${decision.reason})")
-
-        // Back first, then Lunio. Leaving the Settings screen underneath means
-        // a child who dismisses the PIN screen lands straight back on the
-        // uninstall button they were already pressing.
-        performGlobalAction(GLOBAL_ACTION_BACK)
-        startActivity(
-            Intent()
-                .setClassName(packageName, "$packageName.MainActivity")
-                .putExtra(UninstallGuard.EXTRA_REQUIRE_PIN, decision.reason)
-                .addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT,
-                ),
-        )
-        return true
-    }
-
-    /**
-     * Every string the current window is showing.
-     *
-     * Bounded deliberately: a deep tree on a busy Settings page is not worth
-     * walking, and the phrases this looks for are always near the top. Nothing
-     * read here is stored or transmitted — it is compared against this app's own
-     * name and discarded on the next line.
-     */
-    private fun readWindowText(limit: Int = 60): List<String> {
-        val root = rootInActiveWindow ?: return emptyList()
-        val found = ArrayList<String>(limit)
-
-        fun walk(node: android.view.accessibility.AccessibilityNodeInfo?, depth: Int) {
-            if (node == null || found.size >= limit || depth > 8) return
-            node.text?.toString()?.takeIf { it.isNotBlank() }?.let(found::add)
-            node.contentDescription?.toString()?.takeIf { it.isNotBlank() }
-                ?.let(found::add)
-            for (i in 0 until node.childCount) walk(node.getChild(i), depth + 1)
-        }
-
-        return try {
-            walk(root, 0)
-            found
-        } catch (error: Exception) {
-            // A node tree can be recycled underneath us mid-walk. A guard that
-            // crashes the accessibility service takes the blocking down with it.
-            Log.w(TAG, "could not read the window: ${error.message}")
-            emptyList()
-        }
-    }
-
-    /** This app's display name, resolved once. */
-    private val appLabel: String by lazy {
-        runCatching { applicationInfo.loadLabel(packageManager).toString() }
-            .getOrDefault("Lunio")
     }
 
     override fun onInterrupt() {

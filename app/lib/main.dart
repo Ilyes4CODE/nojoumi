@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/providers.dart';
 import 'core/theme.dart';
-import 'features/parent/pin_gate.dart';
 import 'features/child/child_home_screen.dart';
 import 'features/setup/setup_wizard.dart';
 import 'l10n/app_localizations.dart';
@@ -63,10 +62,7 @@ class _RootState extends ConsumerState<_Root> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     // A cold start after the child was playing: the engine may hold seconds
     // nobody has written down yet.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _collectPlayTime();
-      _answerGuardIfAsked();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _collectPlayTime());
   }
 
   @override
@@ -77,46 +73,7 @@ class _RootState extends ConsumerState<_Root> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) return;
-    _collectPlayTime();
-    // Resume is the moment that matters: the accessibility service brought this
-    // activity to the front precisely so the PIN could be asked for, and on a
-    // warm app that arrives as a resume rather than a cold start.
-    _answerGuardIfAsked();
-  }
-
-  /// True while the guard's PIN screen is up, so a second resume does not stack
-  /// another one on top of it.
-  bool _askingForPin = false;
-
-  /// Show the PIN if somebody just opened Lunio's uninstall screen.
-  ///
-  /// The decision was made in Kotlin ([UninstallGuard]); all that is left here
-  /// is to ask, and on success to tell the engine to stand down for a couple of
-  /// minutes so the parent can finish what they authorised.
-  ///
-  /// **The PIN check itself is not reimplemented.** `PinGate` owns it, and the
-  /// hashing lives in `core/pin.dart` — a second comparison written here would
-  /// be a second place for it to be wrong.
-  Future<void> _answerGuardIfAsked() async {
-    if (_askingForPin) return;
-
-    final channel = ref.read(blockingChannelProvider);
-    final reason = await channel.consumePendingPinRequest();
-    if (reason == null || !mounted) return;
-
-    _askingForPin = true;
-    final navigator = Navigator.of(context, rootNavigator: true);
-    try {
-      await navigator.push(
-        MaterialPageRoute<void>(
-          fullscreenDialog: true,
-          builder: (context) => _GuardPinRequest(onAccepted: channel.openGuardGrace),
-        ),
-      );
-    } finally {
-      _askingForPin = false;
-    }
+    if (state == AppLifecycleState.resumed) _collectPlayTime();
   }
 
   /// Write down the play time the engine measured while Dart was not running.
@@ -217,63 +174,4 @@ class _StartupFailure extends StatelessWidget {
       ),
     );
   }
-}
-
-
-/// The PIN screen the uninstall guard puts in front of Settings.
-///
-/// A thin wrapper around [PinGate] so the guard reuses the one PIN
-/// implementation rather than growing a second. Accepting it opens the engine's
-/// grace window and closes this screen, putting the parent back where they
-/// were — which, since the service pressed Back first, is the screen before the
-/// uninstall prompt rather than the prompt itself. They tap once more and
-/// proceed; a child who does not know the PIN cannot.
-class _GuardPinRequest extends StatelessWidget {
-  const _GuardPinRequest({required this.onAccepted});
-
-  final Future<void> Function() onAccepted;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context)!;
-
-    return PinGate(
-      title: l10n.guardPinTitle,
-      child: _GuardAccepted(onAccepted: onAccepted, message: l10n.guardPinBody),
-    );
-  }
-}
-
-/// Shown for the instant between the PIN being accepted and this screen closing.
-class _GuardAccepted extends StatefulWidget {
-  const _GuardAccepted({required this.onAccepted, required this.message});
-
-  final Future<void> Function() onAccepted;
-  final String message;
-
-  @override
-  State<_GuardAccepted> createState() => _GuardAcceptedState();
-}
-
-class _GuardAcceptedState extends State<_GuardAccepted> {
-  @override
-  void initState() {
-    super.initState();
-    // In a post-frame callback rather than inline: `PinGate` builds this the
-    // moment the PIN is accepted, and popping during a build throws.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await widget.onAccepted();
-      if (mounted) Navigator.of(context).maybePop();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    body: Center(
-      child: Padding(
-        padding: LunioSpacing.page,
-        child: Text(widget.message, textAlign: TextAlign.center),
-      ),
-    ),
-  );
 }

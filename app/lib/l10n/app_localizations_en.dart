@@ -1061,26 +1061,4 @@ class AppL10nEn extends AppL10n {
   @override
   String get setupAppsWhyLater =>
       'If you skip this now, nothing will be blocked until you choose.';
-
-  @override
-  String get guardSwitch => 'Ask for the PIN before the app is deleted';
-
-  @override
-  String get guardBody =>
-      'When someone opens the screen to uninstall Lunio or clear its data, they will be asked for the PIN first.';
-
-  @override
-  String get guardNeedsAccessibility =>
-      'Needs the accessibility permission — the same one blocking needs.';
-
-  @override
-  String get guardHonestLimit =>
-      'This stops an accidental deletion. It does not stop someone who starts the phone in Safe Mode, where accessibility services do not run.';
-
-  @override
-  String get guardPinTitle => 'Enter the PIN';
-
-  @override
-  String get guardPinBody =>
-      'Someone asked to uninstall Lunio or clear its data. Enter your PIN to continue.';
 }

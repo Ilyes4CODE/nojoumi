@@ -1045,26 +1045,4 @@ class AppL10nAr extends AppL10n {
   @override
   String get setupAppsWhyLater =>
       'إن تخطّيتها الآن، لن يُحجب أي تطبيق حتى تختار.';
-
-  @override
-  String get guardSwitch => 'اطلب الرمز السري قبل حذف التطبيق';
-
-  @override
-  String get guardBody =>
-      'عندما يفتح أحدهم شاشة حذف Lunio أو مسح بياناته، سيُطلب منه الرمز السري أولاً.';
-
-  @override
-  String get guardNeedsAccessibility =>
-      'يحتاج إذن إمكانية الوصول، وهو نفس الإذن الذي يحتاجه الحجب.';
-
-  @override
-  String get guardHonestLimit =>
-      'هذا يوقف الحذف العَرَضي. لا يوقف من يشغّل الهاتف في «الوضع الآمن»، لأن خدمات إمكانية الوصول لا تعمل هناك.';
-
-  @override
-  String get guardPinTitle => 'أدخل الرمز السري';
-
-  @override
-  String get guardPinBody =>
-      'طُلب حذف Lunio أو مسح بياناته. أدخل رمزك السري للمتابعة.';
 }

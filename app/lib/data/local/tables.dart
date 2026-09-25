@@ -130,15 +130,6 @@ class AppSettings extends Table {
   /// Appendix §4 — the parent may pause play without destroying the balance.
   BoolColumn get playPaused => boolean().withDefault(const Constant(false))();
 
-  /// Ask for the PIN before Lunio can be uninstalled or its data cleared.
-  ///
-  /// Client request, 2026-09-25. **Off by default**, like everything else in
-  /// this block: it interrupts the system Settings of somebody's own phone, and
-  /// that is not a thing to switch on for a parent who has not asked. See
-  /// `native/blocking/UninstallGuard.kt` for what it can and cannot stop.
-  BoolColumn get uninstallGuard =>
-      boolean().withDefault(const Constant(false))();
-
   /// School level, e.g. «السنة الرابعة ابتدائي». Not an identifier (D-11).
   TextColumn get grade => text().withDefault(const Constant(''))();
 

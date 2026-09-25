@@ -1974,42 +1974,6 @@ abstract class AppL10n {
   /// In ar, this message translates to:
   /// **'إن تخطّيتها الآن، لن يُحجب أي تطبيق حتى تختار.'**
   String get setupAppsWhyLater;
-
-  /// No description provided for @guardSwitch.
-  ///
-  /// In ar, this message translates to:
-  /// **'اطلب الرمز السري قبل حذف التطبيق'**
-  String get guardSwitch;
-
-  /// No description provided for @guardBody.
-  ///
-  /// In ar, this message translates to:
-  /// **'عندما يفتح أحدهم شاشة حذف Lunio أو مسح بياناته، سيُطلب منه الرمز السري أولاً.'**
-  String get guardBody;
-
-  /// No description provided for @guardNeedsAccessibility.
-  ///
-  /// In ar, this message translates to:
-  /// **'يحتاج إذن إمكانية الوصول، وهو نفس الإذن الذي يحتاجه الحجب.'**
-  String get guardNeedsAccessibility;
-
-  /// No description provided for @guardHonestLimit.
-  ///
-  /// In ar, this message translates to:
-  /// **'هذا يوقف الحذف العَرَضي. لا يوقف من يشغّل الهاتف في «الوضع الآمن»، لأن خدمات إمكانية الوصول لا تعمل هناك.'**
-  String get guardHonestLimit;
-
-  /// No description provided for @guardPinTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'أدخل الرمز السري'**
-  String get guardPinTitle;
-
-  /// No description provided for @guardPinBody.
-  ///
-  /// In ar, this message translates to:
-  /// **'طُلب حذف Lunio أو مسح بياناته. أدخل رمزك السري للمتابعة.'**
-  String get guardPinBody;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
