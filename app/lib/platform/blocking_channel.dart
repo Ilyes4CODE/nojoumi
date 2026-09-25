@@ -22,11 +22,21 @@ abstract class BlockingChannel {
     required int remainingPlaySeconds,
     required bool playPaused,
     required String priceInStars,
+    required bool uninstallGuard,
   });
 
   /// The apps the parent can classify. Icons are optional because the payload is
   /// a few hundred kilobytes on a phone with sixty apps.
   Future<List<InstalledApp>> launchableApps({bool includeIcons = true});
+
+  /// Why the uninstall guard interrupted, or null if it did not.
+  ///
+  /// Reading it clears it: one interruption produces one PIN prompt, not one on
+  /// every resume for the rest of the day.
+  Future<String?> consumePendingPinRequest();
+
+  /// Stand the guard down, now that the PIN has been accepted.
+  Future<void> openGuardGrace();
 
   /// Seconds of play the engine measured while Dart was not running, cleared as
   /// they are read.
@@ -179,6 +189,7 @@ class PlatformBlockingChannel implements BlockingChannel {
     required int remainingPlaySeconds,
     required bool playPaused,
     required String priceInStars,
+    required bool uninstallGuard,
   }) {
     return channel.invokeMethod<void>('setState', <String, Object?>{
       'enabled': enabled,
@@ -186,8 +197,17 @@ class PlatformBlockingChannel implements BlockingChannel {
       'remainingPlaySeconds': remainingPlaySeconds,
       'playPaused': playPaused,
       'priceInStars': priceInStars,
+      'uninstallGuard': uninstallGuard,
     });
   }
+
+  @override
+  Future<String?> consumePendingPinRequest() async =>
+      channel.invokeMethod<String>('consumePendingPinRequest');
+
+  @override
+  Future<void> openGuardGrace() =>
+      channel.invokeMethod<void>('openGuardGrace');
 
   @override
   Future<List<InstalledApp>> launchableApps({bool includeIcons = true}) async {
@@ -249,6 +269,15 @@ class UnavailableBlockingChannel implements BlockingChannel {
   @override
   Future<BlockingStatus> status() async => const BlockingStatus.unavailable();
 
+  /// Never. There is no accessibility service off a device, so nothing can have
+  /// interrupted — and answering otherwise would put a PIN screen in front of a
+  /// widget test for no reason.
+  @override
+  Future<String?> consumePendingPinRequest() async => null;
+
+  @override
+  Future<void> openGuardGrace() async {}
+
   @override
   Future<void> push({
     required bool enabled,
@@ -256,6 +285,7 @@ class UnavailableBlockingChannel implements BlockingChannel {
     required int remainingPlaySeconds,
     required bool playPaused,
     required String priceInStars,
+    required bool uninstallGuard,
   }) async {}
 
   @override

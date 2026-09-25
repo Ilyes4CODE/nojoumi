@@ -31,6 +31,25 @@ data class BlockingState(
      * What a locked app costs right now, for the block card. Display only.
      */
     val priceInStars: String = "",
+
+    /**
+     * Ask for the parent's PIN before Lunio can be uninstalled or wiped.
+     *
+     * Client request, 2026-09-25. Off by default and set by the parent, because
+     * a control that interrupts the system Settings of somebody's own phone is
+     * not one to switch on for them. See [UninstallGuard] for what it can and
+     * cannot actually stop.
+     */
+    val uninstallGuard: Boolean = false,
+
+    /**
+     * Uptime past which the guard fires again, set when the PIN was accepted.
+     *
+     * Uptime rather than wall time on purpose: the parent's clock is untrusted
+     * (Art. 6.8), and a grace window keyed to it could be extended indefinitely
+     * by a child who moves the date back.
+     */
+    val guardUnlockedUntilMs: Long = 0,
 )
 
 /**

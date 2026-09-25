@@ -2580,3 +2580,49 @@ entire suite and quietly start charging a different amount, discovered by a cust
 accountant. `apps/subscriptions/tests/test_prices.py` pins both literals in **one** place, where changing them
 is obviously a decision rather than a typo — plus the invariant that a year must cost less than twelve months,
 so the page can never advertise a discount that is not one.
+
+## D-95 — the uninstall guard, and what it honestly cannot do
+
+**Client request, 2026-09-25: "if anyone tries to delete the app, the parent code is required."**
+
+### What Android allows, stated before what was built
+
+An ordinary Android app **cannot prevent its own removal**. There is no permission for it and no API.
+`DeviceAdmin` can hide the uninstall button, but Play restricts it sharply outside enterprise use, and pairing
+it with an accessibility service is a documented cause of rejection — which is the risk Article 7.2's entire
+structure exists to avoid. Offered that trade, the client chose the weaker mechanism.
+
+So this notices the screen and asks for the PIN. **It stops a child who taps *uninstall*. It does not stop one
+who boots into safe mode, where accessibility services do not run.** That sentence is on the settings screen
+itself, not only in this file: a parental control sold as unremovable and then removed is worse than one that
+never claimed it.
+
+### It reads a little screen text, and the privacy policy had to change
+
+The system's uninstall dialog and the device-admin list are *Settings* windows. Their package name is the same
+whichever app they are about, so the only way to know that this one concerns Lunio is to read the words on it.
+
+That is the one place this project reads screen content. It is scoped as tightly as the mechanism allows: only
+windows belonging to a handful of installer and settings packages, only compared against the app's own name,
+never stored, never transmitted — and **every other window in the system returns before its text is looked at**,
+which is why `UninstallGuard.handles()` exists separately from `decide()`.
+
+The published policy said «لا تقرأ محتوى الشاشة». That became false the moment this shipped, and the guard test
+in `test_privacy_page.py` failed on exactly that sentence — which is what forced the page to be corrected
+rather than left quietly wrong. A privacy policy is a claim about the code; a test that compares the two is the
+only thing that keeps it one.
+
+### Shape
+
+The decision is a pure function over values, like `BlockPolicy`, so fourteen cases are settled on the JVM with
+no device. Two of them are the ones that matter in opposite directions: **firing too rarely** is the feature not
+working, and **firing too often** is a parent who cannot uninstall anything on their own phone without typing a
+PIN — they will switch it off, and then nothing is protected.
+
+The PIN itself is not reimplemented. The service presses Back, launches Lunio with an extra, and Dart shows the
+existing `PinGate`; accepting it opens a two-minute grace window in engine uptime. Uptime rather than wall time
+because Article 6.8 treats the device clock as untrusted, and a grace window keyed to it could be stretched
+indefinitely by moving the date back.
+
+**UNVERIFIED-ON-HARDWARE.** The decision logic is tested; that the event arrives, that Back lands, and that the
+activity comes to the front over Settings are three things only a phone can answer.

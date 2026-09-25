@@ -130,6 +130,14 @@ class SettingsRepository {
   Future<void> setPlayPaused(bool value) =>
       _write(AppSettingsCompanion(playPaused: Value(value)));
 
+  /// Ask for the PIN before Lunio can be uninstalled or its data cleared.
+  ///
+  /// Client request, 2026-09-25. It needs the accessibility service, which is
+  /// the same permission blocking needs — so a parent who turns this on without
+  /// blocking still has to grant it, and the settings screen says so.
+  Future<void> setUninstallGuard(bool value) =>
+      _write(AppSettingsCompanion(uninstallGuard: Value(value)));
+
   /// A school level, e.g. «السنة الرابعة ابتدائي». Not an identifier (D-11):
   /// it is a pedagogical parameter, sent per lesson request and never stored
   /// server-side.

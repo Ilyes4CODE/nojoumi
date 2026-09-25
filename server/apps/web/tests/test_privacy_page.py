@@ -116,8 +116,28 @@ class ThePolicyMatchesTheManifest(SimpleTestCase):
         # The disclosure Play actually reads. "We use accessibility to provide
         # features" is the sentence that gets an app removed; naming the limits
         # is what gets it through.
-        for claim in ("لا تقرأ محتوى الشاشة", "ولا كلمات المرور"):
+        for claim in ("لا تقرأ كلمات المرور", "ولا ما تكتبه"):
             self.assertIn(claim, self.page)
+
+    def test_the_one_case_where_screen_text_is_read_is_described(self):
+        # This assertion replaced a blanket "reads no screen content" on
+        # 2026-09-25, when the uninstall guard was added — and the *old* one
+        # failing is what forced the page to be corrected rather than left
+        # quietly false.
+        #
+        # `UninstallGuard` reads window text for a handful of system packages,
+        # to tell whether an uninstall prompt is about Lunio. The policy has to
+        # say so, and has to say how narrow it is, or it is describing a
+        # different app from the one that ships.
+        for claim in (
+            "في حالة واحدة فقط",
+            "إعدادات النظام أو مثبّت التطبيقات",
+            "تُستبعد قبل قراءة أي حرف منها",
+            "لا يُحفظ ولا يُرسل",
+        ):
+            self.assertIn(claim, self.page)
+
+        self.assertIn("the system settings or the package installer", self.page)
 
     def test_it_states_that_the_server_holds_nothing_about_the_child(self):
         # Article 14 and AD-6. It is also the most reassuring true sentence we

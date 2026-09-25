@@ -73,6 +73,10 @@ void main() {
       'blockingEnabled',
       'launcherMode',
       'playPaused',
+      // A parent's choice about their own phone. It names no app, records no
+      // behaviour and says nothing about the child — the guard it switches on
+      // watches for Lunio's *own* uninstall screen.
+      'uninstallGuard',
       'grade',
       'onboardingStep',
       'utcOffsetMinutes',

@@ -553,5 +553,11 @@
     }
   },
   "setupAppsNoneYet": "No apps chosen yet",
-  "setupAppsWhyLater": "If you skip this now, nothing will be blocked until you choose."
+  "setupAppsWhyLater": "If you skip this now, nothing will be blocked until you choose.",
+  "guardSwitch": "Ask for the PIN before the app is deleted",
+  "guardBody": "When someone opens the screen to uninstall Lunio or clear its data, they will be asked for the PIN first.",
+  "guardNeedsAccessibility": "Needs the accessibility permission — the same one blocking needs.",
+  "guardHonestLimit": "This stops an accidental deletion. It does not stop someone who starts the phone in Safe Mode, where accessibility services do not run.",
+  "guardPinTitle": "Enter the PIN",
+  "guardPinBody": "Someone asked to uninstall Lunio or clear its data. Enter your PIN to continue."
 }

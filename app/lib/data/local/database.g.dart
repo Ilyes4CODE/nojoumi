@@ -195,6 +195,21 @@ class $AppSettingsTable extends AppSettings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _uninstallGuardMeta = const VerificationMeta(
+    'uninstallGuard',
+  );
+  @override
+  late final GeneratedColumn<bool> uninstallGuard = GeneratedColumn<bool>(
+    'uninstall_guard',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("uninstall_guard" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _gradeMeta = const VerificationMeta('grade');
   @override
   late final GeneratedColumn<String> grade = GeneratedColumn<String>(
@@ -258,6 +273,7 @@ class $AppSettingsTable extends AppSettings
     blockingEnabled,
     launcherMode,
     playPaused,
+    uninstallGuard,
     grade,
     onboardingStep,
     utcOffsetMinutes,
@@ -386,6 +402,15 @@ class $AppSettingsTable extends AppSettings
         playPaused.isAcceptableOrUnknown(data['play_paused']!, _playPausedMeta),
       );
     }
+    if (data.containsKey('uninstall_guard')) {
+      context.handle(
+        _uninstallGuardMeta,
+        uninstallGuard.isAcceptableOrUnknown(
+          data['uninstall_guard']!,
+          _uninstallGuardMeta,
+        ),
+      );
+    }
     if (data.containsKey('grade')) {
       context.handle(
         _gradeMeta,
@@ -487,6 +512,10 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.bool,
         data['${effectivePrefix}play_paused'],
       )!,
+      uninstallGuard: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}uninstall_guard'],
+      )!,
       grade: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}grade'],
@@ -546,6 +575,14 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
   /// Appendix §4 — the parent may pause play without destroying the balance.
   final bool playPaused;
 
+  /// Ask for the PIN before Lunio can be uninstalled or its data cleared.
+  ///
+  /// Client request, 2026-09-25. **Off by default**, like everything else in
+  /// this block: it interrupts the system Settings of somebody's own phone, and
+  /// that is not a thing to switch on for a parent who has not asked. See
+  /// `native/blocking/UninstallGuard.kt` for what it can and cannot stop.
+  final bool uninstallGuard;
+
   /// School level, e.g. «السنة الرابعة ابتدائي». Not an identifier (D-11).
   final String grade;
 
@@ -585,6 +622,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
     required this.blockingEnabled,
     required this.launcherMode,
     required this.playPaused,
+    required this.uninstallGuard,
     required this.grade,
     required this.onboardingStep,
     required this.utcOffsetMinutes,
@@ -612,6 +650,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
     map['blocking_enabled'] = Variable<bool>(blockingEnabled);
     map['launcher_mode'] = Variable<bool>(launcherMode);
     map['play_paused'] = Variable<bool>(playPaused);
+    map['uninstall_guard'] = Variable<bool>(uninstallGuard);
     map['grade'] = Variable<String>(grade);
     map['onboarding_step'] = Variable<int>(onboardingStep);
     map['utc_offset_minutes'] = Variable<int>(utcOffsetMinutes);
@@ -636,6 +675,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
       blockingEnabled: Value(blockingEnabled),
       launcherMode: Value(launcherMode),
       playPaused: Value(playPaused),
+      uninstallGuard: Value(uninstallGuard),
       grade: Value(grade),
       onboardingStep: Value(onboardingStep),
       utcOffsetMinutes: Value(utcOffsetMinutes),
@@ -668,6 +708,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
       blockingEnabled: serializer.fromJson<bool>(json['blockingEnabled']),
       launcherMode: serializer.fromJson<bool>(json['launcherMode']),
       playPaused: serializer.fromJson<bool>(json['playPaused']),
+      uninstallGuard: serializer.fromJson<bool>(json['uninstallGuard']),
       grade: serializer.fromJson<String>(json['grade']),
       onboardingStep: serializer.fromJson<int>(json['onboardingStep']),
       utcOffsetMinutes: serializer.fromJson<int>(json['utcOffsetMinutes']),
@@ -695,6 +736,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
       'blockingEnabled': serializer.toJson<bool>(blockingEnabled),
       'launcherMode': serializer.toJson<bool>(launcherMode),
       'playPaused': serializer.toJson<bool>(playPaused),
+      'uninstallGuard': serializer.toJson<bool>(uninstallGuard),
       'grade': serializer.toJson<String>(grade),
       'onboardingStep': serializer.toJson<int>(onboardingStep),
       'utcOffsetMinutes': serializer.toJson<int>(utcOffsetMinutes),
@@ -718,6 +760,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
     bool? blockingEnabled,
     bool? launcherMode,
     bool? playPaused,
+    bool? uninstallGuard,
     String? grade,
     int? onboardingStep,
     int? utcOffsetMinutes,
@@ -738,6 +781,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
     blockingEnabled: blockingEnabled ?? this.blockingEnabled,
     launcherMode: launcherMode ?? this.launcherMode,
     playPaused: playPaused ?? this.playPaused,
+    uninstallGuard: uninstallGuard ?? this.uninstallGuard,
     grade: grade ?? this.grade,
     onboardingStep: onboardingStep ?? this.onboardingStep,
     utcOffsetMinutes: utcOffsetMinutes ?? this.utcOffsetMinutes,
@@ -784,6 +828,9 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
       playPaused: data.playPaused.present
           ? data.playPaused.value
           : this.playPaused,
+      uninstallGuard: data.uninstallGuard.present
+          ? data.uninstallGuard.value
+          : this.uninstallGuard,
       grade: data.grade.present ? data.grade.value : this.grade,
       onboardingStep: data.onboardingStep.present
           ? data.onboardingStep.value
@@ -813,6 +860,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
           ..write('blockingEnabled: $blockingEnabled, ')
           ..write('launcherMode: $launcherMode, ')
           ..write('playPaused: $playPaused, ')
+          ..write('uninstallGuard: $uninstallGuard, ')
           ..write('grade: $grade, ')
           ..write('onboardingStep: $onboardingStep, ')
           ..write('utcOffsetMinutes: $utcOffsetMinutes, ')
@@ -838,6 +886,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
     blockingEnabled,
     launcherMode,
     playPaused,
+    uninstallGuard,
     grade,
     onboardingStep,
     utcOffsetMinutes,
@@ -862,6 +911,7 @@ class SettingsRow extends DataClass implements Insertable<SettingsRow> {
           other.blockingEnabled == this.blockingEnabled &&
           other.launcherMode == this.launcherMode &&
           other.playPaused == this.playPaused &&
+          other.uninstallGuard == this.uninstallGuard &&
           other.grade == this.grade &&
           other.onboardingStep == this.onboardingStep &&
           other.utcOffsetMinutes == this.utcOffsetMinutes &&
@@ -884,6 +934,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
   final Value<bool> blockingEnabled;
   final Value<bool> launcherMode;
   final Value<bool> playPaused;
+  final Value<bool> uninstallGuard;
   final Value<String> grade;
   final Value<int> onboardingStep;
   final Value<int> utcOffsetMinutes;
@@ -904,6 +955,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
     this.blockingEnabled = const Value.absent(),
     this.launcherMode = const Value.absent(),
     this.playPaused = const Value.absent(),
+    this.uninstallGuard = const Value.absent(),
     this.grade = const Value.absent(),
     this.onboardingStep = const Value.absent(),
     this.utcOffsetMinutes = const Value.absent(),
@@ -925,6 +977,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
     this.blockingEnabled = const Value.absent(),
     this.launcherMode = const Value.absent(),
     this.playPaused = const Value.absent(),
+    this.uninstallGuard = const Value.absent(),
     this.grade = const Value.absent(),
     this.onboardingStep = const Value.absent(),
     this.utcOffsetMinutes = const Value.absent(),
@@ -946,6 +999,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
     Expression<bool>? blockingEnabled,
     Expression<bool>? launcherMode,
     Expression<bool>? playPaused,
+    Expression<bool>? uninstallGuard,
     Expression<String>? grade,
     Expression<int>? onboardingStep,
     Expression<int>? utcOffsetMinutes,
@@ -969,6 +1023,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
       if (blockingEnabled != null) 'blocking_enabled': blockingEnabled,
       if (launcherMode != null) 'launcher_mode': launcherMode,
       if (playPaused != null) 'play_paused': playPaused,
+      if (uninstallGuard != null) 'uninstall_guard': uninstallGuard,
       if (grade != null) 'grade': grade,
       if (onboardingStep != null) 'onboarding_step': onboardingStep,
       if (utcOffsetMinutes != null) 'utc_offset_minutes': utcOffsetMinutes,
@@ -992,6 +1047,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
     Value<bool>? blockingEnabled,
     Value<bool>? launcherMode,
     Value<bool>? playPaused,
+    Value<bool>? uninstallGuard,
     Value<String>? grade,
     Value<int>? onboardingStep,
     Value<int>? utcOffsetMinutes,
@@ -1014,6 +1070,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
       blockingEnabled: blockingEnabled ?? this.blockingEnabled,
       launcherMode: launcherMode ?? this.launcherMode,
       playPaused: playPaused ?? this.playPaused,
+      uninstallGuard: uninstallGuard ?? this.uninstallGuard,
       grade: grade ?? this.grade,
       onboardingStep: onboardingStep ?? this.onboardingStep,
       utcOffsetMinutes: utcOffsetMinutes ?? this.utcOffsetMinutes,
@@ -1073,6 +1130,9 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
     if (playPaused.present) {
       map['play_paused'] = Variable<bool>(playPaused.value);
     }
+    if (uninstallGuard.present) {
+      map['uninstall_guard'] = Variable<bool>(uninstallGuard.value);
+    }
     if (grade.present) {
       map['grade'] = Variable<String>(grade.value);
     }
@@ -1106,6 +1166,7 @@ class AppSettingsCompanion extends UpdateCompanion<SettingsRow> {
           ..write('blockingEnabled: $blockingEnabled, ')
           ..write('launcherMode: $launcherMode, ')
           ..write('playPaused: $playPaused, ')
+          ..write('uninstallGuard: $uninstallGuard, ')
           ..write('grade: $grade, ')
           ..write('onboardingStep: $onboardingStep, ')
           ..write('utcOffsetMinutes: $utcOffsetMinutes, ')
@@ -9870,6 +9931,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<bool> blockingEnabled,
       Value<bool> launcherMode,
       Value<bool> playPaused,
+      Value<bool> uninstallGuard,
       Value<String> grade,
       Value<int> onboardingStep,
       Value<int> utcOffsetMinutes,
@@ -9892,6 +9954,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<bool> blockingEnabled,
       Value<bool> launcherMode,
       Value<bool> playPaused,
+      Value<bool> uninstallGuard,
       Value<String> grade,
       Value<int> onboardingStep,
       Value<int> utcOffsetMinutes,
@@ -9980,6 +10043,11 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<bool> get playPaused => $composableBuilder(
     column: $table.playPaused,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get uninstallGuard => $composableBuilder(
+    column: $table.uninstallGuard,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10088,6 +10156,11 @@ class $$AppSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get uninstallGuard => $composableBuilder(
+    column: $table.uninstallGuard,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get grade => $composableBuilder(
     column: $table.grade,
     builder: (column) => ColumnOrderings(column),
@@ -10188,6 +10261,11 @@ class $$AppSettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get uninstallGuard => $composableBuilder(
+    column: $table.uninstallGuard,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get grade =>
       $composableBuilder(column: $table.grade, builder: (column) => column);
 
@@ -10251,6 +10329,7 @@ class $$AppSettingsTableTableManager
                 Value<bool> blockingEnabled = const Value.absent(),
                 Value<bool> launcherMode = const Value.absent(),
                 Value<bool> playPaused = const Value.absent(),
+                Value<bool> uninstallGuard = const Value.absent(),
                 Value<String> grade = const Value.absent(),
                 Value<int> onboardingStep = const Value.absent(),
                 Value<int> utcOffsetMinutes = const Value.absent(),
@@ -10271,6 +10350,7 @@ class $$AppSettingsTableTableManager
                 blockingEnabled: blockingEnabled,
                 launcherMode: launcherMode,
                 playPaused: playPaused,
+                uninstallGuard: uninstallGuard,
                 grade: grade,
                 onboardingStep: onboardingStep,
                 utcOffsetMinutes: utcOffsetMinutes,
@@ -10293,6 +10373,7 @@ class $$AppSettingsTableTableManager
                 Value<bool> blockingEnabled = const Value.absent(),
                 Value<bool> launcherMode = const Value.absent(),
                 Value<bool> playPaused = const Value.absent(),
+                Value<bool> uninstallGuard = const Value.absent(),
                 Value<String> grade = const Value.absent(),
                 Value<int> onboardingStep = const Value.absent(),
                 Value<int> utcOffsetMinutes = const Value.absent(),
@@ -10313,6 +10394,7 @@ class $$AppSettingsTableTableManager
                 blockingEnabled: blockingEnabled,
                 launcherMode: launcherMode,
                 playPaused: playPaused,
+                uninstallGuard: uninstallGuard,
                 grade: grade,
                 onboardingStep: onboardingStep,
                 utcOffsetMinutes: utcOffsetMinutes,

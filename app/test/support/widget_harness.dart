@@ -158,6 +158,7 @@ SettingsRow fakeSettings({
   // `SettingsRepository.installId()` mints one, and a helper that staged a
   // value would be staging a state the app never starts in.
   String installId = '',
+  bool uninstallGuard = false,
 }) {
   return SettingsRow(
     id: 1,
@@ -179,5 +180,6 @@ SettingsRow fakeSettings({
     onboardingStep: onboardingStep,
     utcOffsetMinutes: utcOffsetMinutes,
     installId: installId,
+    uninstallGuard: uninstallGuard,
   );
 }

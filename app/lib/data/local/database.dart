@@ -45,7 +45,7 @@ class LunioDatabase extends _$LunioDatabase {
   LunioDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -95,6 +95,13 @@ class LunioDatabase extends _$LunioDatabase {
         await customStatement(
           'DELETE FROM task_instances WHERE kind = 0 AND state = 0',
         );
+      }
+      // v6 -> v7 adds the uninstall guard, off. A plain column with a false
+      // default: an install upgrading has not asked for it, and switching a
+      // control on during a migration would interrupt the Settings of a phone
+      // whose owner never requested it.
+      if (from < 7) {
+        await m.addColumn(appSettings, appSettings.uninstallGuard);
       }
     },
     beforeOpen: (details) async {
