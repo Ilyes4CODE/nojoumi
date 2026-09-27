@@ -7,6 +7,7 @@ import 'core/theme.dart';
 import 'features/child/child_home_screen.dart';
 import 'features/setup/setup_wizard.dart';
 import 'l10n/app_localizations.dart';
+import 'core/config.dart';
 
 void main() {
   runApp(const ProviderScope(child: LunioApp()));
@@ -62,7 +63,10 @@ class _RootState extends ConsumerState<_Root> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     // A cold start after the child was playing: the engine may hold seconds
     // nobody has written down yet.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _collectPlayTime());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _collectPlayTime();
+      _scheduleHeartbeat();
+    });
   }
 
   @override
@@ -74,6 +78,30 @@ class _RootState extends ConsumerState<_Root> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) _collectPlayTime();
+  }
+
+  /// Make sure the background "still installed" signal is scheduled.
+  ///
+  /// Client request, 2026-09-27: a parent learns when the child deletes Lunio.
+  /// The phone pings the server every six hours from a WorkManager job, whether
+  /// or not the app is opened, and the server emails the parent when the pings
+  /// stop. Kotlin cannot see the server address (a build-time define) or the
+  /// install id (in Drift), so Dart hands both over here, on every start.
+  ///
+  /// Harmless to repeat: an existing schedule is kept rather than restarted.
+  /// Silent on failure: a missing heartbeat costs one possible email, and an
+  /// error here must never stand between the child and their home screen.
+  Future<void> _scheduleHeartbeat() async {
+    if (!AppConfig.hasApi) return;
+    try {
+      final installId = await ref.read(settingsRepositoryProvider).installId();
+      await ref.read(blockingChannelProvider).configureHeartbeat(
+        apiBase: AppConfig.apiBase,
+        installId: installId,
+      );
+    } catch (_) {
+      // Deliberately swallowed; see above.
+    }
   }
 
   /// Write down the play time the engine measured while Dart was not running.

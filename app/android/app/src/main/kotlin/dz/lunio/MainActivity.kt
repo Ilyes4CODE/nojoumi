@@ -43,6 +43,18 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 "status" -> result.success(blocking.status())
 
+                // The background "still installed" signal. Dart supplies what
+                // Kotlin cannot see: the server address (a build-time define) and
+                // the install id (in the Drift database).
+                "configureHeartbeat" -> {
+                    LunioHeartbeat.configure(
+                        applicationContext,
+                        apiBase = call.argument<String>("apiBase") ?: "",
+                        installId = call.argument<String>("installId") ?: "",
+                    )
+                    result.success(null)
+                }
+
                 "drainConsumedSeconds" ->
                     result.success(blocking.drainConsumedSeconds())
 

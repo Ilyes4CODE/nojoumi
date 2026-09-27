@@ -225,6 +225,12 @@ class RecordingBlockingChannel implements BlockingChannel {
   BlockingPush? get last => pushes.isEmpty ? null : pushes.last;
 
   @override
+  Future<void> configureHeartbeat({
+    required String apiBase,
+    required String installId,
+  }) async {}
+
+  @override
   Future<void> push({
     required bool enabled,
     required List<String> blockedPackages,

@@ -109,6 +109,14 @@ android {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation(project(":blocking"))
+
+    // The background heartbeat (client request, 2026-09-27). WorkManager rather
+    // than an AlarmManager or a thread in the watchdog service: it survives a
+    // reboot on its own, it batches with the system's other background work so
+    // it does not cost battery of its own, and — the property the whole feature
+    // rests on — its schedule is deleted with the app. A deleted Lunio stops
+    // pinging; that silence is the signal.
+    implementation("androidx.work:work-runtime-ktx:2.10.5")
 }
 
 flutter {

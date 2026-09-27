@@ -174,6 +174,11 @@ REST_FRAMEWORK = {
         # for a parent who mistypes a code twice and then asks for a fresh one;
         # far too small to walk a million six-digit codes.
         "password_reset": "15/hour",
+        # The background heartbeat. A phone sends one every six hours, so this is
+        # far above any honest rate — it is here to bound a caller hammering the
+        # endpoint, not to shape real traffic. Keyed per IP, and a household
+        # behind one address has at most a few phones.
+        "heartbeat": "30/hour",
     },
 }
 

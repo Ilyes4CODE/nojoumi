@@ -108,3 +108,46 @@ def send_reset_code(parent, code: str) -> None:
 
     message.send(fail_silently=False)
     log.info("password reset code sent to parent %s", parent.pk)
+
+
+def send_device_silent(parent, *, last_heard) -> None:
+    """Tell `parent` that Lunio has gone quiet on a phone they are bound to.
+
+    Raises whatever the backend raises. Unlike the reset code there is nothing
+    to hide here — the caller is a cron job, not an HTTP client — so a failure
+    is left to propagate and the job does not mark the device as reported,
+    which means it tries again an hour later instead of giving up in silence.
+    """
+    from django.utils import formats, timezone
+
+    ids, files = _art()
+    local = timezone.localtime(last_heard)
+    context = {
+        "email": parent.email,
+        "since": formats.date_format(local, "DATETIME_FORMAT"),
+        "art": ids,
+    }
+
+    message = EmailMultiAlternatives(
+        subject="Lunio لم يعد يتواصل من هاتف طفلك",
+        body=render_to_string("accounts/email/device_silent.txt", context),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[parent.email],
+    )
+    message.attach_alternative(
+        render_to_string("accounts/email/device_silent.html", context), "text/html"
+    )
+    message.mixed_subtype = "related"
+    for cid, path in files:
+        if cid != "lunio-logo":
+            # Only the mark. The key and the shield belong to the password reset,
+            # and a lock drawn on a "your child may have deleted the app" message
+            # reads as an accusation.
+            continue
+        image = MIMEImage(path.read_bytes(), _subtype="png")
+        image.add_header("Content-ID", f"<{cid}>")
+        image.add_header("Content-Disposition", "inline", filename=path.name)
+        message.attach(image)
+
+    message.send(fail_silently=False)
+    log.info("device-silent alert sent to parent %s", parent.pk)

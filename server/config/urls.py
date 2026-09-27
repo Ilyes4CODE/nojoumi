@@ -25,6 +25,8 @@ urlpatterns = [
     path("api/lessons/", include("apps.lessons.urls")),
     path("api/subscriptions/", include("apps.subscriptions.urls")),
     path("api/payments/", include("apps.payments.urls")),
+    # The background "still installed" signal — see apps/devices/views.py.
+    path("api/devices/", include("apps.devices.urls")),
     # Art. 3 names Swagger via drf-spectacular; Art. 19 makes API docs a
     # deliverable.
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

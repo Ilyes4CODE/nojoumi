@@ -28,6 +28,13 @@ abstract class BlockingChannel {
   /// a few hundred kilobytes on a phone with sixty apps.
   Future<List<InstalledApp>> launchableApps({bool includeIcons = true});
 
+  /// Schedule the background heartbeat that tells the server Lunio is still
+  /// installed. Safe to call on every start: an existing schedule is kept.
+  Future<void> configureHeartbeat({
+    required String apiBase,
+    required String installId,
+  });
+
   /// Seconds of play the engine measured while Dart was not running, cleared as
   /// they are read.
   ///
@@ -190,6 +197,15 @@ class PlatformBlockingChannel implements BlockingChannel {
   }
 
   @override
+  Future<void> configureHeartbeat({
+    required String apiBase,
+    required String installId,
+  }) => channel.invokeMethod<void>('configureHeartbeat', <String, Object?>{
+    'apiBase': apiBase,
+    'installId': installId,
+  });
+
+  @override
   Future<List<InstalledApp>> launchableApps({bool includeIcons = true}) async {
     final list = await channel.invokeListMethod<Object?>(
       'launchableApps',
@@ -248,6 +264,13 @@ class UnavailableBlockingChannel implements BlockingChannel {
 
   @override
   Future<BlockingStatus> status() async => const BlockingStatus.unavailable();
+
+  /// Nothing to schedule off a device.
+  @override
+  Future<void> configureHeartbeat({
+    required String apiBase,
+    required String installId,
+  }) async {}
 
   @override
   Future<void> push({

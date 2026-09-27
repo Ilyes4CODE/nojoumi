@@ -44,7 +44,12 @@
   </ul>
   <p>
     ويُحفظ كذلك <strong>معرّف تثبيت</strong> عشوائي للهاتف (رقم لا يُشتقّ من جهازك ولا يدلّ عليه)،
-    لسببين اثنين: أن الفترة التجريبية تُمنح مرّة واحدة لكل هاتف، وأن الحساب الواحد لهاتف واحد.
+    لسببين اثنين: أن الفترة التجريبية تُمنح مرّة واحدة لكل هاتف، وأن الحسابات المرتبطة بالهاتف محدودة.
+  </p>
+  <p>
+    وآخر <strong>وقت اتصل فيه التطبيق</strong> بخوادمنا. يرسل التطبيق كل بضع ساعات إشارة قصيرة
+    فيها معرّف التثبيت وحده — لا حساب، ولا شيء عن الطفل، ولا شيء عمّا يفعله على الهاتف — حتى
+    نستطيع إبلاغك بالبريد إن توقّف التطبيق عن العمل على هاتف طفلك، كأن يُحذف.
   </p>
 </div>
 
@@ -68,7 +73,9 @@
     <li><strong>التشغيل عند الإقلاع (RECEIVE_BOOT_COMPLETED)</strong> — حتى لا تُلغى الضوابط بإعادة تشغيل الهاتف.</li>
     <li><strong>استثناء من تحسين البطارية</strong> — لنفس السبب: نظام يوقف التطبيق يوقف الحجب معه.</li>
     <li><strong>الإشعارات والاهتزاز</strong> — لتنبيه الطفل قبل انتهاء وقت اللعب.</li>
-    <li><strong>الإنترنت</strong> — لتوليد الدروس من الصور، وللاشتراك. التطبيق يعمل بدونه: الحجب والنجوم والدروس المحفوظة لا تحتاج اتصالًا.</li>
+    <li><strong>الإنترنت</strong> — لتوليد الدروس من الصور، وللاشتراك، وللإشارة القصيرة التي تخبرنا أن التطبيق ما زال مثبّتًا. التطبيق يعمل بدونه: الحجب والنجوم والدروس المحفوظة لا تحتاج اتصالًا.</li>
+    <li><strong>حالة الشبكة (ACCESS_NETWORK_STATE)</strong> — لمعرفة وجود اتصال قبل إرسال تلك الإشارة، بدل المحاولة بلا فائدة واستهلاك البطارية.</li>
+    <li><strong>إبقاء الهاتف مستيقظًا لحظات (WAKE_LOCK)</strong> — ليُكمل التطبيق إرسال الإشارة القصيرة قبل أن ينام الهاتف. لا يُبقي الشاشة مضاءة.</li>
     <li><strong>الكاميرا ومعرض الصور</strong> — لتصوير صفحة الدرس، بطلب منك وفي كل مرّة.</li>
   </ul>
 </div>
@@ -114,7 +121,13 @@
     <p style="text-align:left;"><strong>What we store, all of it about the parent:</strong>
       email address, an optional phone number, and subscription and transaction records
       (transaction id, amount, status, timestamps). Also a random install identifier, not derived
-      from the device, so the free trial is granted once per phone and one account maps to one phone.</p>
+      from the device, so the free trial is granted once per phone.</p>
+    <p style="text-align:left;"><strong>The "still installed" signal.</strong> Every few hours the app
+      sends a short signal carrying the install identifier and nothing else — no account, nothing about
+      the child, nothing about what happens on the phone — and we keep the time of the last one. If it
+      stops, we email you that the app may have been removed. This needs two ordinary permissions:
+      network state (to wait for a connection instead of retrying uselessly) and a brief wake lock (to
+      finish sending before the phone sleeps; it never keeps the screen on).</p>
     <p style="text-align:left;"><strong>What we never store:</strong> anything about the child —
       no name, age, photo, school level, results, stars or play time; no lesson photographs, which are
       processed and then deleted from the server immediately and are never used to train any model;

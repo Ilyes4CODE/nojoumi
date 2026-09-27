@@ -132,3 +132,20 @@ class ThePolicyMatchesTheManifest(SimpleTestCase):
         # Required by Play's data-deletion policy, and it has to be an address a
         # person can actually write to.
         self.assertIn("no-reply@bafisslunio.com", self.page)
+
+    def test_the_heartbeat_is_disclosed_with_its_limits(self):
+        # Added 2026-09-27 with the "tell the parent if the app is deleted"
+        # feature. WorkManager, which carries the signal, merges ACCESS_NETWORK_STATE
+        # and WAKE_LOCK into the APK from its own manifest — which is precisely the
+        # kind of permission `declared_permissions()` above cannot see. They were
+        # found by diffing `aapt2 dump permissions` between two builds, and they are
+        # pinned here by hand for that reason.
+        for claim in (
+            "معرّف التثبيت وحده",
+            "ولا شيء عن الطفل",
+            "ACCESS_NETWORK_STATE",
+            "WAKE_LOCK",
+            "لا يُبقي الشاشة مضاءة",
+        ):
+            self.assertIn(claim, self.page)
+        self.assertIn("carrying the install identifier and nothing else", self.page)

@@ -56,8 +56,40 @@ class Install(models.Model):
     # never cleared.
     trial_consumed_at = models.DateTimeField(null=True, blank=True)
 
+    # --- the "is Lunio still on this phone?" signal (client request, 2026-09-27)
+    #
+    # The client asked that a parent learn when the child deletes the app. An app
+    # may not *prevent* its own removal — that was tried and Play Protect blocked
+    # the whole app (D-96) — but a server can notice that a phone has gone quiet.
+    #
+    # **Its own field, not `last_seen_at`.** That one is `auto_now`, so it moves on
+    # any save — a trial, a sign-in, a binding — and says nothing reliable about
+    # whether the app is still installed. Worse, on the day this shipped every
+    # existing device would have looked silent for weeks, and the first alert run
+    # would have emailed every parent in the system at once.
+    #
+    # This is set **only** by the background worker in builds that have it. A
+    # device that has never sent one — every install from before this feature,
+    # and any older build still in the wild — is never alerted on, because silence
+    # from something that never spoke means nothing.
+    heartbeat_at = models.DateTimeField(null=True, blank=True)
+
+    # When the parent was told this phone went quiet. Set once per silence, so the
+    # hourly job does not email them every hour; cleared by the next heartbeat, so
+    # a phone that comes back and goes quiet again is reported again.
+    silence_alerted_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
-        indexes = [models.Index(fields=["trial_consumed_at"])]
+        indexes = [
+            models.Index(fields=["trial_consumed_at"]),
+            # The hourly job asks exactly this question — "which phones have been
+            # quiet since before X and not yet reported" — and it should not read
+            # the whole table to answer it as the client grows.
+            models.Index(
+                fields=["silence_alerted_at", "heartbeat_at"],
+                name="silent_device_lookup",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"Install({self.id})"

@@ -2736,3 +2736,44 @@ Nothing else on the new key reads images — the rest are text, audio, or safety
 checked with one real lesson through the server's own pipeline rather than a toy call: 3.3 s, an Arabic summary,
 12 cards, 8 well-formed questions. **A valid key is not a working configuration**; the model has to be checked
 against the key it will be used with.
+
+## D-99 — detection instead of prevention: the parent is emailed when the phone goes quiet
+
+**Client request, 2026-09-27**, repeated after D-96: the child should not be able to delete the app without
+the parent's code. Prevention is what Play Protect blocked the whole app for; the client chose detection
+instead.
+
+The phone runs a WorkManager job every six hours that sends the server one thing — its install id — whether
+or not Lunio is opened. When a phone has been quiet for forty-eight hours, an hourly cron job emails every
+parent bound to it. Deleting the app deletes the schedule with it; that silence is the signal.
+
+### The two design points that decide whether it is worth having
+
+**In the background, not on open.** A signal sent only when the child opens Lunio cannot tell "deleted" from
+"not used this weekend". A parent woken by a false alarm stops believing the true one, which would leave the
+feature worse than absent.
+
+**A dedicated field, and only for phones that have spoken.** `Install.last_seen_at` already existed, and it
+was the obvious field to use. It is `auto_now`, so it moves on any save and means nothing about installation —
+and on deploy day every existing phone would have looked silent for weeks. The first hourly run would have
+emailed every parent in the system at once. `heartbeat_at` is set only by the worker, and a phone with none is
+never reported: silence from something that never spoke means nothing. The test for this was run against the
+`last_seen_at` design first, where it fails with five emails.
+
+### Smaller choices
+
+* **Unauthenticated heartbeat.** The worker runs for weeks; access tokens last five minutes. The cost — anyone
+  holding a random 122-bit install id could suppress one email — exposes nothing.
+* **One email per silence**, cleared by the next heartbeat, so a phone that returns and goes quiet again is
+  reported again; and a failed send is not marked, so the next hour retries.
+* **"May", not "has".** A flat battery looks exactly like a deletion, and the message says both.
+* **Two permissions arrived with WorkManager**: `ACCESS_NETWORK_STATE` and `WAKE_LOCK`, both ordinary and
+  auto-granted. They came from the library's manifest, which the privacy guard test cannot read; they were
+  found by diffing `aapt2 dump permissions` between two builds, disclosed on the policy page, and pinned by
+  hand in the test.
+
+### What it needs on the server
+
+A migration (`devices.0004`) and a cron job. **Without the cron job nothing is ever sent** — the heartbeats
+arrive and are recorded, and nobody is told. That is the step most likely to be forgotten, so it is the first
+thing in the deploy notes.

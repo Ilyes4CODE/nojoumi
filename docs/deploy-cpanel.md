@@ -282,3 +282,27 @@ curl -s https://bafisslunio.com/api/health/
 * **`pip install` outside the virtualenv.** The packages land in the system Python, the app keeps using the old
   ones, and the error is a `ModuleNotFoundError` for something you just watched install successfully.
 * **Editing `.env` and expecting it to take.** It is read at import time. Restart.
+
+---
+
+# The hourly job: telling a parent their child's phone went quiet (D-99)
+
+**Without this nothing is ever sent.** Heartbeats arrive and are recorded; nobody is told.
+
+cPanel → **Cron Jobs** → *Add New Cron Job* → Common Settings: **Once Per Hour** (`0 * * * *`). Command:
+
+```
+/home/<user>/virtualenv/nojoumi/3.10/bin/python /home/<user>/nojoumi/server/manage.py alert_silent_devices >> /home/<user>/nojoumi/alerts.log 2>&1
+```
+
+The full path to the virtualenv's `python` matters: cron does not run `source .../activate`, and the system
+Python has none of the packages.
+
+Before trusting it, see what it would do without sending anything:
+
+```bash
+python manage.py alert_silent_devices --dry-run
+```
+
+On the day this ships it lists **nobody**, and that is correct: no phone has sent a heartbeat yet, and silence
+from a phone that never spoke is never reported.
