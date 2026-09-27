@@ -233,7 +233,8 @@ class GroqProcessor(LessonProcessor):
             # perfectly ordinary lesson page came back 400. Sizing it from the
             # requested counts keeps the estimate honest.
             "max_tokens": _completion_budget(card_count, question_count),
-            # Verified working on qwen/qwen3.6-27b on 2026-08-15 (D-23).
+            # Verified working on qwen/qwen3.6-27b on 2026-08-15 (D-23), and on
+            # qwen/qwen3.8-27b on 2026-09-27 when the new key lacked 3.6 (D-98).
             "response_format": {"type": "json_object"},
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},

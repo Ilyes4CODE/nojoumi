@@ -2704,3 +2704,35 @@ cannot drift apart again. The test for it was run against the unfixed manager fi
 On the three password fields, through one widget so they cannot drift. **Not on the PIN**: that is typed on
 the child's phone, often with the child beside it, and a reveal button there is a way to read four digits
 over a shoulder.
+
+## D-98 — two dead credentials, found by asking the services directly
+
+### The payment page: a regenerated Chargily key
+
+On 2026-09-27 the client pressed a plan and got «تعذّر بدء عملية الدفع». Reproduced from outside: `502` in 1.6 s —
+a real round trip, so not local configuration. A read-only `GET /balance` with the key from `.env.production`
+answered **`401 Unauthenticated`**.
+
+The live secret key had been pasted into a conversation on day one and was rightly regenerated in the Chargily
+dashboard; regeneration kills the old key at once, and nobody updated `.env`. Every checkout since has reached
+Chargily and been refused. The page tells the parent nothing useful, which is correct for the parent and
+useless for whoever has to fix it — the same shape as the email outage of D-97.
+
+A first probe was blocked by Cloudflare (error 1010, "browser signature") and looked like a second cause. It was
+not: that was `urllib`'s signature. The server uses `requests`, which gets through, and there is nothing to
+change there. Worth writing down because it is an easy wrong turn — and the fix it suggests, spoofing a browser
+User-Agent, would have hidden the real 401 behind a different one.
+
+`python manage.py check_chargily` is the probe, kept: read-only, charges nothing, safe against the live
+account at any time, and names the four failures that actually happen with a different fix for each.
+
+### The lesson model: a new Groq key without the old model
+
+A new Groq key was supplied. It is valid — but `qwen/qwen3.6-27b`, the model D-23 measured as the only one that
+accepted our images, **is not on it**; `qwen/qwen3.8-27b` is. Swapping the key alone would have made every lesson
+fail with "model not found", which is exactly the "AI is not working" the client reported in D-90.
+
+Nothing else on the new key reads images — the rest are text, audio, or safety classifiers. `qwen3.8` was
+checked with one real lesson through the server's own pipeline rather than a toy call: 3.3 s, an Arabic summary,
+12 cards, 8 well-formed questions. **A valid key is not a working configuration**; the model has to be checked
+against the key it will be used with.
