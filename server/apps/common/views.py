@@ -54,10 +54,38 @@ class HealthView(APIView):
             # instruction to the developer than "unreachable".
             database_ok = False
 
+        pending = _pending_migrations() if database_ok else None
+
         return Response(
             {
-                "status": "ok" if database_ok else "degraded",
+                "status": "ok" if database_ok and not pending else "degraded",
                 "database": database_ok,
+                # The count, never the names: migration names describe the schema,
+                # and an unauthenticated probe has no business publishing that.
+                "migrations_pending": pending,
                 "server_time_ms": int(timezone.now().timestamp() * 1000),
             }
         )
+
+
+def _pending_migrations() -> int | None:
+    """How many migrations are on disk but not applied to the database.
+
+    **Added after the second outage of the same kind.** Twice — 2026-09-25 and
+    2026-10-06 — new code was pulled to the server without `migrate`. Both times
+    the site stayed up, `/api/health/` said "ok", and every sign-in from the app
+    returned 500, because the app sends its device id and the device table no
+    longer matched the code. The second time the parent saw only «تعذّر تسجيل
+    الدخول» after resetting their password, and the reset looked broken.
+
+    A health check that says "ok" while every sign-in fails is a health check
+    measuring the wrong thing. This makes a missed `migrate` visible from outside
+    with one `curl`, before a customer finds it.
+    """
+    try:
+        from django.db.migrations.executor import MigrationExecutor
+
+        executor = MigrationExecutor(connection)
+        return len(executor.migration_plan(executor.loader.graph.leaf_nodes()))
+    except Exception:  # noqa: BLE001 - a probe reports, it does not raise
+        return None
