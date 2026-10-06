@@ -809,7 +809,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get oneAccountPerDevice =>
-      'حساب واحد لكل هاتف. لتغييره، احذف بيانات التطبيق.';
+      'حتى ثلاثة حسابات على كل هاتف. لإزالة حساب منها، احذف بيانات التطبيق.';
 
   @override
   String get dialogWelcomeTitle => 'أهلاً بك في Lunio';

@@ -1570,7 +1570,7 @@ abstract class AppL10n {
   /// No description provided for @oneAccountPerDevice.
   ///
   /// In ar, this message translates to:
-  /// **'حساب واحد لكل هاتف. لتغييره، احذف بيانات التطبيق.'**
+  /// **'حتى ثلاثة حسابات على كل هاتف. لإزالة حساب منها، احذف بيانات التطبيق.'**
   String get oneAccountPerDevice;
 
   /// No description provided for @dialogWelcomeTitle.

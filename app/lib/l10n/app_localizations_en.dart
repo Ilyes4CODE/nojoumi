@@ -824,7 +824,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get oneAccountPerDevice =>
-      'One account per phone. To change it, clear the app\'s data.';
+      'Up to three accounts per phone. To remove one, clear the app\'s data.';
 
   @override
   String get dialogWelcomeTitle => 'Welcome to Lunio';

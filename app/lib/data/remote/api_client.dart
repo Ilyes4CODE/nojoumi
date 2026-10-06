@@ -1,6 +1,7 @@
 import 'dart:io' show HandshakeException, SocketException;
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 import '../../core/config.dart';
 
@@ -326,6 +327,16 @@ class ApiClient {
   /// unreachable**: the first is the parent's to fix, the second is ours, and a
   /// single "something went wrong" hides which.
   static ApiFailure _networkFailure(DioException error) {
+    // The real cause, in the device log, every time. The parent's sentence is
+    // deliberately vague and stays that way — but «تعذّرت العملية» was reported
+    // from a phone on 2026-10-06 with nothing anywhere saying what had actually
+    // been thrown, and a failure nobody can see is a failure nobody can fix.
+    // `adb logcat -s flutter` shows it. Type names and the exception's own
+    // message only: no URL, no headers, no body — those can carry a token.
+    debugPrint(
+      '[lunio.api] ${error.type.name}: '
+      '${error.error.runtimeType}: ${error.error ?? error.message}',
+    );
     return switch (error.type) {
       DioExceptionType.connectionTimeout ||
       DioExceptionType.sendTimeout ||

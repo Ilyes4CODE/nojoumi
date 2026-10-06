@@ -400,7 +400,7 @@
     }
   },
   "serverDegraded": "The server is up but its database is not responding",
-  "oneAccountPerDevice": "One account per phone. To change it, clear the app's data.",
+  "oneAccountPerDevice": "Up to three accounts per phone. To remove one, clear the app's data.",
   "dialogWelcomeTitle": "Welcome to Lunio",
   "dialogWelcomeBackTitle": "Welcome back",
   "dialogSetupRemains": "Two steps remain on this phone: the school level and the parent PIN. Neither is ever stored on the server, so both are set on each device.",
