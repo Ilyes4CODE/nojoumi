@@ -2777,3 +2777,48 @@ never reported: silence from something that never spoke means nothing. The test 
 A migration (`devices.0004`) and a cron job. **Without the cron job nothing is ever sent** — the heartbeats
 arrive and are recorded, and nobody is told. That is the step most likely to be forgotten, so it is the first
 thing in the deploy notes.
+
+## D-100 — Gemini becomes the lesson provider
+
+**Client request, 2026-10-06**, with their own API key. `GeminiProcessor` had existed since August (D-29) and
+had **no tests**. Switching providers is one line of configuration; making the switch safe was most of a day.
+
+### Measured, with the client's 22 acceptance photos
+
+| | first run (as configured) | after the fixes |
+|---|---|---|
+| structurally sound | 22/22 | **22/22** |
+| typical time per page | 14–23 s | **6.5–14 s** |
+| thinking tokens | up to 1583 | **0** |
+
+Structure only. Article 11.3's verdict — "سليم لغوياً", "مطابقة لمحتوى الدرس" — is a human reading the cards
+against the pages, in `tools/eval/runs/latest.html`.
+
+### What was wrong, each found by running real pages rather than reading code
+
+1. **Thinking ate the answer.** Thinking tokens come out of the same `maxOutputTokens` as the answer. The settings
+   comment said otherwise ("a cost rather than a truncation risk"); measurement says the JSON was cut off at 366
+   characters in one of two identical runs. Thinking is now **0 by default**, which `gemini-3.6-flash` refused in
+   August and accepts now — and transcribing a page into a schema needs none.
+2. **The ceiling was an estimate with no margin.** Even with thinking off, the fully vowelled Hajj page produced 1789
+   tokens against an estimate of 1900. Google bills tokens produced, not the ceiling, so it is now 8192 and costs
+   nothing extra.
+3. **A cut-off answer was reported as "could not parse"**, which points at the wrong thing. It is named as too long
+   now; the test fails on the old code with exactly that message.
+4. **The model over-delivers.** One page of 22 returned 16 cards for 12 asked. Trimmed to the request; fewer than
+   asked is left alone, since padding would invent content.
+5. **Google's "high demand" 503 clears in seconds** — the same rotated page failed and then succeeded on the next
+   attempt. It is retried twice (2 s, then 4 s) inside the server; a 429, which carries its own longer wait, is not.
+
+### Edge cases through the real endpoint and real Gemini
+
+A real page → 200 (12 cards, 8 questions). A blank sheet, a badly blurred page, and a photo of nothing → 422 with
+«الصورة غير واضحة». A text file renamed `.jpg` → 400 before any money is spent on it. A page photographed
+sideways → read correctly.
+
+### Article 14: the billing flag is still a human statement
+
+`GEMINI_BILLING_ENABLED=1` is set in the development `.env` for these tests. On the server it stays `0` until
+someone confirms in Google AI Studio that the project is on the **paid** tier, because the free tier lets Google
+use inputs for training and human review. Evidence so far points to paid — twenty rapid requests drew no throttling
+— but evidence is not the billing page, and the flag is the client's statement to make, not ours.

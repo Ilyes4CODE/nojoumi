@@ -122,7 +122,8 @@ def _retry_after(response) -> float | None:
 
 
 def _parse_payload(raw: str, *, provider: str, model: str, latency_ms: int,
-                   usage: dict[str, int]) -> LessonResult:
+                   usage: dict[str, int], card_limit: int | None = None,
+                   question_limit: int | None = None) -> LessonResult:
     """Turn the provider's JSON into a LessonResult.
 
     On a parse failure we log the *shape* of the problem, never the content —
@@ -171,6 +172,16 @@ def _parse_payload(raw: str, *, provider: str, model: str, latency_ms: int,
                 )
             )
         )
+
+    # The parent asked for a number; a model that returns more has not followed
+    # the request. Seen on 2026-10-06: one page of 22 came back with 16 cards for
+    # 12 asked. Trimmed rather than refused — the extra items are well formed, and
+    # failing a good lesson because it was generous would be the worse outcome.
+    # Fewer than asked is left alone: a short page honestly has less in it.
+    if card_limit is not None:
+        cards = cards[:card_limit]
+    if question_limit is not None:
+        questions = questions[:question_limit]
 
     return LessonResult(
         summary=str(data.get("summary", "")).strip(),
@@ -301,6 +312,8 @@ class GroqProcessor(LessonProcessor):
         return _parse_payload(
             content, provider=self.name, model=self.model,
             latency_ms=latency_ms, usage=usage,
+            card_limit=card_count,
+            question_limit=question_count,
         )
 
 
@@ -331,6 +344,16 @@ class ClaudeProcessor(LessonProcessor):
             "acceptance run — but it will be written against current API "
             "documentation, not from memory."
         )
+
+
+#: Gemini's output ceiling. See the note where it is used.
+GEMINI_MAX_OUTPUT_TOKENS = 8192
+
+#: Retries of a 503 "high demand" answer, and the base pause between them (it
+#: grows: 2 s, then 4 s). Worst case adds ~6 s plus two requests, which still
+#: fits the app's 90-second lesson timeout with a slow page.
+_GEMINI_503_RETRIES = 2
+_GEMINI_503_PAUSE_SECONDS = 2.0
 
 
 class GeminiProcessor(LessonProcessor):
@@ -394,9 +417,10 @@ class GeminiProcessor(LessonProcessor):
     def __init__(self, api_key: str | None = None, model: str | None = None) -> None:
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.model = model or settings.GEMINI_MODEL
-        # Empty means "do not send thinkingConfig at all", which is the only thing
-        # gemini-3.6-flash accepts: `thinkingBudget: 0` returns 400 on that model
-        # and `thinkingLevel` is not a field in v1beta. Measured 2026-08-17.
+        # Zero by default (see settings). None means "send no thinkingConfig at
+        # all": in August gemini-3.6-flash refused `thinkingBudget: 0` with a 400;
+        # by October it accepts it. If a model ever refuses it again, an empty
+        # GEMINI_THINKING_BUDGET restores the old behaviour without a code change.
         self.thinking_budget = getattr(settings, "GEMINI_THINKING_BUDGET", None)
 
         if not self.api_key:
@@ -451,12 +475,14 @@ class GeminiProcessor(LessonProcessor):
             ],
             "generationConfig": {
                 "temperature": 0.2,
-                # Headroom for thinking tokens: gemini-3.6-flash spends 400–650 of
-                # them per page and will not let them be switched off, and whether
-                # they count against this ceiling is not documented clearly enough
-                # to bet a truncated lesson on.
-                "maxOutputTokens": _completion_budget(card_count, question_count)
-                + 1024,
+                # A ceiling, not a spend: Google bills the tokens actually produced,
+                # so a generous cap costs nothing and a tight one costs a lesson.
+                # The old value (the completion estimate + 1024) assumed 400-650
+                # thinking tokens; on 2026-10-06 the model spent 1583 and cut the
+                # JSON off mid-string. Even with thinking off, a fully vowelled
+                # Arabic page (the Hajj lesson) produced 1789 tokens against an
+                # estimate of 1900 — too close to trust.
+                "maxOutputTokens": GEMINI_MAX_OUTPUT_TOKENS,
                 "responseMimeType": "application/json",
                 # A server-enforced schema, which Groq's json_object mode cannot
                 # do: malformed output becomes impossible rather than unlikely.
@@ -475,20 +501,33 @@ class GeminiProcessor(LessonProcessor):
             }
 
         started = time.monotonic()
-        try:
-            response = requests.post(
-                f"{self.base_url}/models/{self.model}:generateContent",
-                headers={
-                    "x-goog-api-key": self.api_key,
-                    "Content-Type": "application/json",
-                },
-                json=body,
-                timeout=_TIMEOUT_SECONDS,
-            )
-        except requests.RequestException as exc:
-            raise LessonProcessingError(
-                "تعذّر الاتصال بخدمة المعالجة", retryable=True
-            ) from exc
+        # Google answers a demand spike with 503 "This model is currently
+        # experiencing high demand", and it clears in seconds: on 2026-10-06 the
+        # same rotated page failed once and succeeded on the very next attempt.
+        # Passing that straight to the parent as «غير متوفّرة» turns a two-second
+        # blip into a failed lesson. So a 503 is retried here, twice, with a short
+        # pause — bounded so the whole thing stays well inside the app's 90-second
+        # lesson timeout. Anything else (a 4xx, a 429 with its own wait) is not
+        # retried: those will not improve in two seconds.
+        for attempt in range(_GEMINI_503_RETRIES + 1):
+            try:
+                response = requests.post(
+                    f"{self.base_url}/models/{self.model}:generateContent",
+                    headers={
+                        "x-goog-api-key": self.api_key,
+                        "Content-Type": "application/json",
+                    },
+                    json=body,
+                    timeout=_TIMEOUT_SECONDS,
+                )
+            except requests.RequestException as exc:
+                raise LessonProcessingError(
+                    "تعذّر الاتصال بخدمة المعالجة", retryable=True
+                ) from exc
+            if response.status_code != 503 or attempt == _GEMINI_503_RETRIES:
+                break
+            log.info("gemini 503 (high demand), retrying (%d/%d)", attempt + 1, _GEMINI_503_RETRIES)
+            time.sleep(_GEMINI_503_PAUSE_SECONDS * (attempt + 1))
         latency_ms = int((time.monotonic() - started) * 1000)
 
         if response.status_code >= 400:
@@ -521,7 +560,15 @@ class GeminiProcessor(LessonProcessor):
         parts = (candidate.get("content") or {}).get("parts") or []
         text = "".join(p.get("text", "") for p in parts)
 
-        if finish == "MAX_TOKENS" and not text.strip():
+        if finish == "MAX_TOKENS":
+            # A partial answer used to fall through to the JSON parser and come out
+            # as «تعذّر تحليل نتيجة المعالجة», which sends everybody looking at the
+            # wrong thing. A cut-off answer is a budget problem and is named as one.
+            log.warning(
+                "gemini hit MAX_TOKENS (%d chars produced, thinking=%s)",
+                len(text),
+                (payload.get("usageMetadata") or {}).get("thoughtsTokenCount", 0),
+            )
             raise LessonProcessingError(
                 "النتيجة طويلة جداً. قلّل عدد البطاقات أو الأسئلة.", retryable=False
             )
@@ -538,6 +585,8 @@ class GeminiProcessor(LessonProcessor):
             model=self.model,
             latency_ms=latency_ms,
             usage=usage,
+            card_limit=card_count,
+            question_limit=question_count,
         )
 
 

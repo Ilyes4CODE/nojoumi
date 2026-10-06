@@ -291,9 +291,20 @@ GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "")
 # Leave empty to omit thinkingConfig entirely, which is the only thing
 # gemini-3.6-flash accepts — `thinkingBudget: 0` returns HTTP 400 on that model
 # and `thinkingLevel` is not a field in v1beta (measured 2026-08-17). Unlike Groq,
-# Gemini reports thinking tokens separately, so they are a cost rather than a
-# truncation risk.
-_gemini_thinking = os.environ.get("GEMINI_THINKING_BUDGET", "").strip()
+# How many tokens Gemini may spend "thinking" before it answers. **Zero by
+# default**, measured 2026-10-06.
+#
+# The comment that stood here said thinking tokens were "a cost rather than a
+# truncation risk". That was wrong: they come out of the same `maxOutputTokens`
+# allowance as the answer. Left unset, gemini-3.6-flash spent 1583 tokens
+# thinking on one page, the JSON was cut off at 366 characters in one of two
+# identical runs, and the parent saw «تعذّر تحليل نتيجة المعالجة».
+#
+# Turning a page into a fixed schema is transcription, not reasoning: with
+# thinking off, three real pages each gave 12 cards and 8 questions in 5.8-8.0 s.
+# An explicit empty value still means "send no thinkingConfig", for a model that
+# ever refuses the field again — as gemini-3.6-flash did in August.
+_gemini_thinking = os.environ.get("GEMINI_THINKING_BUDGET", "0").strip()
 GEMINI_THINKING_BUDGET = int(_gemini_thinking) if _gemini_thinking else None
 # Art. 14 gate. Google's terms permit model improvement and human review of
 # content on the FREE tier, and forbid both on the PAID tier. The adapter refuses
