@@ -2822,3 +2822,24 @@ sideways → read correctly.
 someone confirms in Google AI Studio that the project is on the **paid** tier, because the free tier lets Google
 use inputs for training and human review. Evidence so far points to paid — twenty rapid requests drew no throttling
 — but evidence is not the billing page, and the flag is the client's statement to make, not ours.
+
+## D-101 — a question finished on one day is not asked on the next
+
+**Client report, 2026-10-09:** "today's lesson comes back tomorrow as a new test."
+
+When the memorization cards were switched off (D-85), the day builder lost its anchor. It picks questions from
+the lessons of the day's selected cards; with no cards selected it fell through to a filler — *any* live
+question, newest lesson first — and nothing excluded what had already been answered. Every morning served the
+newest lesson again, however completely the child had finished it.
+
+A new day now excludes every question **answered** on an earlier day. Answered, not shown: a question on
+yesterday's list that the child never reached is unfinished and carries over. The wrong-answer retry only
+re-asks within the same day, so an answered row from a past day is a finished question.
+
+The exclusion is one indexed `SELECT DISTINCT` of ids, handed to `isNotIn` so the database filters rather than
+Dart. When every lesson is finished the day is empty, and the home screen says to ask the parent for a new
+lesson — which is the honest state.
+
+The four tests were run against the unfixed builder first, and all four fail there.
+
+**Not changed:** the weekly test, which revisits the week's material on purpose.

@@ -656,6 +656,7 @@ class SessionRepository {
     );
 
     final questionRows = await _pickQuestions(
+      day: day,
       selection: selection,
       cardRows: cardRows,
       limit: rules.dailyQuestionCount,
@@ -757,11 +758,25 @@ class SessionRepository {
   /// Purged questions are excluded everywhere: Article 14 deletes the exercises
   /// after the weekly test, and a purged row is a tombstone, not content.
   Future<List<QuestionRow>> _pickQuestions({
+    required DayKey day,
     required DailySelection selection,
     required List<CardRow> cardRows,
     required int limit,
   }) async {
     if (limit <= 0) return const [];
+
+    // **A question finished on an earlier day is done.** Client report,
+    // 2026-10-09: "today's lesson comes back tomorrow as a new test". Once the
+    // memorization cards were switched off (D-85) the selection below has no
+    // cards to anchor on, so every morning fell through to the filler — *any*
+    // live question, newest lesson first — and served the same lesson again,
+    // however completely the child had answered it the day before.
+    //
+    // Answered, not merely shown: a question that was on yesterday's list but
+    // never reached — the child stopped halfway — is unfinished work and carries
+    // over. The wrong-answer retry (`_askAgain`) only ever re-asks within the
+    // same day, so an answered row from a past day is a finished question.
+    final retired = await _questionsFinishedBefore(day);
 
     final selectedIds = selection.cards.map((c) => c.cardId).toSet();
     final preferredLessons = <int>{
@@ -775,6 +790,7 @@ class SessionRepository {
         await (_db.select(_db.questions)
               ..where((t) => t.lessonId.isIn(preferredLessons))
               ..where((t) => t.purgedAtMs.isNull())
+              ..where((t) => t.id.isNotIn(retired))
               ..limit(limit))
             .get(),
       );
@@ -785,6 +801,7 @@ class SessionRepository {
     final filler =
         await (_db.select(_db.questions)
               ..where((t) => t.purgedAtMs.isNull())
+              ..where((t) => t.id.isNotIn(retired))
               ..orderBy([(t) => OrderingTerm.desc(t.lessonId)])
               ..limit(limit))
             .get();
@@ -793,6 +810,27 @@ class SessionRepository {
       if (taken.add(question.id)) picked.add(question);
     }
     return picked;
+  }
+
+  /// Ids of every question answered on a day before [day].
+  ///
+  /// One indexed query over the task list, returning only ids. The set is
+  /// small — a child answers a handful of questions a day — and passed to
+  /// `isNotIn`, so the database does the exclusion rather than Dart filtering a
+  /// whole table.
+  Future<Set<int>> _questionsFinishedBefore(DayKey day) async {
+    final rows =
+        await (_db.selectOnly(_db.taskInstances, distinct: true)
+              ..addColumns([_db.taskInstances.targetId])
+              ..where(
+                _db.taskInstances.kind.equalsValue(TaskKind.review) &
+                    _db.taskInstances.state.equalsValue(TaskState.answered) &
+                    _db.taskInstances.dayKey.isSmallerThanValue(
+                      day.daysSinceEpoch,
+                    ),
+              ))
+            .get();
+    return {for (final row in rows) row.read(_db.taskInstances.targetId)!};
   }
 
   Future<List<TaskInstanceRow>> _tasksFor(DayKey day) {
