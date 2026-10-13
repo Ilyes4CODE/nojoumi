@@ -217,6 +217,30 @@ class AuthRepository {
   /// generating new lessons, which needs the server.
   Future<void> signOut() => _tokens.clear();
 
+  /// Delete the account on the server, then forget the tokens.
+  ///
+  /// Google Play requires this inside the app (2026-10-13). The password is asked
+  /// again because the phone is the child's: being signed in on it proves
+  /// nothing about who is tapping. The server answers a wrong one with 403, not
+  /// 401, so the client's refresh-and-retry does not turn a typo into "signed
+  /// out".
+  ///
+  /// The tokens are cleared only after the server confirms. A failure leaves the
+  /// parent signed in to an account that still exists, which is the truth.
+  Future<void> deleteAccount({required String password}) async {
+    final response = await _api.post(
+      '/api/accounts/delete/',
+      body: {'password': password},
+    );
+    if (response.statusCode != 204 && response.statusCode != 200) {
+      throw ApiFailure(
+        ApiClient.messageFrom(response, 'تعذّر حذف الحساب.'),
+        statusCode: response.statusCode,
+      );
+    }
+    await _tokens.clear();
+  }
+
   Future<void> _write({
     required String access,
     required String refresh,

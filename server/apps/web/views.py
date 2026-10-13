@@ -28,10 +28,11 @@ from __future__ import annotations
 import logging
 
 from django.conf import settings
-from django.http import Http404
+from django.http import Http404, HttpResponseNotAllowed
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
+from rest_framework.throttling import SimpleRateThrottle
 
 from apps.payments import chargily
 from apps.payments.models import Transaction, TransactionStatus
@@ -192,3 +193,64 @@ def privacy(request):
         "web/privacy.html",
         {"updated": timezone.localdate().strftime("%Y-%m-%d")},
     )
+
+
+class _DeletionThrottle(SimpleRateThrottle):
+    """The same "account_delete" budget as the API, keyed on the address.
+
+    The form asks for a password, so unthrottled it would be a way to guess
+    passwords that sign-in's own limit does not see. A plain Django view has no
+    DRF throttling, so the class is borrowed and called by hand.
+    """
+
+    scope = "account_delete"
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {"scope": self.scope, "ident": self.get_ident(request)}
+
+
+def account_delete(request):
+    """Delete an account from a browser. Google Play requires this page.
+
+    It is the route for a parent who has **already uninstalled** the app, so it
+    asks for the email and password and nothing the app would have supplied.
+    The in-app route is `AccountDeleteView`; both end in `deletion.py`.
+
+    An unknown address and a wrong password get the same answer, so the page
+    cannot be used to find out who has an account. `authenticate` also hashes a
+    dummy password when the address is unknown, which keeps the two answers the
+    same length in time as well as in words.
+    """
+    from django.contrib.auth import authenticate
+
+    from apps.accounts.deletion import delete_account
+
+    if request.method not in ("GET", "POST"):
+        return HttpResponseNotAllowed(["GET", "POST"])
+
+    context = {"email": "", "error": ""}
+    if request.method == "GET":
+        return render(request, "web/account_delete.html", context)
+
+    email = (request.POST.get("email") or "").strip()
+    password = request.POST.get("password") or ""
+    # The address is echoed back so a typo does not mean retyping it; the
+    # password never is.
+    context["email"] = email
+
+    if not request.POST.get("confirm"):
+        context["error"] = "ضع علامة على مربّع التأكيد أولًا."
+        return render(request, "web/account_delete.html", context, status=400)
+
+    throttle = _DeletionThrottle()
+    if not throttle.allow_request(request, None):
+        context["error"] = "محاولات كثيرة. انتظر ساعة ثم حاول مرة أخرى."
+        return render(request, "web/account_delete.html", context, status=429)
+
+    user = authenticate(request, username=email, password=password) if email and password else None
+    if user is None:
+        context["error"] = "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+        return render(request, "web/account_delete.html", context, status=400)
+
+    delete_account(user)
+    return render(request, "web/account_deleted.html")

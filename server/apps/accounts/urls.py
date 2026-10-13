@@ -6,7 +6,7 @@ from .reset_views import (
     PasswordResetRequestView,
     PasswordResetVerifyView,
 )
-from .views import MeView, RegisterView, SignInView
+from .views import AccountDeleteView, MeView, RegisterView, SignInView
 
 app_name = "accounts"
 
@@ -18,6 +18,8 @@ urlpatterns = [
     path("token/", SignInView.as_view(), name="token"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     path("me/", MeView.as_view(), name="me"),
+    # Google Play requires deletion inside the app; the web route is /account/delete/.
+    path("delete/", AccountDeleteView.as_view(), name="delete"),
     # A six-digit code by email rather than a link, because the app has no deep
     # links and a link would push the parent into a browser. See reset_codes.py.
     path(

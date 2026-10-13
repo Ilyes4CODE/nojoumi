@@ -164,6 +164,10 @@ REST_FRAMEWORK = {
         # phone for an hour, and account creation — the expensive, abusable
         # operation — would have its budget spent by ordinary logins.
         "signin": "30/hour",
+        # Asks for the password, so it is a password oracle like sign-in, on both
+        # the API and the public web form. Ten an hour is more than any parent
+        # deleting their own account will ever need.
+        "account_delete": "10/hour",
         "subscription": "20/hour",
         # Creating a checkout costs us a gateway call and creates a row, and the
         # endpoint is unauthenticated by contract design (Art. 7.3). The limit is

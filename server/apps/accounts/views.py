@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from . import install_binding
+from . import deletion, install_binding
 from .serializers import (
     InstallAwareTokenSerializer,
     ParentSerializer,
@@ -108,3 +108,40 @@ class MeView(APIView):
     )
     def get(self, request):
         return Response(ParentSerializer(request.user).data)
+
+
+class AccountDeleteView(APIView):
+    """Delete the signed-in parent's account. Google Play requires it in-app.
+
+    **The password is asked again**, not just the token. The phone this runs on is
+    the child's phone, and a session that is signed in on it says nothing about
+    who is holding it. A wrong password answers 403 rather than 401: the app's
+    client treats 401 as an expired token, refreshes, and retries — it would then
+    report a typo as "signed out".
+
+    What goes and what stays is in `deletion.py`, shared with the web page.
+    """
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "account_delete"
+
+    @extend_schema(
+        summary="Delete the authenticated parent's account",
+        description="Requires the current password. Payment records are kept, detached.",
+        responses={204: None},
+    )
+    def post(self, request):
+        password = request.data.get("password")
+        if not isinstance(password, str) or not password:
+            return Response(
+                {"detail": "أدخل كلمة المرور لتأكيد الحذف."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not request.user.check_password(password):
+            return Response(
+                {"detail": "كلمة المرور غير صحيحة."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        deletion.delete_account(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)

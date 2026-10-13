@@ -18,6 +18,9 @@ urlpatterns = [
     # reviewer opens it cold, and so does a parent who has not installed
     # anything yet.
     path("privacy/", web_views.privacy, name="privacy"),
+    # Google Play asks for a deletion page that works without the app, for a
+    # parent who has already uninstalled it. The in-app route is the API one.
+    path("account/delete/", web_views.account_delete, name="account-delete"),
     # Unauthenticated liveness, checked by the app before sign-in so that
     # "cannot reach the server" and "wrong credentials" are never confused.
     path("api/", include("apps.common.urls")),

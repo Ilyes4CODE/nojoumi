@@ -6,7 +6,9 @@ import '../../core/illustrations.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../l10n/app_localizations.dart';
+import '../../data/remote/api_client.dart';
 import '../auth/account_form.dart';
+import '../auth/password_field.dart';
 
 /// The parent's account — the only account this app has.
 ///
@@ -51,7 +53,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             if (!AppConfig.hasApi)
               _Notice(message: l10n.serverNotConfigured)
             else if (signedIn)
-              _SignedIn(onSignOut: _signOut)
+              _SignedIn(onSignOut: _signOut, onDelete: _delete)
             else
               // The same form the setup wizard shows. See `AccountForm` for why
               // it is shared rather than duplicated.
@@ -63,12 +65,117 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   }
 
   Future<void> _signOut() => ref.read(authRepositoryProvider).signOut();
+
+  Future<void> _delete() async {
+    final deleted = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _DeleteAccountDialog(),
+    );
+    if (deleted != true || !mounted) return;
+    final l10n = AppL10n.of(context)!;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(l10n.accountDeleted)));
+  }
+}
+
+/// Google Play requires account deletion inside the app (2026-10-13).
+///
+/// Asks for the password, not just a tap: this screen sits behind the parent
+/// PIN, but the PIN is four digits typed beside the child, and deleting the
+/// account loses whatever is left of a paid subscription. Says so before the
+/// button, in the same words as the web page at /account/delete/.
+///
+/// Pops `true` only once the server has confirmed. On a wrong password the
+/// dialog stays open with the server's message under the field.
+class _DeleteAccountDialog extends ConsumerStatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  ConsumerState<_DeleteAccountDialog> createState() =>
+      _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
+  final _password = TextEditingController();
+  String? _error;
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _confirm() async {
+    if (_password.text.isEmpty || _busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .deleteAccount(password: _password.text);
+      if (mounted) Navigator.of(context).pop(true);
+    } on ApiFailure catch (failure) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _error = failure.message;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context)!;
+    final danger = Theme.of(context).colorScheme.error;
+
+    return AlertDialog(
+      title: Text(l10n.deleteAccountTitle),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(l10n.deleteAccountBody),
+            const SizedBox(height: LunioSpacing.m),
+            PasswordField(
+              controller: _password,
+              label: l10n.deleteAccountPasswordHint,
+              errorText: _error,
+              onSubmitted: (_) => _confirm(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: danger),
+          onPressed: _busy ? null : _confirm,
+          child: _busy
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(l10n.deleteAccountConfirm),
+        ),
+      ],
+    );
+  }
 }
 
 class _SignedIn extends ConsumerWidget {
-  const _SignedIn({required this.onSignOut});
+  const _SignedIn({required this.onSignOut, required this.onDelete});
 
   final Future<void> Function() onSignOut;
+  final Future<void> Function() onDelete;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -92,6 +199,15 @@ class _SignedIn extends ConsumerWidget {
         ),
         const SizedBox(height: LunioSpacing.l),
         OutlinedButton(onPressed: onSignOut, child: Text(l10n.signOut)),
+        const SizedBox(height: LunioSpacing.l),
+        TextButton.icon(
+          onPressed: onDelete,
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.error,
+          ),
+          icon: const Icon(Icons.delete_forever_outlined),
+          label: Text(l10n.deleteAccount),
+        ),
       ],
     );
   }

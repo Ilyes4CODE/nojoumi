@@ -555,5 +555,11 @@
   "setupAppsNoneYet": "لم تختر أي تطبيق بعد",
   "setupAppsWhyLater": "إن تخطّيتها الآن، لن يُحجب أي تطبيق حتى تختار.",
   "passwordShow": "إظهار كلمة المرور",
-  "passwordHide": "إخفاء كلمة المرور"
+  "passwordHide": "إخفاء كلمة المرور",
+  "deleteAccount": "حذف الحساب",
+  "deleteAccountTitle": "حذف الحساب نهائيًا؟",
+  "deleteAccountBody": "سيُحذف بريدك وكلمة المرور واشتراكك من الخادم، ولا يمكن التراجع. الأيام المتبقّية من الاشتراك تضيع ولا يُستردّ ثمنها.\n\nالحجب والنجوم والدروس المحفوظة على هذا الهاتف تبقى كما هي.",
+  "deleteAccountConfirm": "حذف نهائيًا",
+  "deleteAccountPasswordHint": "أدخل كلمة المرور للتأكيد",
+  "accountDeleted": "تمّ حذف الحساب."
 }

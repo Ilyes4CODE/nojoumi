@@ -1067,4 +1067,23 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get passwordHide => 'Hide password';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete the account for good?';
+
+  @override
+  String get deleteAccountBody =>
+      'Your email, password and subscription will be deleted from the server, and this cannot be undone. Any remaining subscription days are lost and not refunded.\n\nBlocking, stars and saved lessons on this phone stay as they are.';
+
+  @override
+  String get deleteAccountConfirm => 'Delete for good';
+
+  @override
+  String get deleteAccountPasswordHint => 'Enter your password to confirm';
+
+  @override
+  String get accountDeleted => 'The account has been deleted.';
 }

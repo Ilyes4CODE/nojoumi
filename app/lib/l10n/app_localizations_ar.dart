@@ -1051,4 +1051,23 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get passwordHide => 'إخفاء كلمة المرور';
+
+  @override
+  String get deleteAccount => 'حذف الحساب';
+
+  @override
+  String get deleteAccountTitle => 'حذف الحساب نهائيًا؟';
+
+  @override
+  String get deleteAccountBody =>
+      'سيُحذف بريدك وكلمة المرور واشتراكك من الخادم، ولا يمكن التراجع. الأيام المتبقّية من الاشتراك تضيع ولا يُستردّ ثمنها.\n\nالحجب والنجوم والدروس المحفوظة على هذا الهاتف تبقى كما هي.';
+
+  @override
+  String get deleteAccountConfirm => 'حذف نهائيًا';
+
+  @override
+  String get deleteAccountPasswordHint => 'أدخل كلمة المرور للتأكيد';
+
+  @override
+  String get accountDeleted => 'تمّ حذف الحساب.';
 }

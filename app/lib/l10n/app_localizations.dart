@@ -1986,6 +1986,42 @@ abstract class AppL10n {
   /// In ar, this message translates to:
   /// **'إخفاء كلمة المرور'**
   String get passwordHide;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الحساب'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الحساب نهائيًا؟'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُحذف بريدك وكلمة المرور واشتراكك من الخادم، ولا يمكن التراجع. الأيام المتبقّية من الاشتراك تضيع ولا يُستردّ ثمنها.\n\nالحجب والنجوم والدروس المحفوظة على هذا الهاتف تبقى كما هي.'**
+  String get deleteAccountBody;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف نهائيًا'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountPasswordHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل كلمة المرور للتأكيد'**
+  String get deleteAccountPasswordHint;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمّ حذف الحساب.'**
+  String get accountDeleted;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

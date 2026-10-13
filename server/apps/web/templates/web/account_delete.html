@@ -1,0 +1,99 @@
+{% extends "web/base.html" %}
+{% comment %}
+  Deleting an account from a browser, at a stable public URL.
+
+  **Google Play requires this page** for any app that creates accounts, and its
+  URL goes into the Data safety form. Play checks three things on it: that it
+  names the app, that it gives the steps, and that it says what is deleted and
+  what is kept, and for how long. Those three sections are below in that order.
+
+  Arabic for the parents, with an English summary underneath for the reviewer:
+  the same two audiences as the privacy policy.
+{% endcomment %}
+
+{% block title %}حذف الحساب — Lunio{% endblock %}
+
+{% block header %}
+  <h1>حذف حساب <span class="brand">Lunio</span></h1>
+  <p class="lede">يمكنك حذف حسابك من التطبيق نفسه، أو من هذه الصفحة إن كنت قد حذفت التطبيق.</p>
+{% endblock %}
+
+{% block content %}
+<style>
+  label { display: block; font-weight: 500; margin: 14px 0 6px; }
+  input[type=email], input[type=password] {
+    width: 100%; font: inherit; padding: 13px 14px; border-radius: 14px;
+    border: 1.5px solid #D9D4EE; background: #fff; direction: ltr; text-align: left;
+  }
+  input:focus { outline: 2px solid var(--violet); border-color: transparent; }
+  .check { display: flex; gap: 10px; align-items: flex-start; margin: 18px 0; font-weight: 400; }
+  .check input { margin-top: 6px; width: 18px; height: 18px; flex: 0 0 auto; }
+  button.danger { background: #C62828; margin-top: 8px; }
+  button.danger:hover { background: #A51F1F; }
+  .error { background: #FDE2E1; color: #8A1C1C; border-radius: 14px; padding: 12px 16px; margin-bottom: 8px; }
+  ol, ul { padding-inline-start: 22px; }
+</style>
+
+<div class="card">
+  <h2>من داخل التطبيق</h2>
+  <ol>
+    <li>افتح Lunio واضغط على أيقونة الدرع، ثم أدخل رمز PIN.</li>
+    <li>من لوحة ولي الأمر افتح <strong>حساب الوالد</strong>.</li>
+    <li>اضغط <strong>حذف الحساب</strong> وأكّد بكلمة المرور.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2>ما يُحذف</h2>
+  <ul>
+    <li>بريدك الإلكتروني ورقم هاتفك وكلمة المرور.</li>
+    <li><strong>الاشتراك</strong>، بما في ذلك الأيام المتبقّية منه، ولا يُستردّ ثمنها.</li>
+    <li>ارتباط الحساب بالهواتف التي سجّلت الدخول منها.</li>
+  </ul>
+  <p>يتمّ الحذف فورًا ونهائيًا، ولا يمكن التراجع عنه.</p>
+
+  <h2>ما يبقى</h2>
+  <ul>
+    <li><strong>سجلّ الدفع</strong> (المبلغ، الخطة، التاريخ، رقم المعاملة) لأغراض المحاسبة، دون أي ربط بك: لا بريد ولا اسم ولا بيانات بطاقة.</li>
+    <li>رقم عشوائي للهاتف يتذكّر أن الفترة التجريبية استُعملت عليه، ولا يدلّ عليك.</li>
+  </ul>
+  <p>
+    لا شيء عن طفلك، لأن الخادم لم يحفظ عنه شيئًا أصلًا. ما على الهاتف (النجوم، الدروس، الإعدادات)
+    يُمحى بحذف التطبيق أو بمسح بياناته من إعدادات الهاتف.
+  </p>
+</div>
+
+<div class="card">
+  <h2>حذف الحساب من هنا</h2>
+  {% if error %}<div class="error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" autocomplete="off">
+    <label for="email">البريد الإلكتروني</label>
+    <input id="email" name="email" type="email" required value="{{ email }}">
+    <label for="password">كلمة المرور</label>
+    <input id="password" name="password" type="password" required>
+    <label class="check">
+      <input type="checkbox" name="confirm" required>
+      <span>أفهم أن الحذف نهائي، وأن الأيام المتبقّية من اشتراكي ستضيع.</span>
+    </label>
+    <button type="submit" class="danger">حذف الحساب نهائيًا</button>
+  </form>
+  <p class="note">نسيت كلمة المرور؟ استعِدها من شاشة الدخول في التطبيق (نسيت كلمة المرور)، ثم عُد إلى هذه الصفحة.</p>
+</div>
+
+<div dir="ltr" style="text-align:left;">
+  <div class="card">
+    <h2 style="text-align:left;">Delete your Lunio account (English)</h2>
+    <p style="text-align:left;"><strong>In the app:</strong> shield icon → parent PIN → Account →
+      Delete account → confirm with your password.</p>
+    <p style="text-align:left;"><strong>Without the app:</strong> enter your email and password in the
+      form above and confirm.</p>
+    <p style="text-align:left;"><strong>Deleted immediately and permanently:</strong> email address,
+      phone number, password, subscription (including any remaining paid days, which are not
+      refunded), and the links between the account and phones.</p>
+    <p style="text-align:left;"><strong>Kept:</strong> payment records (amount, plan, date, transaction
+      id) for accounting, detached from the account and carrying no email, name or card data; and a
+      random phone identifier that records the free trial was used. Nothing about the child is held
+      on the server, so there is nothing about the child to delete.</p>
+  </div>
+</div>
+{% endblock %}

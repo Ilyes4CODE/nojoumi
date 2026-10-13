@@ -555,5 +555,11 @@
   "setupAppsNoneYet": "No apps chosen yet",
   "setupAppsWhyLater": "If you skip this now, nothing will be blocked until you choose.",
   "passwordShow": "Show password",
-  "passwordHide": "Hide password"
+  "passwordHide": "Hide password",
+  "deleteAccount": "Delete account",
+  "deleteAccountTitle": "Delete the account for good?",
+  "deleteAccountBody": "Your email, password and subscription will be deleted from the server, and this cannot be undone. Any remaining subscription days are lost and not refunded.\n\nBlocking, stars and saved lessons on this phone stay as they are.",
+  "deleteAccountConfirm": "Delete for good",
+  "deleteAccountPasswordHint": "Enter your password to confirm",
+  "accountDeleted": "The account has been deleted."
 }
