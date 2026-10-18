@@ -1,3 +1,4 @@
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -121,4 +122,33 @@ dependencies {
 
 flutter {
     source = "../.."
+}
+
+// A release build must know the production server.
+//
+// The app reads its server address from `--dart-define` (see AppConfig), and
+// without one it falls back to the emulator's development address. On
+// 2026-10-18 build 2 went to Play's internal test built with a bare
+// `flutter build appbundle`: it installed, opened, and could reach nothing.
+// Nothing complained, because a missing define is not an error to Dart.
+//
+// So it is one here. Release builds are made with
+//   flutter build appbundle --dart-define-from-file=lunio.production.json
+// and Flutter hands the defines to Gradle, base64-encoded, in `dart-defines`.
+gradle.taskGraph.whenReady {
+    val releasing = allTasks.any {
+        it.project == project && (it.name == "bundleRelease" || it.name == "assembleRelease")
+    }
+    if (!releasing) return@whenReady
+    val defines = (project.findProperty("dart-defines") as String?)
+        ?.split(",")
+        ?.filter { it.isNotBlank() }
+        ?.map { String(Base64.getDecoder().decode(it)) }
+        .orEmpty()
+    if (defines.none { it.startsWith("LUNIO_API_BASE=https://") }) {
+        throw GradleException(
+            "Release build without the production server address. Build with:\n" +
+                "  flutter build appbundle --dart-define-from-file=lunio.production.json"
+        )
+    }
 }
