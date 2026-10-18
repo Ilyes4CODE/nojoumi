@@ -4,7 +4,7 @@ description: >-
   The Android app. Contract logic lives in ../packages (AD-1); this app is a
   client of it and of the Kotlin blocking layer, never the owner of a rule.
 publish_to: none
-version: 1.0.0+2
+version: 1.0.0+3
 
 environment:
   sdk: ^3.11.0
