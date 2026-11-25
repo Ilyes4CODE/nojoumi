@@ -3,7 +3,10 @@ from __future__ import annotations
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from rest_framework_simplejwt.settings import api_settings as jwt_settings
+from rest_framework_simplejwt.utils import get_md5_hash_password
 
 ParentUser = get_user_model()
 
@@ -109,3 +112,37 @@ class InstallAwareTokenSerializer(InstallFieldsMixin, TokenObtainPairSerializer)
                 raise serializers.ValidationError({"detail": str(exc)}) from exc
 
         return data
+
+
+class RevocationAwareRefreshSerializer(TokenRefreshSerializer):
+    """Renew a session only for an account that still exists, unchanged.
+
+    `CHECK_REVOKE_TOKEN` is enforced by SimpleJWT when an **access** token is
+    used, never when a refresh token is renewed. So after a password change or
+    an account deletion the old refresh token still got a 200 and a fresh
+    access token — which every endpoint then refused. The app saw a stream of
+    401s it could not recover from instead of one clear "signed out".
+
+    Checked here, at the door, the answer is a single 401 and the app ends the
+    session cleanly. It matters more since 2026-11-25, when sessions became
+    long-lived: a refresh token now outlives a password by months.
+    """
+
+    def validate(self, attrs):
+        # Constructing the token verifies signature and expiry; a TokenError is
+        # turned into a 401 by the view.
+        refresh = self.token_class(attrs["refresh"])
+        user = (
+            ParentUser.objects.filter(
+                **{jwt_settings.USER_ID_FIELD: refresh.payload.get(jwt_settings.USER_ID_CLAIM)}
+            )
+            .only("password", "is_active")
+            .first()
+        )
+        if user is None or not user.is_active:
+            raise AuthenticationFailed("الحساب غير موجود.", code="user_not_found")
+        if jwt_settings.CHECK_REVOKE_TOKEN and refresh.payload.get(
+            jwt_settings.REVOKE_TOKEN_CLAIM
+        ) != get_md5_hash_password(user.password):
+            raise AuthenticationFailed("انتهت الجلسة. سجّل الدخول من جديد.", code="token_revoked")
+        return super().validate(attrs)

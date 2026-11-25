@@ -73,6 +73,12 @@ class TokenStore {
         .write(AuthTokensCompanion(accessToken: Value(access)));
   }
 
+  /// Replace only the refresh token, after a renewal that rotated it.
+  Future<void> writeRefresh(String refresh) async {
+    await (_db.update(_db.authTokens)..where((t) => t.id.equals(_singletonId)))
+        .write(AuthTokensCompanion(refreshToken: Value(refresh)));
+  }
+
   /// Forget everything.
   ///
   /// Signing out takes nothing away from the child: Article 7.1 keeps blocking,

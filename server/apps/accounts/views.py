@@ -9,13 +9,14 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from . import deletion, install_binding
 from .serializers import (
     InstallAwareTokenSerializer,
     ParentSerializer,
     RegisterSerializer,
+    RevocationAwareRefreshSerializer,
 )
 
 
@@ -94,6 +95,15 @@ class SignInView(TokenObtainPairView):
     serializer_class = InstallAwareTokenSerializer
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "signin"
+
+
+class RefreshView(TokenRefreshView):
+    """Renew a session; refuses one whose password changed or account is gone.
+
+    See `RevocationAwareRefreshSerializer`.
+    """
+
+    serializer_class = RevocationAwareRefreshSerializer
 
 
 class MeView(APIView):

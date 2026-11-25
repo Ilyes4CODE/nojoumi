@@ -4,6 +4,7 @@ Contract-driven configuration is marked with its article. Anything so marked is
 not a preference — changing it changes whether we are in breach.
 """
 
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -201,6 +202,17 @@ REST_FRAMEWORK = {
 # moment for this change: before the app is in anyone's hands but the client's.
 SIMPLE_JWT = {
     "CHECK_REVOKE_TOKEN": True,
+    # A parent signs in once. Until 2026-11-25 only the line above was set, so
+    # the refresh token had the library's default lifetime of ONE day and every
+    # parent was sent back to the sign-in form each morning.
+    #
+    # Rotation makes the session slide: each renewal returns a new refresh
+    # token with a fresh lifetime, so a phone in use stays signed in for good
+    # and one abandoned for 180 days signs in again. The access token stays
+    # short; the app renews it on the first 401.
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=180),
+    "ROTATE_REFRESH_TOKENS": True,
 }
 
 # Art. 7.6 — Ed25519 private key for signing the subscription snapshot. The app

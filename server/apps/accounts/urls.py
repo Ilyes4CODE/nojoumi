@@ -1,12 +1,11 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
 
 from .reset_views import (
     PasswordResetConfirmView,
     PasswordResetRequestView,
     PasswordResetVerifyView,
 )
-from .views import AccountDeleteView, MeView, RegisterView, SignInView
+from .views import AccountDeleteView, MeView, RefreshView, RegisterView, SignInView
 
 app_name = "accounts"
 
@@ -16,7 +15,7 @@ urlpatterns = [
     # Our own subclass, not simplejwt's view: sign-in also claims the device for
     # this account (one account per phone, 2026-08-28).
     path("token/", SignInView.as_view(), name="token"),
-    path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
+    path("token/refresh/", RefreshView.as_view(), name="token-refresh"),
     path("me/", MeView.as_view(), name="me"),
     # Google Play requires deletion inside the app; the web route is /account/delete/.
     path("delete/", AccountDeleteView.as_view(), name="delete"),

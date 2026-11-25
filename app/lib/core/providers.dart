@@ -79,6 +79,7 @@ final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
     readToken: tokens.accessToken,
     readRefreshToken: tokens.refreshToken,
     writeAccessToken: tokens.writeAccess,
+    writeRefreshToken: tokens.writeRefresh,
     endSession: tokens.clear,
   );
 });

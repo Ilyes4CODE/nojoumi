@@ -68,6 +68,10 @@ typedef RefreshTokenReader = Future<String?> Function();
 /// Stores a freshly minted access token.
 typedef AccessTokenWriter = Future<void> Function(String access);
 
+/// Stores the refresh token the server issued with a renewal. The server
+/// rotates them (2026-11-25), so the next renewal must present this one.
+typedef RefreshTokenWriter = Future<void> Function(String refresh);
+
 /// Called when a refresh is refused and the session is genuinely over.
 typedef SessionEnder = Future<void> Function();
 
@@ -84,11 +88,13 @@ class ApiClient {
     required TokenReader readToken,
     RefreshTokenReader? readRefreshToken,
     AccessTokenWriter? writeAccessToken,
+    RefreshTokenWriter? writeRefreshToken,
     SessionEnder? endSession,
   }) : _baseUrl = baseUrl ?? AppConfig.apiBase,
        _readToken = readToken,
        _readRefreshToken = readRefreshToken,
        _writeAccessToken = writeAccessToken,
+       _writeRefreshToken = writeRefreshToken,
        _endSession = endSession,
        dio = dio ?? Dio() {
     this.dio.options
@@ -114,6 +120,7 @@ class ApiClient {
   final TokenReader _readToken;
   final RefreshTokenReader? _readRefreshToken;
   final AccessTokenWriter? _writeAccessToken;
+  final RefreshTokenWriter? _writeRefreshToken;
   final SessionEnder? _endSession;
 
   /// Ask the server whether it is there. Never throws.
@@ -310,14 +317,31 @@ class ApiClient {
       return null;
     }
 
-    final data = response.data;
-    final access = data is Map ? data['access'] : null;
-    if (response.statusCode != 200 || access is! String || access.isEmpty) {
+    // Only a refused token ends the session. SimpleJWT answers 401 for one that
+    // is expired, revoked or belongs to a deleted account. Anything else — a 503
+    // while a deployment restarts the server, a 502 from the proxy — says
+    // nothing about the session, and until 2026-11-25 it signed the parent out
+    // all the same.
+    if (response.statusCode == 401) {
       await _endSession?.call();
       return null;
     }
 
+    final data = response.data;
+    final access = data is Map ? data['access'] : null;
+    if (response.statusCode != 200 || access is! String || access.isEmpty) {
+      return null;
+    }
+
     await _writeAccessToken?.call(access);
+    // The server rotates refresh tokens, so a renewal hands back a new one and
+    // its lifetime starts again. Keeping it is what lets a phone in use stay
+    // signed in; presenting the first one forever would put the session back
+    // on a fixed clock.
+    final refresh = data is Map ? data['refresh'] : null;
+    if (refresh is String && refresh.isNotEmpty) {
+      await _writeRefreshToken?.call(refresh);
+    }
     return access;
   }
 
