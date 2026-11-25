@@ -173,11 +173,43 @@ class _ClockUntrustedCard extends StatelessWidget {
 ///
 /// So it is on the first screen, in a colour that is not the ordinary palette,
 /// with the one action that fixes it.
-class _BlockingBrokenBanner extends ConsumerWidget {
+///
+/// **It re-reads the status when the app comes back.** The action sends the
+/// parent to the phone's settings, and there is no callback for what they did
+/// there. Until 2026-11-25 the banner kept the answer it read before they left,
+/// so it went on saying blocking was broken after they had fixed it, until the
+/// app was closed and reopened.
+class _BlockingBrokenBanner extends ConsumerStatefulWidget {
   const _BlockingBrokenBanner();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_BlockingBrokenBanner> createState() =>
+      _BlockingBrokenBannerState();
+}
+
+class _BlockingBrokenBannerState extends ConsumerState<_BlockingBrokenBanner>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(blockingStatusProvider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppL10n.of(context)!;
     final theme = Theme.of(context);
 
